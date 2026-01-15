@@ -5,6 +5,28 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../auth/AuthProvider';
 
+// Type declaration for Google Sign-In API
+declare global {
+  interface Window {
+    google?: {
+      accounts?: {
+        id: {
+          initialize: (config: {
+            client_id: string;
+            callback: (response: { credential?: string }) => void;
+            use_fedcm_for_prompt?: boolean;
+          }) => void;
+          renderButton: (element: HTMLElement, config: {
+            theme: string;
+            size: string;
+            text?: string;
+          }) => void;
+        };
+      };
+    };
+  }
+}
+
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
 
 // Seeded user accounts from database - identity_subject must match DB exactly
