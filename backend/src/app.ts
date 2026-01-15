@@ -32,6 +32,7 @@ import { buildGoogleMapsTravelCalculatorFromEnv } from './services/travelProvide
 import { issueLocalJwt } from './services/jwtIssuer';
 import { verifyJwtFromRequest } from './services/jwtVerifier';
 import { hashPassword } from './services/password';
+import { sendInvitationEmail } from './services/email';
 
 function resolveSchoolContext(req: AuthenticatedRequest, res: express.Response): number | null {
   const requestedSchoolId = Number(req.params.schoolId);
@@ -241,6 +242,20 @@ export function createApp() {
           allowedHours,
           maxLessonsPerDay,
         });
+
+        // Send invitation email (don't fail if email fails)
+        try {
+          await sendInvitationEmail({
+            to: email,
+            inviteeName: fullName || '',
+            role: roleValue,
+            schoolName: school.name,
+            invitationToken: token,
+          });
+        } catch (emailError) {
+          console.error('Failed to send invitation email:', emailError);
+          // Continue - invitation is created, just email failed
+        }
 
         res.status(201).json({ invitation });
       } catch (error) {
