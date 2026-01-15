@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "./dist-tests",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "target": "ES2019",
+    "types": ["node"]
+  },
+  "include": ["tests/**/*.ts", "src/app/auth/**/*.ts", "src/app/testing/**/*.ts"]
+}

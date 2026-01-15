@@ -1,0 +1,10 @@
+node_modules
+npm-debug.log
+.yarn
+.pnpm-store
+**/.next
+**/dist
+**/coverage
+.DS_Store
+.env*
+.git
