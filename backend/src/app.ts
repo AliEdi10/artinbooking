@@ -469,15 +469,34 @@ export function createApp() {
           });
         }
 
-        // If fullName provided and role is Student, verify/create profile?
-        // Note: The original code didn't create profile here, relying on later steps?
-        // But for consistency with /register, we might want to create profile if Student.
-        // However, sticking to original behavior for now regarding profile creation 
-        // (frontend calls /students endpoint or similar? No, only admin creates student?)
-        // Wait, if I am a student accepting invite, I need a profile.
-        // I will add profile creation if it's a student and user doesn't have one?
-        // Importing createStudentProfile is complicated here (circular deps?).
-        // I'll stick to minimum changes for now.
+        // If fullName provided and role is Student, verify/create profile?\n        // Note: The original code didn't create profile here, relying on later steps?\n        // But for consistency with /register, we might want to create profile if Student.\n        // However, sticking to original behavior for now regarding profile creation \n        // (frontend calls /students endpoint or similar? No, only admin creates student?)\n        // Wait, if I am a student accepting invite, I need a profile.\n        // I will add profile creation if it's a student and user doesn't have one?\n        // Importing createStudentProfile is complicated here (circular deps?).\n        // I'll stick to minimum changes for now.
+
+        // Create student profile if role is STUDENT
+        if (invitation.role === 'STUDENT' && user) {
+          try {
+            await createStudentProfile({
+              userId: user.id,
+              drivingSchoolId: invitation.drivingSchoolId,
+              fullName: fullName || invitation.fullName || invitation.email.split('@')[0],
+            });
+          } catch (profileError) {
+            console.error('Failed to create student profile:', profileError);
+            // Don't fail the whole registration - profile can be created later
+          }
+        }
+
+        // Create driver profile if role is DRIVER
+        if (invitation.role === 'DRIVER' && user) {
+          try {
+            await createDriverProfile({
+              userId: user.id,
+              drivingSchoolId: invitation.drivingSchoolId,
+              fullName: fullName || invitation.fullName || invitation.email.split('@')[0],
+            });
+          } catch (profileError) {
+            console.error('Failed to create driver profile:', profileError);
+          }
+        }
 
         const updatedInvitation = await markInvitationAccepted(invitation.id);
 
