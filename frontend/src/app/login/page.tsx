@@ -59,7 +59,12 @@ export default function LoginPage() {
 
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
     if (!clientId) {
-      setStatus('Set NEXT_PUBLIC_GOOGLE_CLIENT_ID to enable Google sign-in, or use dev accounts below.');
+      // Only show this message in dev mode
+      if (process.env.NEXT_PUBLIC_DEV_MODE === 'true') {
+        setStatus('Google Sign-In not configured. Use email/password or dev accounts.');
+      } else {
+        setStatus('Sign in with your email and password.');
+      }
       return;
     }
 
@@ -243,15 +248,18 @@ export default function LoginPage() {
           </div>
         )}
 
-        <div className="flex items-center justify-between border rounded p-3 bg-slate-50">
-          <div>
-            <p className="text-sm font-medium">Google Identity Platform</p>
-            <p className="text-xs text-slate-500">Uses NEXT_PUBLIC_GOOGLE_CLIENT_ID</p>
+        {/* Only show Google Sign-In section if configured */}
+        {process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID && (
+          <div className="flex items-center justify-between border rounded p-3 bg-slate-50">
+            <div>
+              <p className="text-sm font-medium">Google Sign-In</p>
+              <p className="text-xs text-slate-500">Sign in with your Google account</p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div ref={buttonRef} />
+            </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <div ref={buttonRef} />
-          </div>
-        </div>
+        )}
 
         {process.env.NEXT_PUBLIC_DEV_MODE === 'true' && (
           <details className="text-sm">

@@ -1,0 +1,9 @@
+# REQUIRED - Copy these to Vercel Environment Variables
+# Go to: Vercel Project → Settings → Environment Variables
+
+NEXT_PUBLIC_BACKEND_URL=https://artinbooking-production.up.railway.app
+NEXT_PUBLIC_DEV_MODE=false
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=AIzaSyBpxJUBfbBuvVHknxXNbCDHJEy9wCeb508
+
+# Optional - only if you want Google Sign-In to work
+# NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-google-client-id-here
