@@ -21,7 +21,7 @@ function normalizePrivateKey(): crypto.KeyObject {
 export function issueLocalJwt(params: IssueJwtParams): string {
   const key = normalizePrivateKey();
   const nowSeconds = Math.floor(Date.now() / 1000);
-  const expiresInSeconds = params.expiresInSeconds ?? 60 * 60; // default 1h
+  const expiresInSeconds = params.expiresInSeconds ?? 60 * 60 * 24 * 7; // default 7 days
 
   const issuer = process.env.AUTH_LOCAL_ISSUER || process.env.AUTH_ISSUER || 'local-artinbk-auth';
   const audience = process.env.AUTH_LOCAL_AUDIENCE || process.env.AUTH_AUDIENCE || 'artinbk-local';
