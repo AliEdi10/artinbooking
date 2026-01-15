@@ -30,9 +30,9 @@ export default function BookingsPage() {
       try {
         setStatus('Loading roster and bookings...');
         const [driverResults, studentResults, bookingResults] = await Promise.all([
-          apiFetch<DriverProfile[]>(`/schools/${schoolId}/drivers`, token),
-          apiFetch<StudentProfile[]>(`/schools/${schoolId}/students`, token),
-          apiFetch<Booking[]>(`/schools/${schoolId}/bookings`, token),
+          apiFetch<DriverProfile[]>(`/schools/${schoolId}/drivers`, token!),
+          apiFetch<StudentProfile[]>(`/schools/${schoolId}/students`, token!),
+          apiFetch<Booking[]>(`/schools/${schoolId}/bookings`, token!),
         ]);
 
         setDrivers(driverResults);
@@ -45,7 +45,7 @@ export default function BookingsPage() {
         if (driver && student) {
           const addresses = await apiFetch<Address[]>(
             `/schools/${schoolId}/students/${student.id}/addresses`,
-            token,
+            token!,
           ).catch(() => []);
           const pickup = addresses.find((entry) => entry.isDefaultPickup) ?? addresses[0];
           const dropoff = addresses.find((entry) => entry.isDefaultDropoff) ?? addresses[1] ?? pickup;
@@ -54,7 +54,7 @@ export default function BookingsPage() {
             const dateParam = new Date().toISOString().slice(0, 10);
             const slotResults = await apiFetch<string[]>(
               `/schools/${schoolId}/drivers/${driver.id}/available-slots?date=${dateParam}&pickupAddressId=${pickup.id}&dropoffAddressId=${dropoff.id}`,
-              token,
+              token!,
             ).catch(() => []);
             setSlots(slotResults.map((slot) => ({ startTime: slot, driverId: driver.id })));
           } else {
