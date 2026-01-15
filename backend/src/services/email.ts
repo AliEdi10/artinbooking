@@ -7,26 +7,34 @@ const APP_NAME = process.env.APP_NAME || 'Artin Driving School';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://artinbooking.vercel.app';
 
 export interface SendInvitationEmailParams {
-    to: string;
-    inviteeName: string;
-    role: string;
-    schoolName: string;
-    invitationToken: string;
+  to: string;
+  inviteeName: string;
+  role: string;
+  schoolName: string;
+  invitationToken: string;
 }
 
 export async function sendInvitationEmail(params: SendInvitationEmailParams): Promise<void> {
-    const { to, inviteeName, role, schoolName, invitationToken } = params;
+  const { to, inviteeName, role, schoolName, invitationToken } = params;
 
-    const registrationUrl = `${FRONTEND_URL}/register?token=${invitationToken}`;
+  const registrationUrl = `${FRONTEND_URL}/register?token=${invitationToken}`;
 
-    const roleDisplay = role === 'STUDENT' ? 'student' : role === 'DRIVER' ? 'instructor' : 'team member';
+  const roleDisplay = role === 'STUDENT' ? 'student' : role === 'DRIVER' ? 'instructor' : 'team member';
 
-    try {
-        await resend.emails.send({
-            from: FROM_EMAIL,
-            to,
-            subject: `You're invited to join ${schoolName}`,
-            html: `
+  // Debug: Check if API key is set
+  if (!process.env.RESEND_API_KEY) {
+    console.error('RESEND_API_KEY is not set! Email will not be sent.');
+    return;
+  }
+
+  console.log(`Attempting to send invitation email to ${to}...`);
+
+  try {
+    const result = await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject: `You're invited to join ${schoolName}`,
+      html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #1e40af;">Welcome to ${APP_NAME}!</h2>
           <p>Hi ${inviteeName || 'there'},</p>
@@ -46,23 +54,23 @@ export async function sendInvitationEmail(params: SendInvitationEmailParams): Pr
           </p>
         </div>
       `,
-        });
-        console.log(`Invitation email sent to ${to}`);
-    } catch (error) {
-        console.error('Failed to send invitation email:', error);
-        throw error;
-    }
+    });
+    console.log(`Invitation email sent to ${to}`, result);
+  } catch (error) {
+    console.error('Failed to send invitation email:', error);
+    throw error;
+  }
 }
 
 export async function sendPasswordResetEmail(to: string, resetToken: string): Promise<void> {
-    const resetUrl = `${FRONTEND_URL}/reset-password?token=${resetToken}`;
+  const resetUrl = `${FRONTEND_URL}/reset-password?token=${resetToken}`;
 
-    try {
-        await resend.emails.send({
-            from: FROM_EMAIL,
-            to,
-            subject: `Reset your ${APP_NAME} password`,
-            html: `
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject: `Reset your ${APP_NAME} password`,
+      html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #1e40af;">Password Reset Request</h2>
           <p>You requested to reset your password.</p>
@@ -77,10 +85,10 @@ export async function sendPasswordResetEmail(to: string, resetToken: string): Pr
           </p>
         </div>
       `,
-        });
-        console.log(`Password reset email sent to ${to}`);
-    } catch (error) {
-        console.error('Failed to send password reset email:', error);
-        throw error;
-    }
+    });
+    console.log(`Password reset email sent to ${to}`);
+  } catch (error) {
+    console.error('Failed to send password reset email:', error);
+    throw error;
+  }
 }
