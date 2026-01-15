@@ -4,6 +4,8 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { apiFetch } from '../apiClient';
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+
 type InvitationInfo = {
     email: string;
     role: string;
@@ -40,7 +42,7 @@ function RegisterContent() {
         // Validate token and get invitation info
         async function validateToken() {
             try {
-                const response = await fetch(`http://localhost:3001/invitations/validate?token=${token}`);
+                const response = await fetch(`${BACKEND_URL}/invitations/validate?token=${token}`);
                 if (!response.ok) {
                     const data = await response.json();
                     throw new Error(data.error || 'Invalid or expired invitation');
@@ -76,8 +78,8 @@ function RegisterContent() {
 
         try {
             const endpoint = token
-                ? 'http://localhost:3001/invitations/accept'
-                : 'http://localhost:3001/auth/register';
+                ? `${BACKEND_URL}/invitations/accept`
+                : `${BACKEND_URL}/auth/register`;
 
             const body = token
                 ? { token, fullName: form.fullName, password: form.password }
