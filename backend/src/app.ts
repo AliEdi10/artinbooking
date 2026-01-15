@@ -336,6 +336,23 @@ export function createApp() {
           return;
         }
 
+        // Send invitation email
+        const school = await getDrivingSchoolById(schoolId);
+        if (school) {
+          try {
+            await sendInvitationEmail({
+              to: updated.email,
+              inviteeName: updated.fullName || '',
+              role: updated.role,
+              schoolName: school.name,
+              invitationToken: newToken,
+            });
+          } catch (emailError) {
+            console.error('Failed to send resend invitation email:', emailError);
+            // Continue - invitation is updated, just email failed
+          }
+        }
+
         res.json({ invitation: updated });
       } catch (error) {
         next(error);
