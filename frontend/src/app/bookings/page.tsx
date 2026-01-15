@@ -26,6 +26,7 @@ export default function BookingsPage() {
     if (!token || !schoolId) return;
 
     async function loadData() {
+      if (!token) return; // Type guard for TypeScript
       try {
         setStatus('Loading roster and bookings...');
         const [driverResults, studentResults, bookingResults] = await Promise.all([
@@ -125,7 +126,7 @@ export default function BookingsPage() {
                 ) : null}
               </ul>
             </SummaryCard>
-        </div>
+          </div>
           <SummaryCard
             title="Next steps"
             description="Let users choose drivers/addresses and perform create/cancel actions from the UI."
