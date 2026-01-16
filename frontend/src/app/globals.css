@@ -24,3 +24,23 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Make placeholder text more visible */
+input::placeholder,
+textarea::placeholder,
+select::placeholder {
+  color: #64748b; /* slate-500 equivalent - darker gray */
+  opacity: 1;
+}
+
+/* Make disabled buttons and inputs more visible */
+button:disabled {
+  color: #475569 !important; /* slate-600 equivalent */
+  opacity: 0.8;
+}
+
+input:disabled,
+select:disabled {
+  color: #475569;
+  background-color: #f8fafc;
+}
