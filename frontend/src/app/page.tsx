@@ -59,7 +59,7 @@ function SuperadminOverview({ token }: { token: string }) {
         <SummaryCard title="📊 System Status" description="Platform health" footer="">
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-full bg-green-500"></span>
-            <span className="text-sm">All systems operational</span>
+            <span className="text-sm text-slate-700">All systems operational</span>
           </div>
         </SummaryCard>
       </div>
