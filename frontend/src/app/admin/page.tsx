@@ -55,7 +55,7 @@ export default function AdminPage() {
   const [error, setError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState('');
 
-  const [driverForm, setDriverForm] = useState({ userId: '', fullName: '', phone: '' });
+  const [driverForm, setDriverForm] = useState({ email: '', fullName: '' });
   const [studentForm, setStudentForm] = useState({
     email: '',
     fullName: '',
@@ -202,22 +202,22 @@ export default function AdminPage() {
   async function handleCreateDriver(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!token || !schoolId) return;
-    setActionMessage('Creating driver...');
+    setActionMessage('Sending invitation...');
     try {
-      await apiFetch(`/schools/${schoolId}/drivers`, token, {
+      await apiFetch(`/schools/${schoolId}/invitations`, token, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: Number(driverForm.userId),
-          fullName: driverForm.fullName,
-          phone: driverForm.phone || undefined,
+          email: driverForm.email,
+          role: 'DRIVER',
+          fullName: driverForm.fullName || undefined,
         }),
       });
-      setDriverForm({ userId: '', fullName: '', phone: '' });
-      await loadRoster();
-      setActionMessage('Driver created.');
+      setDriverForm({ email: '', fullName: '' });
+      await loadPendingInvitations();
+      setActionMessage('Invitation sent! Driver will receive an email to complete registration.');
     } catch (err) {
-      setActionMessage('Unable to create driver.');
+      setActionMessage('Unable to send invitation.');
     }
   }
 
@@ -375,34 +375,26 @@ export default function AdminPage() {
                 ) : null}
               </ul>
               <form className="mt-3 space-y-2" onSubmit={handleCreateDriver}>
-                <div className="flex gap-2 text-sm">
-                  <input
-                    className="border rounded px-2 py-1 w-full"
-                    placeholder="User ID"
-                    type="number"
-                    value={driverForm.userId}
-                    onChange={(e) => setDriverForm({ ...driverForm, userId: e.target.value })}
-                    required
-                  />
-                  <input
-                    className="border rounded px-2 py-1 w-full"
-                    placeholder="Full name"
-                    value={driverForm.fullName}
-                    onChange={(e) => setDriverForm({ ...driverForm, fullName: e.target.value })}
-                    required
-                  />
-                </div>
+                <div className="text-xs font-medium text-slate-700 mb-1">Invite New Driver</div>
                 <input
-                  className="border rounded px-2 py-1 text-sm w-full"
-                  placeholder="Phone (optional)"
-                  value={driverForm.phone}
-                  onChange={(e) => setDriverForm({ ...driverForm, phone: e.target.value })}
+                  className="border rounded px-3 py-2 text-sm w-full"
+                  placeholder="Email *"
+                  type="email"
+                  value={driverForm.email}
+                  onChange={(e) => setDriverForm({ ...driverForm, email: e.target.value })}
+                  required
+                />
+                <input
+                  className="border rounded px-3 py-2 text-sm w-full"
+                  placeholder="Full name (optional)"
+                  value={driverForm.fullName}
+                  onChange={(e) => setDriverForm({ ...driverForm, fullName: e.target.value })}
                 />
                 <button
                   type="submit"
-                  className="w-full bg-slate-900 text-white rounded px-3 py-2 text-sm hover:bg-slate-800"
+                  className="w-full bg-blue-600 text-white rounded px-3 py-2 text-sm hover:bg-blue-700 flex items-center justify-center gap-2"
                 >
-                  Add driver
+                  📧 Send Invitation
                 </button>
               </form>
             </SummaryCard>

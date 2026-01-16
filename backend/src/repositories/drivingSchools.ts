@@ -11,3 +11,16 @@ export async function getDrivingSchoolById(id: number): Promise<DrivingSchool | 
   if (result.rowCount === 0) return null;
   return mapDrivingSchool(result.rows[0]);
 }
+
+export async function createDrivingSchool(params: {
+  name: string;
+  contactEmail?: string;
+}): Promise<DrivingSchool> {
+  const result = await getPool().query<DrivingSchoolRow>(
+    `INSERT INTO driving_schools (name, contact_email, active)
+     VALUES ($1, $2, true)
+     RETURNING *`,
+    [params.name, params.contactEmail ?? null]
+  );
+  return mapDrivingSchool(result.rows[0]);
+}

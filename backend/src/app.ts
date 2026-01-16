@@ -3,7 +3,7 @@ import cors from 'cors';
 import express from 'express';
 import { authenticateRequest, authenticateRequestAllowUnregistered } from './middleware/authentication';
 import { enforceTenantScope, requireRoles } from './middleware/authorization';
-import { getDrivingSchoolById, getDrivingSchools } from './repositories/drivingSchools';
+import { getDrivingSchoolById, getDrivingSchools, createDrivingSchool } from './repositories/drivingSchools';
 import { findInvitationByToken, markInvitationAccepted, upsertInvitation, getPendingInvitations, getInvitationById, resendInvitation } from './repositories/invitations';
 import { countAdminsForSchool, createUserWithIdentity, createUserWithPassword } from './repositories/users';
 import {
@@ -173,6 +173,35 @@ export function createApp() {
         }
 
         res.json([school]);
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
+
+  // Create new driving school (superadmin only)
+  app.post(
+    '/schools',
+    authenticateRequest,
+    requireRoles(['SUPERADMIN']),
+    async (req: AuthenticatedRequest, res, next) => {
+      try {
+        const { name, contactEmail } = req.body as {
+          name?: string;
+          contactEmail?: string;
+        };
+
+        if (!name) {
+          res.status(400).json({ error: 'name is required' });
+          return;
+        }
+
+        const school = await createDrivingSchool({ name, contactEmail });
+
+        // Also create school settings for the new school
+        await upsertSchoolSettings(school.id, {});
+
+        res.status(201).json(school);
       } catch (error) {
         next(error);
       }
