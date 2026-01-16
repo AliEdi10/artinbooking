@@ -217,9 +217,6 @@ export default function LoginPage() {
           >
             {loadingUser === 'password-login' ? 'Signing in...' : 'Sign in'}
           </button>
-          <p className="text-center text-xs text-slate-600">
-            Don't have an account? <a href="/register" className="text-blue-600 hover:underline">Sign up</a>
-          </p>
         </form>
 
         {/* Dev Login Accounts - only shown in dev mode */}
