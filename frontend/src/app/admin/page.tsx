@@ -443,7 +443,7 @@ export default function AdminPage() {
                         <p className="text-xs text-slate-500">
                           {invite.fullName || 'No name'} • {invite.role}
                         </p>
-                        <p className="text-xs text-slate-400">
+                        <p className="text-xs text-slate-600">
                           Expires: {new Date(invite.expiresAt).toLocaleDateString()}
                         </p>
                       </div>
@@ -495,7 +495,7 @@ export default function AdminPage() {
                           {student.licenceStatus === 'approved' ? '✓' : student.licenceStatus === 'rejected' ? '✗' : '⏳'}
                           {student.licenceStatus}
                         </span>
-                        <p className="text-xs text-slate-400 mt-1">Click to review</p>
+                        <p className="text-xs text-slate-600 mt-1">Click to review</p>
                       </div>
                     </div>
                   </li>
@@ -514,7 +514,7 @@ export default function AdminPage() {
                         <h3 className="text-lg font-semibold">Licence Review</h3>
                         <button
                           onClick={() => setSelectedStudent(null)}
-                          className="text-slate-400 hover:text-slate-600 text-xl leading-none"
+                          className="text-slate-600 hover:text-slate-600 text-xl leading-none"
                         >×</button>
                       </div>
 
@@ -562,7 +562,7 @@ export default function AdminPage() {
                               className="w-full max-h-48 object-contain border rounded-lg bg-slate-50"
                             />
                           ) : (
-                            <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center text-slate-400">
+                            <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center text-slate-600">
                               No licence image uploaded
                             </div>
                           )}

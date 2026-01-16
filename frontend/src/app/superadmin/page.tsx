@@ -132,7 +132,7 @@ export default function SuperadminPage() {
                                         <div className="flex justify-between items-center">
                                             <div>
                                                 <p className="font-medium">{school.name}</p>
-                                                <p className="text-xs text-slate-500">{school.contactEmail || 'No email'}</p>
+                                                <p className="text-xs text-slate-600">{school.contactEmail || 'No email'}</p>
                                             </div>
                                             <span className={`text-xs px-2 py-1 rounded ${school.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                                                 {school.active ? 'Active' : 'Inactive'}
@@ -141,7 +141,7 @@ export default function SuperadminPage() {
                                     </li>
                                 ))}
                                 {schools.length === 0 && !loading && (
-                                    <li className="text-xs text-slate-500 text-center py-4">No schools yet.</li>
+                                    <li className="text-xs text-slate-600 text-center py-4">No schools yet.</li>
                                 )}
                             </ul>
 
@@ -182,14 +182,14 @@ export default function SuperadminPage() {
                                     return (
                                         <li key={admin.id} className="border rounded p-2 bg-blue-50">
                                             <p className="font-medium">{admin.email}</p>
-                                            <p className="text-xs text-slate-500">
+                                            <p className="text-xs text-slate-600">
                                                 {admin.fullName || 'No name'} • {school?.name || 'Unknown school'}
                                             </p>
                                         </li>
                                     );
                                 })}
                                 {admins.length === 0 && (
-                                    <li className="text-xs text-slate-500 text-center py-4">No school admins yet.</li>
+                                    <li className="text-xs text-slate-600 text-center py-4">No school admins yet.</li>
                                 )}
                             </ul>
 

@@ -16,10 +16,17 @@ const defaultCenter = {
 
 const libraries: ('places')[] = ['places'];
 
+type AddressComponents = {
+    line1: string;
+    city: string;
+    provinceOrState: string;
+    formattedAddress: string;
+};
+
 type MapPickerProps = {
     latitude?: number | null;
     longitude?: number | null;
-    onLocationSelect: (lat: number, lng: number, address?: string) => void;
+    onLocationSelect: (lat: number, lng: number, address?: AddressComponents) => void;
 };
 
 export function MapPicker({ latitude, longitude, onLocationSelect }: MapPickerProps) {
@@ -74,7 +81,36 @@ export function MapPicker({ latitude, longitude, onLocationSelect }: MapPickerPr
                 setMarkerPosition({ lat, lng });
                 setMapCenter({ lat, lng });
                 setSearchValue(place.formatted_address || '');
-                onLocationSelect(lat, lng, place.formatted_address);
+
+                // Extract address components
+                let streetNumber = '';
+                let route = '';
+                let city = '';
+                let provinceOrState = '';
+
+                if (place.address_components) {
+                    for (const component of place.address_components) {
+                        const types = component.types;
+                        if (types.includes('street_number')) {
+                            streetNumber = component.long_name;
+                        } else if (types.includes('route')) {
+                            route = component.long_name;
+                        } else if (types.includes('locality')) {
+                            city = component.long_name;
+                        } else if (types.includes('administrative_area_level_1')) {
+                            provinceOrState = component.short_name;
+                        }
+                    }
+                }
+
+                const line1 = streetNumber ? `${streetNumber} ${route}` : route;
+
+                onLocationSelect(lat, lng, {
+                    line1,
+                    city,
+                    provinceOrState,
+                    formattedAddress: place.formatted_address || '',
+                });
             }
         }
     }, [onLocationSelect]);

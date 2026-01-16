@@ -245,10 +245,10 @@ export default function DriverPage() {
             <p className="text-sm text-slate-600">
               Adjust your service hours, review requests, and keep bookings within buffers and travel radius.
             </p>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-600">
               {driverState.driver ? `Active profile: ${driverState.driver.fullName}` : 'No driver profile loaded yet.'}
             </p>
-            {actionMessage ? <p className="text-[11px] text-slate-500">{actionMessage}</p> : null}
+            {actionMessage ? <p className="text-[11px] text-slate-600">{actionMessage}</p> : null}
           </div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <SummaryCard
@@ -260,11 +260,11 @@ export default function DriverPage() {
                 {availabilitySummary.map((slot) => (
                   <li key={`${slot.day}-${slot.window}`} className="flex justify-between">
                     <span>{slot.day}</span>
-                    <span className="text-xs text-slate-500">{slot.window}</span>
+                    <span className="text-xs text-slate-600">{slot.window}</span>
                   </li>
                 ))}
                 {availabilitySummary.length === 0 && !status ? (
-                  <li className="text-xs text-slate-500">No availability published yet.</li>
+                  <li className="text-xs text-slate-600">No availability published yet.</li>
                 ) : null}
               </ul>
             </SummaryCard>
@@ -279,8 +279,8 @@ export default function DriverPage() {
                     <div className="flex justify-between">
                       <div>
                         <p className="font-medium">{lesson.time}</p>
-                        <p className="text-xs text-slate-500">{lesson.status}</p>
-                        <p className="text-[11px] text-slate-500">Student: {lesson.student}</p>
+                        <p className="text-xs text-slate-600">{lesson.status}</p>
+                        <p className="text-[11px] text-slate-600">Student: {lesson.student}</p>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2 text-xs items-center">
@@ -323,7 +323,7 @@ export default function DriverPage() {
                   </li>
                 ))}
                 {upcomingLessons.length === 0 && !status ? (
-                  <li className="text-xs text-slate-500">No bookings scheduled yet.</li>
+                  <li className="text-xs text-slate-600">No bookings scheduled yet.</li>
                 ) : null}
               </ul>
             </SummaryCard>
@@ -378,7 +378,7 @@ export default function DriverPage() {
                       <div className="flex justify-between items-center">
                         <div>
                           <p className="font-medium">{new Date(booking.startTime).toLocaleDateString()}</p>
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-slate-600">
                             {new Date(booking.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </p>
                         </div>
@@ -392,13 +392,13 @@ export default function DriverPage() {
                     </li>
                   ))}
                   {studentHistory.length === 0 && (
-                    <li className="text-xs text-slate-500 text-center py-4">No lesson history for this student.</li>
+                    <li className="text-xs text-slate-600 text-center py-4">No lesson history for this student.</li>
                   )}
                 </ul>
               )}
 
               {!selectedStudentId && (
-                <p className="text-xs text-slate-500 text-center py-4">
+                <p className="text-xs text-slate-600 text-center py-4">
                   Select a student from the dropdown to view their lesson history.
                 </p>
               )}
@@ -475,7 +475,7 @@ export default function DriverPage() {
                   </li>
                 ))}
               {driverState.availability.filter(a => a.type === 'override_closed').length === 0 ? (
-                <li className="text-xs text-slate-500 text-center py-2">No time off scheduled.</li>
+                <li className="text-xs text-slate-600 text-center py-2">No time off scheduled.</li>
               ) : null}
             </ul>
           </SummaryCard>
@@ -490,7 +490,7 @@ export default function DriverPage() {
                   <div className="flex justify-between items-center">
                     <div>
                       <p className="font-medium">{new Date(booking.startTime).toLocaleDateString()}</p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-slate-600">
                         {new Date(booking.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         {' - '}
                         {driverState.students.find((s) => s.id === booking.studentId)?.fullName ?? 'Unknown Student'}
@@ -506,7 +506,7 @@ export default function DriverPage() {
                 </li>
               ))}
               {driverState.pastBookings.length === 0 ? (
-                <li className="text-xs text-slate-500 text-center py-4">No lesson history yet.</li>
+                <li className="text-xs text-slate-600 text-center py-4">No lesson history yet.</li>
               ) : null}
             </ul>
           </SummaryCard>

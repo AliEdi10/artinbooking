@@ -42,7 +42,7 @@ function SuperadminOverview({ token }: { token: string }) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <SummaryCard title="🏫 Driving Schools" description="Total registered schools" footer={loading ? 'Loading...' : ''}>
           <div className="text-4xl font-bold text-blue-600">{schools.length}</div>
-          <p className="text-sm text-slate-500">{schools.filter(s => s.active).length} active</p>
+          <p className="text-sm text-slate-600">{schools.filter(s => s.active).length} active</p>
         </SummaryCard>
 
         <SummaryCard title="⚡ Quick Actions" description="Common tasks" footer="">
@@ -114,7 +114,7 @@ function AdminOverview({ token, schoolId }: { token: string; schoolId: number })
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <SummaryCard title="📅 Today's Lessons" description="Scheduled for today" footer="">
           <div className="text-4xl font-bold text-blue-600">{todayBookings.length}</div>
-          <p className="text-sm text-slate-500">{bookings.length} total upcoming</p>
+          <p className="text-sm text-slate-600">{bookings.length} total upcoming</p>
         </SummaryCard>
 
         <SummaryCard title="📋 Pending Reviews" description="Licences awaiting review" footer="">
@@ -191,7 +191,7 @@ function DriverOverview({ token, schoolId }: { token: string; schoolId: number }
         <SummaryCard title="📅 Today's Lessons" description="Your schedule for today" footer="">
           <div className="text-4xl font-bold text-blue-600">{todayBookings.length}</div>
           {nextLesson && (
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-600">
               Next: {new Date(nextLesson.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </p>
           )}
@@ -199,7 +199,7 @@ function DriverOverview({ token, schoolId }: { token: string; schoolId: number }
 
         <SummaryCard title="📆 This Week" description="Upcoming lessons" footer="">
           <div className="text-4xl font-bold text-green-600">{bookings.length}</div>
-          <p className="text-sm text-slate-500">total scheduled</p>
+          <p className="text-sm text-slate-600">total scheduled</p>
         </SummaryCard>
 
         <SummaryCard title="⚡ Quick Actions" description="" footer="">
@@ -218,7 +218,7 @@ function DriverOverview({ token, schoolId }: { token: string; schoolId: number }
                 <li key={booking.id} className="flex justify-between items-center p-3 bg-slate-50 rounded border">
                   <div>
                     <p className="font-medium">{new Date(booking.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                    <p className="text-sm text-slate-500">{student?.fullName || 'Student'}</p>
+                    <p className="text-sm text-slate-600">{student?.fullName || 'Student'}</p>
                   </div>
                   <span className="px-2 py-1 text-xs rounded bg-blue-100 text-blue-800">{booking.status}</span>
                 </li>
@@ -294,12 +294,12 @@ function StudentOverview({ token, schoolId }: { token: string; schoolId: number 
                   <span>Remaining</span>
                   <span className="font-bold text-green-600">{remainingHours?.toFixed(1)} hrs</span>
                 </div>
-                <p className="text-xs text-slate-500 text-center">of {allowedHours} total hours</p>
+                <p className="text-xs text-slate-600 text-center">of {allowedHours} total hours</p>
               </>
             ) : (
               <div className="text-center py-2">
                 <p className="text-2xl font-bold text-blue-600">{usedHours.toFixed(1)} hrs</p>
-                <p className="text-sm text-slate-500">used (no limit set)</p>
+                <p className="text-sm text-slate-600">used (no limit set)</p>
               </div>
             )}
           </div>
@@ -313,11 +313,11 @@ function StudentOverview({ token, schoolId }: { token: string; schoolId: number 
               <p className="text-2xl font-bold text-blue-600">
                 {new Date(nextLesson.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </p>
-              <p className="text-sm text-slate-500 mt-1">{bookings.length} total upcoming</p>
+              <p className="text-sm text-slate-600 mt-1">{bookings.length} total upcoming</p>
             </div>
           ) : (
             <div className="text-center py-4">
-              <p className="text-slate-500">No lessons scheduled</p>
+              <p className="text-slate-600">No lessons scheduled</p>
               <Link href="/student" className="text-blue-600 text-sm hover:underline">Book a lesson →</Link>
             </div>
           )}
@@ -366,7 +366,7 @@ export default function Home() {
       <Protected>
         <AppShell>
           <div className="flex items-center justify-center min-h-[200px]">
-            <p className="text-slate-500">Loading...</p>
+            <p className="text-slate-600">Loading...</p>
           </div>
         </AppShell>
       </Protected>
@@ -384,7 +384,7 @@ export default function Home() {
         {role === 'student' && token && schoolId && <StudentOverview token={token} schoolId={schoolId} />}
         {!role && (
           <div className="text-center py-10">
-            <p className="text-slate-500">Please log in to see your dashboard.</p>
+            <p className="text-slate-600">Please log in to see your dashboard.</p>
           </div>
         )}
       </AppShell>

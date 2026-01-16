@@ -57,8 +57,8 @@ export default function StudentPage() {
     provinceOrState: '',
     latitude: '',
     longitude: '',
-    isDefaultPickup: false,
-    isDefaultDropoff: false,
+    isDefaultPickup: true,
+    isDefaultDropoff: true,
   });
   const [slotQuery, setSlotQuery] = useState({ driverId: '', pickupId: '', dropoffId: '', date: '' });
   const [bookingForm, setBookingForm] = useState({ driverId: '', pickupId: '', dropoffId: '', startTime: '' });
@@ -317,8 +317,8 @@ export default function StudentPage() {
             <p className="text-sm text-slate-600">
               Upload licence details, manage pickup/dropoff addresses, and browse policy-checked slots.
             </p>
-            <p className="text-xs text-slate-500">{policyHint}</p>
-            {actionMessage ? <p className="text-[11px] text-slate-500">{actionMessage}</p> : null}
+            <p className="text-xs text-slate-600">{policyHint}</p>
+            {actionMessage ? <p className="text-[11px] text-slate-600">{actionMessage}</p> : null}
           </div>
 
           {/* Booking Limits Display */}
@@ -338,7 +338,7 @@ export default function StudentPage() {
                         style={{ width: `${Math.min(100, (usedHours / (student.allowedHours ?? 1)) * 100)}%` }}
                       ></div>
                     </div>
-                    <p className="text-xs text-slate-500 mt-1">
+                    <p className="text-xs text-slate-600 mt-1">
                       {Math.max(0, (student.allowedHours ?? 0) - usedHours).toFixed(1)} hours remaining
                     </p>
                   </div>
@@ -349,7 +349,7 @@ export default function StudentPage() {
                     <p className="text-xl font-bold text-blue-700">
                       {student.maxLessonsPerDay} lesson{student.maxLessonsPerDay !== 1 ? 's' : ''}/day
                     </p>
-                    <p className="text-xs text-slate-500 mt-1">
+                    <p className="text-xs text-slate-600 mt-1">
                       Maximum bookings per day
                     </p>
                   </div>
@@ -368,83 +368,108 @@ export default function StudentPage() {
                 {addresses.map((address) => (
                   <li key={address.id} className="border rounded p-2 bg-slate-50">
                     <p className="font-medium">{address.label}</p>
-                    <p className="text-xs text-slate-500">{address.line1}</p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-slate-600">{address.line1}</p>
+                    <p className="text-xs text-slate-600">
                       {address.city}, {address.provinceOrState}
                     </p>
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-[11px] text-slate-600">
                       Pickup: {address.isDefaultPickup ? 'default' : 'no'} · Dropoff: {address.isDefaultDropoff ? 'default' : 'no'}
                     </p>
                   </li>
                 ))}
                 {addresses.length === 0 && !status ? (
-                  <li className="text-xs text-slate-500">No addresses on file yet.</li>
+                  <li className="text-xs text-slate-600">No addresses on file yet.</li>
                 ) : null}
               </ul>
-              <form className="mt-3 space-y-2 text-sm" onSubmit={addAddress}>
-                <input
-                  className="border rounded px-2 py-1 w-full"
-                  placeholder="Label"
-                  value={addressForm.label}
-                  onChange={(e) => setAddressForm({ ...addressForm, label: e.target.value })}
-                  required
-                />
-                <input
-                  className="border rounded px-2 py-1 w-full"
-                  placeholder="Line 1"
-                  value={addressForm.line1}
-                  onChange={(e) => setAddressForm({ ...addressForm, line1: e.target.value })}
-                  required
-                />
-                <div className="flex gap-2">
+              <form className="mt-3 space-y-3 text-sm" onSubmit={addAddress}>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Address Label *</label>
                   <input
-                    className="border rounded px-2 py-1 w-full"
-                    placeholder="City"
-                    value={addressForm.city}
-                    onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })}
-                    required
-                  />
-                  <input
-                    className="border rounded px-2 py-1 w-full"
-                    placeholder="Province/State"
-                    value={addressForm.provinceOrState}
-                    onChange={(e) => setAddressForm({ ...addressForm, provinceOrState: e.target.value })}
+                    className="border rounded px-3 py-2 w-full"
+                    placeholder="e.g. Home, Work, School"
+                    value={addressForm.label}
+                    onChange={(e) => setAddressForm({ ...addressForm, label: e.target.value })}
                     required
                   />
                 </div>
-                {/* Map Location Picker */}
-                <MapPicker
-                  latitude={addressForm.latitude ? parseFloat(addressForm.latitude) : null}
-                  longitude={addressForm.longitude ? parseFloat(addressForm.longitude) : null}
-                  onLocationSelect={(lat, lng) => {
-                    setAddressForm({ ...addressForm, latitude: lat.toString(), longitude: lng.toString() });
-                  }}
-                />
-                <div className="flex gap-2 text-xs text-slate-500">
-                  <span>Lat: {addressForm.latitude || 'Not set'}</span>
-                  <span>Lng: {addressForm.longitude || 'Not set'}</span>
+
+                {/* Map Location Picker - now with autofill */}
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Search & Select Location *</label>
+                  <MapPicker
+                    latitude={addressForm.latitude ? parseFloat(addressForm.latitude) : null}
+                    longitude={addressForm.longitude ? parseFloat(addressForm.longitude) : null}
+                    onLocationSelect={(lat, lng, address) => {
+                      setAddressForm({
+                        ...addressForm,
+                        latitude: lat.toString(),
+                        longitude: lng.toString(),
+                        line1: address?.line1 || addressForm.line1,
+                        city: address?.city || addressForm.city,
+                        provinceOrState: address?.provinceOrState || addressForm.provinceOrState,
+                      });
+                    }}
+                  />
                 </div>
-                <div className="flex gap-3 text-xs text-slate-700">
-                  <label className="flex items-center gap-1">
+
+                {/* Display auto-filled address or allow manual entry */}
+                {(addressForm.line1 || addressForm.city) && (
+                  <div className="bg-slate-50 border rounded-lg p-3 text-slate-700">
+                    <p className="text-xs font-medium text-slate-600 mb-1">📍 Selected Address:</p>
+                    <p className="font-medium">{addressForm.line1 || 'Street not detected'}</p>
+                    <p className="text-sm">{addressForm.city}{addressForm.city && addressForm.provinceOrState ? ', ' : ''}{addressForm.provinceOrState}</p>
+                  </div>
+                )}
+
+                {/* Manual entry fallback (collapsed by default, expandable if needed) */}
+                {!addressForm.line1 && !addressForm.latitude && (
+                  <div className="space-y-2">
+                    <input
+                      className="border rounded px-3 py-2 w-full text-slate-700"
+                      placeholder="Street address"
+                      value={addressForm.line1}
+                      onChange={(e) => setAddressForm({ ...addressForm, line1: e.target.value })}
+                    />
+                    <div className="flex gap-2">
+                      <input
+                        className="border rounded px-3 py-2 w-full text-slate-700"
+                        placeholder="City"
+                        value={addressForm.city}
+                        onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })}
+                      />
+                      <input
+                        className="border rounded px-3 py-2 w-full text-slate-700"
+                        placeholder="Province"
+                        value={addressForm.provinceOrState}
+                        onChange={(e) => setAddressForm({ ...addressForm, provinceOrState: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-4 text-slate-700">
+                  <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={addressForm.isDefaultPickup}
                       onChange={(e) => setAddressForm({ ...addressForm, isDefaultPickup: e.target.checked })}
+                      className="w-4 h-4"
                     />
-                    Default pickup
+                    <span className="text-sm">Default pickup</span>
                   </label>
-                  <label className="flex items-center gap-1">
+                  <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={addressForm.isDefaultDropoff}
                       onChange={(e) => setAddressForm({ ...addressForm, isDefaultDropoff: e.target.checked })}
+                      className="w-4 h-4"
                     />
-                    Default dropoff
+                    <span className="text-sm">Default dropoff</span>
                   </label>
                 </div>
                 <button
                   type="submit"
-                  className="w-full bg-slate-900 text-white rounded px-3 py-2 text-sm hover:bg-slate-800"
+                  className="w-full bg-slate-900 text-white rounded px-3 py-2 text-sm font-medium hover:bg-slate-800"
                 >
                   Save address
                 </button>
@@ -474,7 +499,7 @@ export default function StudentPage() {
                       <p className="font-medium text-sm">
                         Status: {student?.licenceStatus ?? 'pending_review'}
                       </p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-slate-600">
                         {student?.licenceStatus === 'approved'
                           ? 'Your licence is verified. You can book lessons.'
                           : student?.licenceStatus === 'rejected'
@@ -490,7 +515,7 @@ export default function StudentPage() {
                 {/* Current Licence Image */}
                 {student?.licenceImageUrl && (
                   <div className="border rounded-lg p-2 bg-slate-50">
-                    <p className="text-xs text-slate-500 mb-2">Current licence image:</p>
+                    <p className="text-xs text-slate-600 mb-2">Current licence image:</p>
                     <img
                       src={student.licenceImageUrl}
                       alt="Licence"
@@ -509,15 +534,15 @@ export default function StudentPage() {
                     accept="image/*"
                     onChange={handleLicenceImageUpload}
                     disabled={uploadingLicence}
-                    className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 disabled:opacity-50"
+                    className="block w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 disabled:opacity-50"
                   />
-                  {uploadingLicence && <p className="text-xs text-slate-500 mt-1">Uploading...</p>}
+                  {uploadingLicence && <p className="text-xs text-slate-600 mt-1">Uploading...</p>}
                 </div>
 
                 {/* Licence Details Form */}
                 <form onSubmit={updateLicence} className="space-y-2">
                   <div>
-                    <label className="block text-xs text-slate-500 mb-1">Licence Number *</label>
+                    <label className="block text-xs text-slate-600 mb-1">Licence Number *</label>
                     <input
                       type="text"
                       className="w-full border rounded px-3 py-2 text-sm"
@@ -529,7 +554,7 @@ export default function StudentPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-xs text-slate-500 mb-1">Province/State</label>
+                      <label className="block text-xs text-slate-600 mb-1">Province/State</label>
                       <input
                         type="text"
                         className="w-full border rounded px-3 py-2 text-sm"
@@ -539,7 +564,7 @@ export default function StudentPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs text-slate-500 mb-1">Expiry Date</label>
+                      <label className="block text-xs text-slate-600 mb-1">Expiry Date</label>
                       <input
                         type="date"
                         className="w-full border rounded px-3 py-2 text-sm"
@@ -631,7 +656,7 @@ export default function StudentPage() {
                     <li key={`${slot.driverId}-${slot.startTime}`} className="flex items-center justify-between p-2 bg-slate-50 rounded border">
                       <div>
                         <span className="text-sm font-medium text-slate-800">{new Date(slot.startTime).toLocaleString()}</span>
-                        <span className="text-xs text-slate-500 ml-2">with {drivers.find(d => d.id === slot.driverId)?.fullName}</span>
+                        <span className="text-xs text-slate-600 ml-2">with {drivers.find(d => d.id === slot.driverId)?.fullName}</span>
                       </div>
                       <button
                         className="px-4 py-2 rounded bg-slate-900 text-white hover:bg-slate-800 text-sm font-medium"
@@ -643,7 +668,7 @@ export default function StudentPage() {
                     </li>
                   ))}
                   {suggestedSlots.length === 0 && !status ? (
-                    <li className="text-sm text-slate-500 text-center py-4">
+                    <li className="text-sm text-slate-600 text-center py-4">
                       Select options above and click "Find Available Slots" to see booking times.
                     </li>
                   ) : null}
@@ -662,9 +687,9 @@ export default function StudentPage() {
                   <div className="flex justify-between items-center">
                     <div>
                       <p className="font-medium">{new Date(booking.startTime).toLocaleString()}</p>
-                      <p className="text-xs text-slate-500">Status: {booking.status}</p>
+                      <p className="text-xs text-slate-600">Status: {booking.status}</p>
                     </div>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-slate-600">
                       Driver: {drivers.find((driver) => driver.id === booking.driverId)?.fullName ?? 'Driver'}
                     </p>
                   </div>
@@ -701,7 +726,7 @@ export default function StudentPage() {
                 </li>
               ))}
               {bookings.length === 0 && !status ? (
-                <li className="text-xs text-slate-500">No bookings scheduled yet.</li>
+                <li className="text-xs text-slate-600">No bookings scheduled yet.</li>
               ) : null}
             </ul>
           </SummaryCard>
@@ -716,7 +741,7 @@ export default function StudentPage() {
                   <div className="flex justify-between items-center">
                     <div>
                       <p className="font-medium">{new Date(booking.startTime).toLocaleDateString()}</p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-slate-600">
                         {new Date(booking.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         {' with '}
                         {drivers.find((d) => d.id === booking.driverId)?.fullName ?? 'Unknown'}
@@ -732,7 +757,7 @@ export default function StudentPage() {
                 </li>
               ))}
               {pastBookings.length === 0 ? (
-                <li className="text-xs text-slate-500 text-center py-4">No past lessons yet.</li>
+                <li className="text-xs text-slate-600 text-center py-4">No past lessons yet.</li>
               ) : null}
             </ul>
           </SummaryCard>
