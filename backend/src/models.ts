@@ -127,6 +127,7 @@ export interface StudentProfileRow {
   licence_province_or_state: string | null;
   licence_image_url: string | null;
   licence_status: LicenceStatus;
+  licence_rejection_note: string | null;
   allowed_hours: number | null;
   max_lessons_per_day: number | null;
   active: boolean;
@@ -147,6 +148,7 @@ export interface StudentProfile {
   licenceProvinceOrState: string | null;
   licenceImageUrl: string | null;
   licenceStatus: LicenceStatus;
+  licenceRejectionNote: string | null;
   allowedHours: number | null;
   maxLessonsPerDay: number | null;
   active: boolean;
@@ -219,6 +221,7 @@ export const mapStudentProfile = (row: StudentProfileRow): StudentProfile => ({
   licenceProvinceOrState: row.licence_province_or_state,
   licenceImageUrl: row.licence_image_url,
   licenceStatus: row.licence_status,
+  licenceRejectionNote: row.licence_rejection_note,
   allowedHours: row.allowed_hours,
   maxLessonsPerDay: row.max_lessons_per_day,
   active: row.active,

@@ -47,10 +47,10 @@ function SuperadminOverview({ token }: { token: string }) {
 
         <SummaryCard title="⚡ Quick Actions" description="Common tasks" footer="">
           <div className="space-y-2">
-            <Link href="/superadmin" className="block w-full text-left px-4 py-2 rounded bg-slate-100 hover:bg-slate-200 text-sm">
+            <Link href="/superadmin" className="block w-full text-left px-4 py-2 rounded bg-slate-100 hover:bg-slate-200 text-sm font-medium text-slate-800">
               → Manage Schools
             </Link>
-            <Link href="/admin" className="block w-full text-left px-4 py-2 rounded bg-slate-100 hover:bg-slate-200 text-sm">
+            <Link href="/admin" className="block w-full text-left px-4 py-2 rounded bg-slate-100 hover:bg-slate-200 text-sm font-medium text-slate-800">
               → School Admin View
             </Link>
           </div>
@@ -327,8 +327,8 @@ function StudentOverview({ token, schoolId }: { token: string; schoolId: number 
         <SummaryCard title="📋 Licence Status" description="Your verification status" footer="">
           <div className="text-center py-2">
             <span className={`inline-block px-4 py-2 rounded-full text-sm font-medium ${student?.licenceStatus === 'approved' ? 'bg-green-100 text-green-800' :
-                student?.licenceStatus === 'rejected' ? 'bg-red-100 text-red-800' :
-                  'bg-yellow-100 text-yellow-800'
+              student?.licenceStatus === 'rejected' ? 'bg-red-100 text-red-800' :
+                'bg-yellow-100 text-yellow-800'
               }`}>
               {student?.licenceStatus === 'approved' ? '✓ Approved' :
                 student?.licenceStatus === 'rejected' ? '✗ Rejected' :

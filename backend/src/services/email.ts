@@ -30,6 +30,13 @@ export async function sendInvitationEmail(params: SendInvitationEmailParams): Pr
   console.log(`Attempting to send invitation email to ${to}...`);
 
   try {
+    // Add special note for students
+    const studentNote = role === 'STUDENT'
+      ? `<p style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px; margin: 16px 0; font-size: 14px;">
+           <strong>📋 Important:</strong> Please ensure you have your valid driver's license ready for all in-car lessons.
+         </p>`
+      : '';
+
     const result = await resend.emails.send({
       from: FROM_EMAIL,
       to,
@@ -39,6 +46,7 @@ export async function sendInvitationEmail(params: SendInvitationEmailParams): Pr
           <h2 style="color: #1e40af;">Welcome to ${APP_NAME}!</h2>
           <p>Hi ${inviteeName || 'there'},</p>
           <p>You've been invited to join <strong>${schoolName}</strong> as a ${roleDisplay}.</p>
+          ${studentNote}
           <p style="margin: 24px 0;">
             <a href="${registrationUrl}" 
                style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">

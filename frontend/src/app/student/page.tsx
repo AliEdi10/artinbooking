@@ -18,6 +18,7 @@ type StudentProfile = {
   licenceImageUrl?: string | null;
   licenceExpiryDate?: string | null;
   licenceProvinceOrState?: string | null;
+  licenceRejectionNote?: string | null;
   allowedHours?: number | null;
   maxLessonsPerDay?: number | null;
 };
@@ -477,7 +478,9 @@ export default function StudentPage() {
                         {student?.licenceStatus === 'approved'
                           ? 'Your licence is verified. You can book lessons.'
                           : student?.licenceStatus === 'rejected'
-                            ? 'Please upload a valid licence image.'
+                            ? (student?.licenceRejectionNote
+                              ? `Reason: ${student.licenceRejectionNote}`
+                              : 'Please upload a valid licence image.')
                             : 'Waiting for admin review.'}
                       </p>
                     </div>

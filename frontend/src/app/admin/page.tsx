@@ -81,6 +81,7 @@ export default function AdminPage() {
   const [rescheduleDriverId, setRescheduleDriverId] = useState('');
   const [cancelReason, setCancelReason] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [rejectionNote, setRejectionNote] = useState('');
 
   async function loadSettings() {
     if (!token || !schoolId) return;
@@ -328,17 +329,21 @@ export default function AdminPage() {
     }
   }
 
-  async function updateLicenceStatus(studentId: number, newStatus: 'approved' | 'rejected' | 'pending_review') {
+  async function updateLicenceStatus(studentId: number, newStatus: 'approved' | 'rejected' | 'pending_review', note?: string) {
     if (!token || !schoolId) return;
     setActionMessage(`Updating licence status to ${newStatus}...`);
     try {
       await apiFetch(`/schools/${schoolId}/students/${studentId}`, token, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ licenceStatus: newStatus }),
+        body: JSON.stringify({
+          licenceStatus: newStatus,
+          licenceRejectionNote: newStatus === 'rejected' ? (note || undefined) : null,
+        }),
       });
       await loadRoster();
       setSelectedStudent(null);
+      setRejectionNote('');
       setActionMessage(`Licence status updated to ${newStatus}.`);
     } catch (err) {
       setActionMessage('Unable to update licence status.');
@@ -563,8 +568,21 @@ export default function AdminPage() {
                           )}
                         </div>
 
+                        {/* Rejection Note Input */}
+                        <div className="pt-4 border-t">
+                          <label className="block text-xs font-medium text-slate-700 mb-1">
+                            Rejection Note (optional)
+                          </label>
+                          <textarea
+                            value={rejectionNote}
+                            onChange={(e) => setRejectionNote(e.target.value)}
+                            placeholder="Provide a reason if rejecting (will be shown to student)"
+                            className="w-full border rounded-lg px-3 py-2 text-sm h-20 resize-none"
+                          />
+                        </div>
+
                         {/* Action Buttons */}
-                        <div className="flex gap-2 pt-4 border-t">
+                        <div className="flex gap-2 pt-2">
                           <button
                             onClick={() => updateLicenceStatus(selectedStudent.id, 'approved')}
                             className="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-lg px-4 py-2 text-sm font-medium"
@@ -572,7 +590,7 @@ export default function AdminPage() {
                             ✓ Approve
                           </button>
                           <button
-                            onClick={() => updateLicenceStatus(selectedStudent.id, 'rejected')}
+                            onClick={() => updateLicenceStatus(selectedStudent.id, 'rejected', rejectionNote)}
                             className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-lg px-4 py-2 text-sm font-medium"
                           >
                             ✗ Reject
