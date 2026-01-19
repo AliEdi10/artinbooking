@@ -79,9 +79,9 @@ export default function BookingsPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-semibold">Booking & availability</h1>
-              <p className="text-sm text-slate-600">Lead times, service radius, and policy enforcement happen on the API.</p>
+              <p className="text-sm text-slate-700">Lead times, service radius, and policy enforcement happen on the API.</p>
             </div>
-            <p className="text-xs text-slate-500">{status || 'Loaded from live APIs'}</p>
+            <p className="text-xs text-slate-700">{status || 'Loaded from live APIs'}</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <SummaryCard
@@ -95,12 +95,12 @@ export default function BookingsPage() {
                   return (
                     <li key={`${slot.startTime}-${slot.driverId}`} className="border rounded p-2 bg-slate-50">
                       <p className="font-medium">{new Date(slot.startTime).toLocaleString()}</p>
-                      <p className="text-xs text-slate-500">Driver: {driverName}</p>
+                      <p className="text-xs text-slate-700">Driver: {driverName}</p>
                     </li>
                   );
                 })}
                 {slots.length === 0 && !status ? (
-                  <li className="text-xs text-slate-500">No available slots returned for the provided addresses.</li>
+                  <li className="text-xs text-slate-700">No available slots returned for the provided addresses.</li>
                 ) : null}
               </ul>
             </SummaryCard>
@@ -116,13 +116,13 @@ export default function BookingsPage() {
                   return (
                     <li key={booking.id} className="border rounded p-2 bg-slate-50">
                       <p className="font-medium">{new Date(booking.startTime).toLocaleString()}</p>
-                      <p className="text-xs text-slate-500">{studentName} with {driverName}</p>
-                      <p className="text-xs text-slate-500">Status: {booking.status}</p>
+                      <p className="text-xs text-slate-700">{studentName} with {driverName}</p>
+                      <p className="text-xs text-slate-700">Status: {booking.status}</p>
                     </li>
                   );
                 })}
                 {bookings.length === 0 && !status ? (
-                  <li className="text-xs text-slate-500">No bookings found for this school.</li>
+                  <li className="text-xs text-slate-700">No bookings found for this school.</li>
                 ) : null}
               </ul>
             </SummaryCard>

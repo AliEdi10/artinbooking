@@ -163,7 +163,7 @@ export default function LoginPage() {
       <div className="bg-white border border-slate-200 rounded-lg shadow p-6 w-full max-w-lg space-y-4">
         <div className="space-y-1">
           <h1 className="text-xl font-semibold">Sign in to artinbk</h1>
-          <p className="text-sm text-slate-600">{status}</p>
+          <p className="text-sm text-slate-700">{status}</p>
         </div>
 
         {error && (
@@ -250,7 +250,7 @@ export default function LoginPage() {
           <div className="flex items-center justify-between border rounded p-3 bg-slate-50">
             <div>
               <p className="text-sm font-medium">Google Sign-In</p>
-              <p className="text-xs text-slate-500">Sign in with your Google account</p>
+              <p className="text-xs text-slate-700">Sign in with your Google account</p>
             </div>
             <div className="flex items-center space-x-2">
               <div ref={buttonRef} />
@@ -260,7 +260,7 @@ export default function LoginPage() {
 
         {process.env.NEXT_PUBLIC_DEV_MODE === 'true' && (
           <details className="text-sm">
-            <summary className="cursor-pointer text-slate-600 hover:text-slate-800">
+            <summary className="cursor-pointer text-slate-700 hover:text-slate-800">
               Manual JWT entry (advanced)
             </summary>
             <div className="mt-2 space-y-2">

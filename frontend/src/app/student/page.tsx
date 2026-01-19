@@ -314,11 +314,11 @@ export default function StudentPage() {
         <div className="space-y-4">
           <div>
             <h1 className="text-2xl font-semibold">Student portal</h1>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-slate-700">
               Upload licence details, manage pickup/dropoff addresses, and browse policy-checked slots.
             </p>
-            <p className="text-xs text-slate-600">{policyHint}</p>
-            {actionMessage ? <p className="text-[11px] text-slate-600">{actionMessage}</p> : null}
+            <p className="text-xs text-slate-700">{policyHint}</p>
+            {actionMessage ? <p className="text-[11px] text-slate-700">{actionMessage}</p> : null}
           </div>
 
           {/* Booking Limits Display */}
@@ -328,7 +328,7 @@ export default function StudentPage() {
               <div className="grid grid-cols-2 gap-4 text-sm">
                 {student.allowedHours !== null && (
                   <div>
-                    <p className="text-slate-600">Hours Used</p>
+                    <p className="text-slate-700">Hours Used</p>
                     <p className="text-xl font-bold text-blue-700">
                       {usedHours.toFixed(1)} / {student.allowedHours}
                     </p>
@@ -338,18 +338,18 @@ export default function StudentPage() {
                         style={{ width: `${Math.min(100, (usedHours / (student.allowedHours ?? 1)) * 100)}%` }}
                       ></div>
                     </div>
-                    <p className="text-xs text-slate-600 mt-1">
+                    <p className="text-xs text-slate-700 mt-1">
                       {Math.max(0, (student.allowedHours ?? 0) - usedHours).toFixed(1)} hours remaining
                     </p>
                   </div>
                 )}
                 {student.maxLessonsPerDay !== null && (
                   <div>
-                    <p className="text-slate-600">Daily Limit</p>
+                    <p className="text-slate-700">Daily Limit</p>
                     <p className="text-xl font-bold text-blue-700">
                       {student.maxLessonsPerDay} lesson{student.maxLessonsPerDay !== 1 ? 's' : ''}/day
                     </p>
-                    <p className="text-xs text-slate-600 mt-1">
+                    <p className="text-xs text-slate-700 mt-1">
                       Maximum bookings per day
                     </p>
                   </div>
@@ -368,17 +368,17 @@ export default function StudentPage() {
                 {addresses.map((address) => (
                   <li key={address.id} className="border rounded p-2 bg-slate-50">
                     <p className="font-medium">{address.label}</p>
-                    <p className="text-xs text-slate-600">{address.line1}</p>
-                    <p className="text-xs text-slate-600">
+                    <p className="text-xs text-slate-700">{address.line1}</p>
+                    <p className="text-xs text-slate-700">
                       {address.city}, {address.provinceOrState}
                     </p>
-                    <p className="text-[11px] text-slate-600">
+                    <p className="text-[11px] text-slate-700">
                       Pickup: {address.isDefaultPickup ? 'default' : 'no'} · Dropoff: {address.isDefaultDropoff ? 'default' : 'no'}
                     </p>
                   </li>
                 ))}
                 {addresses.length === 0 && !status ? (
-                  <li className="text-xs text-slate-600">No addresses on file yet.</li>
+                  <li className="text-xs text-slate-700">No addresses on file yet.</li>
                 ) : null}
               </ul>
               <form className="mt-3 space-y-3 text-sm" onSubmit={addAddress}>
@@ -415,7 +415,7 @@ export default function StudentPage() {
                 {/* Display auto-filled address or allow manual entry */}
                 {(addressForm.line1 || addressForm.city) && (
                   <div className="bg-slate-50 border rounded-lg p-3 text-slate-700">
-                    <p className="text-xs font-medium text-slate-600 mb-1">📍 Selected Address:</p>
+                    <p className="text-xs font-medium text-slate-700 mb-1">📍 Selected Address:</p>
                     <p className="font-medium">{addressForm.line1 || 'Street not detected'}</p>
                     <p className="text-sm">{addressForm.city}{addressForm.city && addressForm.provinceOrState ? ', ' : ''}{addressForm.provinceOrState}</p>
                   </div>
@@ -499,7 +499,7 @@ export default function StudentPage() {
                       <p className="font-medium text-sm">
                         Status: {student?.licenceStatus ?? 'pending_review'}
                       </p>
-                      <p className="text-xs text-slate-600">
+                      <p className="text-xs text-slate-700">
                         {student?.licenceStatus === 'approved'
                           ? 'Your licence is verified. You can book lessons.'
                           : student?.licenceStatus === 'rejected'
@@ -515,7 +515,7 @@ export default function StudentPage() {
                 {/* Current Licence Image */}
                 {student?.licenceImageUrl && (
                   <div className="border rounded-lg p-2 bg-slate-50">
-                    <p className="text-xs text-slate-600 mb-2">Current licence image:</p>
+                    <p className="text-xs text-slate-700 mb-2">Current licence image:</p>
                     <img
                       src={student.licenceImageUrl}
                       alt="Licence"
@@ -534,15 +534,15 @@ export default function StudentPage() {
                     accept="image/*"
                     onChange={handleLicenceImageUpload}
                     disabled={uploadingLicence}
-                    className="block w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 disabled:opacity-50"
+                    className="block w-full text-sm text-slate-700 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 disabled:opacity-50"
                   />
-                  {uploadingLicence && <p className="text-xs text-slate-600 mt-1">Uploading...</p>}
+                  {uploadingLicence && <p className="text-xs text-slate-700 mt-1">Uploading...</p>}
                 </div>
 
                 {/* Licence Details Form */}
                 <form onSubmit={updateLicence} className="space-y-2">
                   <div>
-                    <label className="block text-xs text-slate-600 mb-1">Licence Number *</label>
+                    <label className="block text-xs text-slate-700 mb-1">Licence Number *</label>
                     <input
                       type="text"
                       className="w-full border rounded px-3 py-2 text-sm"
@@ -554,7 +554,7 @@ export default function StudentPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-xs text-slate-600 mb-1">Province/State</label>
+                      <label className="block text-xs text-slate-700 mb-1">Province/State</label>
                       <input
                         type="text"
                         className="w-full border rounded px-3 py-2 text-sm"
@@ -564,7 +564,7 @@ export default function StudentPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs text-slate-600 mb-1">Expiry Date</label>
+                      <label className="block text-xs text-slate-700 mb-1">Expiry Date</label>
                       <input
                         type="date"
                         className="w-full border rounded px-3 py-2 text-sm"
@@ -656,7 +656,7 @@ export default function StudentPage() {
                     <li key={`${slot.driverId}-${slot.startTime}`} className="flex items-center justify-between p-2 bg-slate-50 rounded border">
                       <div>
                         <span className="text-sm font-medium text-slate-800">{new Date(slot.startTime).toLocaleString()}</span>
-                        <span className="text-xs text-slate-600 ml-2">with {drivers.find(d => d.id === slot.driverId)?.fullName}</span>
+                        <span className="text-xs text-slate-700 ml-2">with {drivers.find(d => d.id === slot.driverId)?.fullName}</span>
                       </div>
                       <button
                         className="px-4 py-2 rounded bg-slate-900 text-white hover:bg-slate-800 text-sm font-medium"
@@ -668,7 +668,7 @@ export default function StudentPage() {
                     </li>
                   ))}
                   {suggestedSlots.length === 0 && !status ? (
-                    <li className="text-sm text-slate-600 text-center py-4">
+                    <li className="text-sm text-slate-700 text-center py-4">
                       Select options above and click "Find Available Slots" to see booking times.
                     </li>
                   ) : null}
@@ -687,9 +687,9 @@ export default function StudentPage() {
                   <div className="flex justify-between items-center">
                     <div>
                       <p className="font-medium">{new Date(booking.startTime).toLocaleString()}</p>
-                      <p className="text-xs text-slate-600">Status: {booking.status}</p>
+                      <p className="text-xs text-slate-700">Status: {booking.status}</p>
                     </div>
-                    <p className="text-xs text-slate-600">
+                    <p className="text-xs text-slate-700">
                       Driver: {drivers.find((driver) => driver.id === booking.driverId)?.fullName ?? 'Driver'}
                     </p>
                   </div>
@@ -726,7 +726,7 @@ export default function StudentPage() {
                 </li>
               ))}
               {bookings.length === 0 && !status ? (
-                <li className="text-xs text-slate-600">No bookings scheduled yet.</li>
+                <li className="text-xs text-slate-700">No bookings scheduled yet.</li>
               ) : null}
             </ul>
           </SummaryCard>
@@ -741,7 +741,7 @@ export default function StudentPage() {
                   <div className="flex justify-between items-center">
                     <div>
                       <p className="font-medium">{new Date(booking.startTime).toLocaleDateString()}</p>
-                      <p className="text-xs text-slate-600">
+                      <p className="text-xs text-slate-700">
                         {new Date(booking.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         {' with '}
                         {drivers.find((d) => d.id === booking.driverId)?.fullName ?? 'Unknown'}
@@ -749,7 +749,7 @@ export default function StudentPage() {
                     </div>
                     <span className={`px-2 py-1 rounded text-xs font-medium ${booking.status === 'completed'
                       ? 'bg-green-100 text-green-800'
-                      : 'bg-slate-100 text-slate-600'
+                      : 'bg-slate-100 text-slate-700'
                       }`}>
                       {booking.status.replace(/_/g, ' ')}
                     </span>
@@ -757,7 +757,7 @@ export default function StudentPage() {
                 </li>
               ))}
               {pastBookings.length === 0 ? (
-                <li className="text-xs text-slate-600 text-center py-4">No past lessons yet.</li>
+                <li className="text-xs text-slate-700 text-center py-4">No past lessons yet.</li>
               ) : null}
             </ul>
           </SummaryCard>

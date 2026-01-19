@@ -141,11 +141,11 @@ export function WeeklyCalendar({ availability, bookings, students }: WeeklyCalen
                 <div className="min-w-[600px]">
                     {/* Header */}
                     <div className="grid grid-cols-8 gap-px bg-slate-200 rounded-t">
-                        <div className="bg-white p-2 text-xs font-medium text-slate-500">Time</div>
+                        <div className="bg-white p-2 text-xs font-medium text-slate-700">Time</div>
                         {weekDates.map((date, i) => (
                             <div key={i} className="bg-white p-2 text-center">
                                 <div className="text-xs font-medium">{DAYS[i]}</div>
-                                <div className="text-xs text-slate-500">{date.getDate()}</div>
+                                <div className="text-xs text-slate-700">{date.getDate()}</div>
                             </div>
                         ))}
                     </div>
@@ -154,7 +154,7 @@ export function WeeklyCalendar({ availability, bookings, students }: WeeklyCalen
                     <div className="relative bg-slate-100">
                         {HOURS.map((hour) => (
                             <div key={hour} className="grid grid-cols-8 gap-px h-12">
-                                <div className="bg-white p-1 text-xs text-slate-500 flex items-start">
+                                <div className="bg-white p-1 text-xs text-slate-700 flex items-start">
                                     {hour}:00
                                 </div>
                                 {weekDates.map((_, dayIndex) => (

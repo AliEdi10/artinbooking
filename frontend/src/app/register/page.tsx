@@ -118,7 +118,7 @@ function RegisterContent() {
             <div className="min-h-screen bg-gradient-to-br from-blue-50 to-slate-100 flex items-center justify-center">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-slate-600">Validating...</p>
+                    <p className="text-slate-700">Validating...</p>
                 </div>
             </div>
         );
@@ -132,10 +132,10 @@ function RegisterContent() {
                         <span className="text-3xl">✓</span>
                     </div>
                     <h1 className="text-2xl font-bold text-slate-800 mb-2">Registration Complete!</h1>
-                    <p className="text-slate-600 mb-4">
+                    <p className="text-slate-700 mb-4">
                         Your account has been created successfully. Redirecting to login...
                     </p>
-                    <div className="animate-pulse text-sm text-slate-500">
+                    <div className="animate-pulse text-sm text-slate-700">
                         You can now sign in with your email and password.
                     </div>
                 </div>
@@ -173,12 +173,12 @@ function RegisterContent() {
                         {isPublic ? 'Create Student Account' : 'Complete Your Registration'}
                     </h1>
                     {invitationInfo && (
-                        <p className="text-slate-600 text-sm">
+                        <p className="text-slate-700 text-sm">
                             You've been invited to join <strong>{invitationInfo.schoolName}</strong>
                         </p>
                     )}
                     {isPublic && (
-                        <p className="text-slate-600 text-sm">
+                        <p className="text-slate-700 text-sm">
                             Join Brightside Driving School
                         </p>
                     )}
@@ -188,11 +188,11 @@ function RegisterContent() {
                     <div className="bg-blue-50 rounded-lg p-4 mb-6">
                         <div className="grid grid-cols-2 gap-2 text-sm">
                             <div>
-                                <span className="text-slate-500">Email:</span>
+                                <span className="text-slate-700">Email:</span>
                                 <p className="font-medium">{invitationInfo.email}</p>
                             </div>
                             <div>
-                                <span className="text-slate-500">Role:</span>
+                                <span className="text-slate-700">Role:</span>
                                 <p className="font-medium capitalize">{invitationInfo.role.toLowerCase()}</p>
                             </div>
                         </div>
@@ -289,7 +289,7 @@ function RegisterContent() {
                     </button>
                 </form>
 
-                <p className="text-center text-xs text-slate-500 mt-4">
+                <p className="text-center text-xs text-slate-700 mt-4">
                     Already have an account?{' '}
                     <a href="/login" className="text-blue-600 hover:underline">
                         Sign in
@@ -306,7 +306,7 @@ export default function RegisterPage() {
             <div className="min-h-screen bg-gradient-to-br from-blue-50 to-slate-100 flex items-center justify-center">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-slate-600">Loading...</p>
+                    <p className="text-slate-700">Loading...</p>
                 </div>
             </div>
         }>

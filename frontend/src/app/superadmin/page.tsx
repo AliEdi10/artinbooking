@@ -111,12 +111,12 @@ export default function SuperadminPage() {
             <AppShell>
                 <div className="space-y-6">
                     <div>
-                        <h1 className="text-2xl font-semibold">Superadmin Dashboard</h1>
-                        <p className="text-sm text-slate-600">
+                        <h1 className="text-2xl font-semibold text-slate-900">Superadmin Dashboard</h1>
+                        <p className="text-sm text-slate-700">
                             Manage driving schools and assign administrators.
                         </p>
-                        {actionMessage && <p className="text-sm text-blue-600 mt-2">{actionMessage}</p>}
-                        {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
+                        {actionMessage && <p className="text-sm text-blue-700 mt-2">{actionMessage}</p>}
+                        {error && <p className="text-sm text-red-700 mt-2">{error}</p>}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -131,8 +131,8 @@ export default function SuperadminPage() {
                                     <li key={school.id} className="border rounded p-3 bg-slate-50">
                                         <div className="flex justify-between items-center">
                                             <div>
-                                                <p className="font-medium">{school.name}</p>
-                                                <p className="text-xs text-slate-600">{school.contactEmail || 'No email'}</p>
+                                                <p className="font-medium text-slate-900">{school.name}</p>
+                                                <p className="text-xs text-slate-700">{school.contactEmail || 'No email'}</p>
                                             </div>
                                             <span className={`text-xs px-2 py-1 rounded ${school.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                                                 {school.active ? 'Active' : 'Inactive'}
@@ -141,21 +141,21 @@ export default function SuperadminPage() {
                                     </li>
                                 ))}
                                 {schools.length === 0 && !loading && (
-                                    <li className="text-xs text-slate-600 text-center py-4">No schools yet.</li>
+                                    <li className="text-xs text-slate-700 text-center py-4">No schools yet.</li>
                                 )}
                             </ul>
 
                             <form className="mt-4 space-y-2" onSubmit={handleCreateSchool}>
                                 <div className="text-xs font-medium text-slate-700">Create New School</div>
                                 <input
-                                    className="border rounded px-3 py-2 text-sm w-full"
+                                    className="border rounded px-3 py-2 text-sm w-full text-slate-900"
                                     placeholder="School name *"
                                     value={schoolForm.name}
                                     onChange={(e) => setSchoolForm({ ...schoolForm, name: e.target.value })}
                                     required
                                 />
                                 <input
-                                    className="border rounded px-3 py-2 text-sm w-full"
+                                    className="border rounded px-3 py-2 text-sm w-full text-slate-900"
                                     placeholder="Contact email (optional)"
                                     type="email"
                                     value={schoolForm.contactEmail}
@@ -181,22 +181,22 @@ export default function SuperadminPage() {
                                     const school = schools.find(s => s.id === admin.drivingSchoolId);
                                     return (
                                         <li key={admin.id} className="border rounded p-2 bg-blue-50">
-                                            <p className="font-medium">{admin.email}</p>
-                                            <p className="text-xs text-slate-600">
+                                            <p className="font-medium text-slate-900">{admin.email}</p>
+                                            <p className="text-xs text-slate-700">
                                                 {admin.fullName || 'No name'} • {school?.name || 'Unknown school'}
                                             </p>
                                         </li>
                                     );
                                 })}
                                 {admins.length === 0 && (
-                                    <li className="text-xs text-slate-600 text-center py-4">No school admins yet.</li>
+                                    <li className="text-xs text-slate-700 text-center py-4">No school admins yet.</li>
                                 )}
                             </ul>
 
                             <form className="mt-4 space-y-2" onSubmit={handleInviteAdmin}>
                                 <div className="text-xs font-medium text-slate-700">Invite School Admin</div>
                                 <select
-                                    className="border rounded px-3 py-2 text-sm w-full"
+                                    className="border rounded px-3 py-2 text-sm w-full text-slate-900"
                                     value={adminForm.schoolId}
                                     onChange={(e) => setAdminForm({ ...adminForm, schoolId: e.target.value })}
                                     required
