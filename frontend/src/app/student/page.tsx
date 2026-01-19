@@ -590,7 +590,7 @@ export default function StudentPage() {
               <div className="space-y-2 text-sm">
                 <div className="grid grid-cols-2 gap-2">
                   <select
-                    className="border rounded px-2 py-1"
+                    className="border rounded px-2 py-1 text-slate-700"
                     value={slotQuery.driverId}
                     onChange={(e) => setSlotQuery({ ...slotQuery, driverId: e.target.value })}
                   >
@@ -602,13 +602,13 @@ export default function StudentPage() {
                     ))}
                   </select>
                   <input
-                    className="border rounded px-2 py-1"
+                    className="border rounded px-2 py-1 text-slate-700"
                     type="date"
                     value={slotQuery.date}
                     onChange={(e) => setSlotQuery({ ...slotQuery, date: e.target.value })}
                   />
                   <select
-                    className="border rounded px-2 py-1"
+                    className="border rounded px-2 py-1 text-slate-700"
                     value={slotQuery.pickupId}
                     onChange={(e) => setSlotQuery({ ...slotQuery, pickupId: e.target.value })}
                   >
@@ -620,7 +620,7 @@ export default function StudentPage() {
                     ))}
                   </select>
                   <select
-                    className="border rounded px-2 py-1"
+                    className="border rounded px-2 py-1 text-slate-700"
                     value={slotQuery.dropoffId}
                     onChange={(e) => setSlotQuery({ ...slotQuery, dropoffId: e.target.value })}
                   >
