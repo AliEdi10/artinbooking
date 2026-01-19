@@ -241,7 +241,7 @@ export default function DriverPage() {
       <AppShell>
         <div className="space-y-4">
           <div>
-            <h1 className="text-2xl font-semibold">Driver schedule & availability</h1>
+            <h1 className="text-2xl font-semibold text-slate-900">Driver schedule & availability</h1>
             <p className="text-sm text-slate-700">
               Adjust your service hours, review requests, and keep bookings within buffers and travel radius.
             </p>

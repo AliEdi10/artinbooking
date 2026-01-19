@@ -313,7 +313,7 @@ export default function StudentPage() {
       <AppShell>
         <div className="space-y-4">
           <div>
-            <h1 className="text-2xl font-semibold">Student portal</h1>
+            <h1 className="text-2xl font-semibold text-slate-900">Student portal</h1>
             <p className="text-sm text-slate-700">
               Upload licence details, manage pickup/dropoff addresses, and browse policy-checked slots.
             </p>

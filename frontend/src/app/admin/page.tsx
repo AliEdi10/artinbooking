@@ -355,7 +355,7 @@ export default function AdminPage() {
       <AppShell>
         <div className="space-y-4">
           <div>
-            <h1 className="text-2xl font-semibold">School Admin workspace</h1>
+            <h1 className="text-2xl font-semibold text-slate-900">School Admin workspace</h1>
             <p className="text-sm text-slate-700">
               Manage your school roster, policies, and bookings. Backend calls are scoped using your JWT school ID.
             </p>
@@ -439,7 +439,7 @@ export default function AdminPage() {
                   <li key={invite.id} className="border rounded p-2 bg-yellow-50">
                     <div className="flex justify-between items-start">
                       <div>
-                        <p className="font-medium">{invite.email}</p>
+                        <p className="font-medium text-slate-900">{invite.email}</p>
                         <p className="text-xs text-slate-700">
                           {invite.fullName || 'No name'} • {invite.role}
                         </p>

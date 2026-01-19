@@ -29,11 +29,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <header className="border-b bg-white">
         <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
           <div>
-            <p className="text-lg font-semibold">artinbk portal</p>
+            <p className="text-lg font-semibold text-slate-900">artinbk portal</p>
             <p className="text-xs text-slate-700">Role-aware dashboards & booking flows</p>
           </div>
           <div className="text-right">
-            <p className="text-sm font-medium">{user?.email ?? 'Signed out'}</p>
+            <p className="text-sm font-medium text-slate-900">{user?.email ?? 'Signed out'}</p>
             <p className="text-xs text-slate-700">{user?.role ?? 'role unknown'}</p>
             <div className="mt-2 flex items-center justify-end space-x-2">
               <button

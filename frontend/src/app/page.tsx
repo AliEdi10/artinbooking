@@ -35,7 +35,7 @@ function SuperadminOverview({ token }: { token: string }) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Welcome, Superadmin</h1>
+        <h1 className="text-2xl font-semibold text-slate-900">Welcome, Superadmin</h1>
         <p className="text-slate-600">Platform overview and quick actions.</p>
       </div>
 
@@ -107,7 +107,7 @@ function AdminOverview({ token, schoolId }: { token: string; schoolId: number })
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">School Admin Dashboard</h1>
+        <h1 className="text-2xl font-semibold text-slate-900">School Admin Dashboard</h1>
         <p className="text-slate-600">Today's overview and quick actions.</p>
       </div>
 
@@ -183,7 +183,7 @@ function DriverOverview({ token, schoolId }: { token: string; schoolId: number }
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Driver Dashboard</h1>
+        <h1 className="text-2xl font-semibold text-slate-900">Driver Dashboard</h1>
         <p className="text-slate-600">Your schedule overview.</p>
       </div>
 
@@ -270,7 +270,7 @@ function StudentOverview({ token, schoolId }: { token: string; schoolId: number 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Welcome, {student?.fullName || 'Student'}</h1>
+        <h1 className="text-2xl font-semibold text-slate-900">Welcome, {student?.fullName || 'Student'}</h1>
         <p className="text-slate-600">Your learning progress and upcoming lessons.</p>
       </div>
 
