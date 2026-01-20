@@ -7,11 +7,20 @@ import { AppShell } from '../components/AppShell';
 import { SummaryCard } from '../components/SummaryCard';
 import { WeeklyCalendar } from '../components/WeeklyCalendar';
 import { MapViewer } from '../components/MapViewer';
+import { MapPicker } from '../components/MapPicker';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useAuth } from '../auth/AuthProvider';
 import { apiFetch } from '../apiClient';
 
-type DriverProfile = { id: number; fullName: string; active: boolean };
+type DriverProfile = {
+  id: number;
+  fullName: string;
+  active: boolean;
+  serviceCenterLocation?: { latitude: number; longitude: number } | null;
+  workDayStart?: string | null;
+  workDayEnd?: string | null;
+  serviceRadiusKm?: string | null;
+};
 type Availability = { id: number; date: string; startTime: string; endTime: string; type?: string };
 type Booking = { id: number; driverId: number; studentId: number; startTime: string; status: string; pickupAddressId?: number | null; dropoffAddressId?: number | null };
 type StudentProfile = { id: number; fullName: string };
@@ -54,6 +63,11 @@ export default function DriverPage() {
   const [confirmCancel, setConfirmCancel] = useState<{ bookingId: number; studentName: string } | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
 
+  // Service Center and Working Hours state
+  const [serviceCenterCoords, setServiceCenterCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [workingHours, setWorkingHours] = useState<{ start: string; end: string }>({ start: '09:00', end: '17:00' });
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
   const availabilitySummary = driverState.availability.map((slot) => ({
     day: new Date(slot.date).toLocaleDateString(),
     window: `${slot.startTime}–${slot.endTime}`,
@@ -78,6 +92,18 @@ export default function DriverPage() {
         setStatus('No driver profile found for this account.');
         return;
       }
+
+      // Populate service center and working hours from driver profile
+      if (activeDriver.serviceCenterLocation) {
+        setServiceCenterCoords(activeDriver.serviceCenterLocation);
+      }
+      if (activeDriver.workDayStart || activeDriver.workDayEnd) {
+        setWorkingHours({
+          start: activeDriver.workDayStart || '09:00',
+          end: activeDriver.workDayEnd || '17:00',
+        });
+      }
+
       setStatus('Loading availability and bookings...');
 
       const [availabilityResults, upcomingResults, pastResults, studentResults] = await Promise.all([
@@ -97,6 +123,44 @@ export default function DriverPage() {
       setStatus('');
     } catch (err) {
       setStatus('Unable to load driver profile. Check your token and backend availability.');
+    }
+  }
+
+  async function saveServiceCenter() {
+    if (!token || !schoolId || !driverState.driver || !serviceCenterCoords) return;
+    setIsSavingProfile(true);
+    setActionMessage('Saving service center location...');
+    try {
+      await apiFetch(`/schools/${schoolId}/drivers/${driverState.driver.id}`, token, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ serviceCenterLocation: serviceCenterCoords }),
+      });
+      await loadDriverContext();
+      setActionMessage('Service center location saved!');
+    } catch (err) {
+      setActionMessage('Unable to save service center location.');
+    } finally {
+      setIsSavingProfile(false);
+    }
+  }
+
+  async function saveWorkingHours() {
+    if (!token || !schoolId || !driverState.driver) return;
+    setIsSavingProfile(true);
+    setActionMessage('Saving default working hours...');
+    try {
+      await apiFetch(`/schools/${schoolId}/drivers/${driverState.driver.id}`, token, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workDayStart: workingHours.start, workDayEnd: workingHours.end }),
+      });
+      await loadDriverContext();
+      setActionMessage('Default working hours saved!');
+    } catch (err) {
+      setActionMessage('Unable to save working hours.');
+    } finally {
+      setIsSavingProfile(false);
     }
   }
 
@@ -250,6 +314,72 @@ export default function DriverPage() {
             </p>
             {actionMessage ? <p className="text-[11px] text-slate-700">{actionMessage}</p> : null}
           </div>
+
+          {/* Service Center Location & Default Working Hours */}
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <SummaryCard
+              title="📍 Service Center Location"
+              description="Set your base location. Students can only book if pickup/dropoff is within your service radius."
+              footer={serviceCenterCoords ? `Lat: ${serviceCenterCoords.latitude.toFixed(4)}, Lng: ${serviceCenterCoords.longitude.toFixed(4)}` : 'Not set - required for bookings!'}
+            >
+              <div className="space-y-3">
+                <MapPicker
+                  latitude={serviceCenterCoords?.latitude}
+                  longitude={serviceCenterCoords?.longitude}
+                  onLocationSelect={(lat, lng) => setServiceCenterCoords({ latitude: lat, longitude: lng })}
+                />
+                <button
+                  className="w-full bg-blue-600 text-white rounded px-3 py-2 text-sm hover:bg-blue-700 disabled:opacity-50"
+                  onClick={saveServiceCenter}
+                  disabled={!serviceCenterCoords || isSavingProfile}
+                >
+                  {isSavingProfile ? 'Saving...' : '💾 Save Service Center'}
+                </button>
+              </div>
+            </SummaryCard>
+
+            <SummaryCard
+              title="⏰ Default Working Hours"
+              description="Set your typical daily hours. Used when no specific availability is published for a date."
+              footer={driverState.driver?.workDayStart && driverState.driver?.workDayEnd
+                ? `Current: ${driverState.driver.workDayStart} - ${driverState.driver.workDayEnd}`
+                : 'Not set - will default to 09:00-17:00'}
+            >
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">Start Time</label>
+                    <input
+                      type="time"
+                      className="w-full border rounded px-3 py-2 text-sm text-slate-900"
+                      value={workingHours.start}
+                      onChange={(e) => setWorkingHours({ ...workingHours, start: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">End Time</label>
+                    <input
+                      type="time"
+                      className="w-full border rounded px-3 py-2 text-sm text-slate-900"
+                      value={workingHours.end}
+                      onChange={(e) => setWorkingHours({ ...workingHours, end: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <button
+                  className="w-full bg-green-600 text-white rounded px-3 py-2 text-sm hover:bg-green-700 disabled:opacity-50"
+                  onClick={saveWorkingHours}
+                  disabled={isSavingProfile}
+                >
+                  {isSavingProfile ? 'Saving...' : '💾 Save Working Hours'}
+                </button>
+                <p className="text-xs text-slate-600">
+                  💡 Tip: You can also set specific availability for individual dates using the form below.
+                </p>
+              </div>
+            </SummaryCard>
+          </div>
+
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <SummaryCard
               title="Availability grid"
