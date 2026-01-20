@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useState, useRef } from 'react';
-import { GoogleMap, useJsApiLoader, Marker, Autocomplete } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, Marker, Autocomplete, Circle } from '@react-google-maps/api';
 
 const containerStyle = {
     width: '100%',
@@ -26,10 +26,11 @@ type AddressComponents = {
 type MapPickerProps = {
     latitude?: number | null;
     longitude?: number | null;
+    radiusKm?: number | null;
     onLocationSelect: (lat: number, lng: number, address?: AddressComponents) => void;
 };
 
-export function MapPicker({ latitude, longitude, onLocationSelect }: MapPickerProps) {
+export function MapPicker({ latitude, longitude, radiusKm, onLocationSelect }: MapPickerProps) {
     const { isLoaded, loadError } = useJsApiLoader({
         id: 'google-map-script',
         googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
@@ -170,6 +171,19 @@ export function MapPicker({ latitude, longitude, onLocationSelect }: MapPickerPr
                         position={markerPosition}
                         draggable={true}
                         onDragEnd={handleMarkerDragEnd}
+                    />
+                )}
+                {markerPosition && radiusKm && radiusKm > 0 && (
+                    <Circle
+                        center={markerPosition}
+                        radius={radiusKm * 1000} // Convert km to meters
+                        options={{
+                            strokeColor: '#3b82f6',
+                            strokeOpacity: 0.8,
+                            strokeWeight: 2,
+                            fillColor: '#3b82f6',
+                            fillOpacity: 0.15,
+                        }}
                     />
                 )}
             </GoogleMap>

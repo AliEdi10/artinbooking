@@ -65,6 +65,7 @@ export default function DriverPage() {
 
   // Service Center and Working Hours state
   const [serviceCenterCoords, setServiceCenterCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [serviceRadiusKm, setServiceRadiusKm] = useState<number>(25); // Default 25km
   const [workingHours, setWorkingHours] = useState<{ start: string; end: string }>({ start: '09:00', end: '17:00' });
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
@@ -96,6 +97,9 @@ export default function DriverPage() {
       // Populate service center and working hours from driver profile
       if (activeDriver.serviceCenterLocation) {
         setServiceCenterCoords(activeDriver.serviceCenterLocation);
+      }
+      if (activeDriver.serviceRadiusKm) {
+        setServiceRadiusKm(Number(activeDriver.serviceRadiusKm));
       }
       if (activeDriver.workDayStart || activeDriver.workDayEnd) {
         setWorkingHours({
@@ -134,10 +138,13 @@ export default function DriverPage() {
       await apiFetch(`/schools/${schoolId}/drivers/${driverState.driver.id}`, token, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ serviceCenterLocation: serviceCenterCoords }),
+        body: JSON.stringify({
+          serviceCenterLocation: serviceCenterCoords,
+          serviceRadiusKm: serviceRadiusKm,
+        }),
       });
       await loadDriverContext();
-      setActionMessage('Service center location saved!');
+      setActionMessage('Service center location and radius saved!');
     } catch (err) {
       setActionMessage('Unable to save service center location.');
     } finally {
@@ -352,16 +359,38 @@ export default function DriverPage() {
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <SummaryCard
               title="📍 Service Center Location"
-              description="Set your base location. Students can only book if pickup/dropoff is within your service radius."
-              footer={serviceCenterCoords ? `Lat: ${serviceCenterCoords.latitude.toFixed(4)}, Lng: ${serviceCenterCoords.longitude.toFixed(4)}` : 'Not set - required for bookings!'}
+              description="Set your base location and service radius. Students can only book if pickup/dropoff is within your radius."
+              footer={serviceCenterCoords
+                ? `Lat: ${serviceCenterCoords.latitude.toFixed(4)}, Lng: ${serviceCenterCoords.longitude.toFixed(4)} | Radius: ${serviceRadiusKm}km`
+                : 'Not set - required for bookings!'}
             >
               <div className="space-y-3">
                 <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
-                  ⚠️ Click on the map to set your location, then click "Save Service Center" below.
+                  ⚠️ Click on the map to set your location, adjust the radius, then click "Save Service Center" below.
                 </p>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                    Service Radius: <span className="font-bold text-blue-600">{serviceRadiusKm} km</span>
+                  </label>
+                  <input
+                    type="range"
+                    min="5"
+                    max="100"
+                    step="5"
+                    value={serviceRadiusKm}
+                    onChange={(e) => setServiceRadiusKm(Number(e.target.value))}
+                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                  />
+                  <div className="flex justify-between text-xs text-slate-500 mt-1">
+                    <span>5km</span>
+                    <span>50km</span>
+                    <span>100km</span>
+                  </div>
+                </div>
                 <MapPicker
                   latitude={serviceCenterCoords?.latitude}
                   longitude={serviceCenterCoords?.longitude}
+                  radiusKm={serviceRadiusKm}
                   onLocationSelect={(lat, lng) => setServiceCenterCoords({ latitude: lat, longitude: lng })}
                 />
                 <button
@@ -369,7 +398,7 @@ export default function DriverPage() {
                   onClick={saveServiceCenter}
                   disabled={!serviceCenterCoords || isSavingProfile}
                 >
-                  {isSavingProfile ? 'Saving...' : '💾 Save Service Center'}
+                  {isSavingProfile ? 'Saving...' : '💾 Save Service Center & Radius'}
                 </button>
               </div>
             </SummaryCard>
