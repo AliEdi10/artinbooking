@@ -356,6 +356,9 @@ export default function DriverPage() {
               footer={serviceCenterCoords ? `Lat: ${serviceCenterCoords.latitude.toFixed(4)}, Lng: ${serviceCenterCoords.longitude.toFixed(4)}` : 'Not set - required for bookings!'}
             >
               <div className="space-y-3">
+                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
+                  ⚠️ Click on the map to set your location, then click "Save Service Center" below.
+                </p>
                 <MapPicker
                   latitude={serviceCenterCoords?.latitude}
                   longitude={serviceCenterCoords?.longitude}

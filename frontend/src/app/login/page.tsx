@@ -204,11 +204,11 @@ export default function LoginPage() {
         }} className="space-y-4 border-b pb-6">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-            <input name="email" type="email" required className="w-full border rounded p-2" />
+            <input name="email" type="email" required className="w-full border rounded p-2 text-slate-900" />
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
-            <input name="password" type="password" required className="w-full border rounded p-2" />
+            <input name="password" type="password" required className="w-full border rounded p-2 text-slate-900" />
           </div>
           <button
             type="submit"

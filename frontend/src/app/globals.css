@@ -29,18 +29,29 @@ body {
 input::placeholder,
 textarea::placeholder,
 select::placeholder {
-  color: #334155; /* slate-700 equivalent - very dark gray */
+  color: #334155;
+  /* slate-700 equivalent - very dark gray */
   opacity: 1;
 }
 
 /* Make disabled buttons and inputs more visible */
 button:disabled {
-  color: #334155 !important; /* slate-700 equivalent */
+  color: #334155 !important;
+  /* slate-700 equivalent */
   opacity: 0.9;
 }
 
 input:disabled,
 select:disabled {
   color: #334155;
-  background-color: #f1f5f9; /* slate-100 background for contrast */
+  background-color: #f1f5f9;
+  /* slate-100 background for contrast */
+}
+
+/* Ensure all input text is dark */
+input,
+textarea,
+select {
+  color: #0f172a !important;
+  /* slate-900 - almost black */
 }
