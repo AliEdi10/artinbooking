@@ -26,7 +26,7 @@ type Booking = { id: number; driverId: number; studentId: number; startTime: str
 type StudentProfile = { id: number; fullName: string };
 type Address = { id: number; latitude: number | null; longitude: number | null; label: string; line1: string; city: string };
 
-type AvailabilityForm = { date: string; startTime: string; endTime: string };
+type AvailabilityForm = { dateStart: string; dateEnd: string; startTime: string; endTime: string };
 
 type DriverState = {
   driver: DriverProfile | null;
@@ -48,11 +48,11 @@ export default function DriverPage() {
     students: [],
   });
   const [status, setStatus] = useState<string>('Loading driver data...');
-  const [availabilityForm, setAvailabilityForm] = useState<AvailabilityForm>({ date: '', startTime: '', endTime: '' });
+  const [availabilityForm, setAvailabilityForm] = useState<AvailabilityForm>({ dateStart: '', dateEnd: '', startTime: '', endTime: '' });
   const [reschedule, setReschedule] = useState<Record<number, string>>({});
   const [cancelReason, setCancelReason] = useState<Record<number, string>>({});
   const [actionMessage, setActionMessage] = useState('');
-  const [holidayDate, setHolidayDate] = useState('');
+  const [holidayRange, setHolidayRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
 
   // Phase 3: Student history viewer
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
@@ -190,21 +190,38 @@ export default function DriverPage() {
   async function publishAvailability(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!token || !schoolId || !driverState.driver) return;
-    setActionMessage('Publishing availability...');
+
+    const startDate = new Date(availabilityForm.dateStart);
+    const endDate = new Date(availabilityForm.dateEnd || availabilityForm.dateStart);
+
+    if (endDate < startDate) {
+      setActionMessage('End date must be after start date.');
+      return;
+    }
+
+    const dayCount = Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    setActionMessage(`Publishing availability for ${dayCount} day(s)...`);
+
     try {
-      await apiFetch(`/schools/${schoolId}/drivers/${driverState.driver.id}/availability`, token, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          date: availabilityForm.date,
-          startTime: availabilityForm.startTime,
-          endTime: availabilityForm.endTime,
-          type: 'working_hours',
-        }),
-      });
-      setAvailabilityForm({ date: '', startTime: '', endTime: '' });
+      // Create entries for each day in the range
+      const currentDate = new Date(startDate);
+      while (currentDate <= endDate) {
+        const dateStr = currentDate.toISOString().slice(0, 10);
+        await apiFetch(`/schools/${schoolId}/drivers/${driverState.driver.id}/availability`, token, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            date: dateStr,
+            startTime: availabilityForm.startTime,
+            endTime: availabilityForm.endTime,
+            type: 'working_hours',
+          }),
+        });
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+      setAvailabilityForm({ dateStart: '', dateEnd: '', startTime: '', endTime: '' });
       await loadDriverContext();
-      setActionMessage('Availability published.');
+      setActionMessage(`Availability published for ${dayCount} day(s)!`);
     } catch (err) {
       setActionMessage('Unable to publish availability.');
     }
@@ -212,22 +229,38 @@ export default function DriverPage() {
 
   async function addHoliday(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!token || !schoolId || !driverState.driver || !holidayDate) return;
-    setActionMessage('Adding time off...');
+    if (!token || !schoolId || !driverState.driver || !holidayRange.start) return;
+
+    const startDate = new Date(holidayRange.start);
+    const endDate = new Date(holidayRange.end || holidayRange.start);
+
+    if (endDate < startDate) {
+      setActionMessage('End date must be after start date.');
+      return;
+    }
+
+    const dayCount = Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    setActionMessage(`Adding time off for ${dayCount} day(s)...`);
+
     try {
-      await apiFetch(`/schools/${schoolId}/drivers/${driverState.driver.id}/availability`, token, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          date: holidayDate,
-          startTime: '00:00',
-          endTime: '23:59',
-          type: 'override_closed',
-        }),
-      });
-      setHolidayDate('');
+      const currentDate = new Date(startDate);
+      while (currentDate <= endDate) {
+        const dateStr = currentDate.toISOString().slice(0, 10);
+        await apiFetch(`/schools/${schoolId}/drivers/${driverState.driver.id}/availability`, token, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            date: dateStr,
+            startTime: '00:00',
+            endTime: '23:59',
+            type: 'override_closed',
+          }),
+        });
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+      setHolidayRange({ start: '', end: '' });
       await loadDriverContext();
-      setActionMessage('Time off added.');
+      setActionMessage(`Time off added for ${dayCount} day(s)!`);
     } catch (err) {
       setActionMessage('Unable to add time off.');
     }
@@ -535,55 +568,93 @@ export default function DriverPage() {
             </div>
           </SummaryCard>
           <SummaryCard
-            title="Actions"
-            description="These controls will call backend endpoints to update availability and handle booking decisions."
+            title="📅 Publish Availability"
+            description="Set your working hours for a date range. Students can book within these windows."
           >
-            <form className="grid grid-cols-1 md:grid-cols-4 gap-2 text-sm" onSubmit={publishAvailability}>
-              <input
-                className="border rounded px-2 py-2"
-                type="date"
-                value={availabilityForm.date}
-                onChange={(e) => setAvailabilityForm({ ...availabilityForm, date: e.target.value })}
-                required
-              />
-              <input
-                className="border rounded px-2 py-2"
-                type="time"
-                value={availabilityForm.startTime}
-                onChange={(e) => setAvailabilityForm({ ...availabilityForm, startTime: e.target.value })}
-                required
-              />
-              <input
-                className="border rounded px-2 py-2"
-                type="time"
-                value={availabilityForm.endTime}
-                onChange={(e) => setAvailabilityForm({ ...availabilityForm, endTime: e.target.value })}
-                required
-              />
-              <button className="px-3 py-2 rounded bg-slate-900 text-white hover:bg-slate-800" type="submit">
-                Publish availability
+            <form className="space-y-3 text-sm" onSubmit={publishAvailability}>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Start Date</label>
+                  <input
+                    className="w-full border rounded px-2 py-2 text-slate-900"
+                    type="date"
+                    value={availabilityForm.dateStart}
+                    onChange={(e) => setAvailabilityForm({ ...availabilityForm, dateStart: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">End Date (optional)</label>
+                  <input
+                    className="w-full border rounded px-2 py-2 text-slate-900"
+                    type="date"
+                    value={availabilityForm.dateEnd}
+                    onChange={(e) => setAvailabilityForm({ ...availabilityForm, dateEnd: e.target.value })}
+                    min={availabilityForm.dateStart}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Start Time</label>
+                  <input
+                    className="w-full border rounded px-2 py-2 text-slate-900"
+                    type="time"
+                    value={availabilityForm.startTime}
+                    onChange={(e) => setAvailabilityForm({ ...availabilityForm, startTime: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">End Time</label>
+                  <input
+                    className="w-full border rounded px-2 py-2 text-slate-900"
+                    type="time"
+                    value={availabilityForm.endTime}
+                    onChange={(e) => setAvailabilityForm({ ...availabilityForm, endTime: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+              <button className="w-full px-3 py-2 rounded bg-slate-900 text-white hover:bg-slate-800" type="submit">
+                📆 Publish Availability
               </button>
             </form>
           </SummaryCard>
           <SummaryCard
-            title="Time Off / Holidays"
+            title="🏖️ Time Off / Holidays"
             description="Mark days you're unavailable. Students won't be able to book on these dates."
             footer={`${driverState.availability.filter(a => a.type === 'override_closed').length} day(s) blocked`}
           >
-            <form className="flex gap-2 mb-3" onSubmit={addHoliday}>
-              <input
-                className="border rounded px-3 py-2 flex-1 text-sm"
-                type="date"
-                value={holidayDate}
-                onChange={(e) => setHolidayDate(e.target.value)}
-                required
-                min={new Date().toISOString().slice(0, 10)}
-              />
+            <form className="space-y-3 mb-3" onSubmit={addHoliday}>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Start Date</label>
+                  <input
+                    className="w-full border rounded px-3 py-2 text-sm text-slate-900"
+                    type="date"
+                    value={holidayRange.start}
+                    onChange={(e) => setHolidayRange({ ...holidayRange, start: e.target.value })}
+                    required
+                    min={new Date().toISOString().slice(0, 10)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">End Date (optional)</label>
+                  <input
+                    className="w-full border rounded px-3 py-2 text-sm text-slate-900"
+                    type="date"
+                    value={holidayRange.end}
+                    onChange={(e) => setHolidayRange({ ...holidayRange, end: e.target.value })}
+                    min={holidayRange.start || new Date().toISOString().slice(0, 10)}
+                  />
+                </div>
+              </div>
               <button
-                className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700 text-sm"
+                className="w-full px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700 text-sm"
                 type="submit"
               >
-                Block Date
+                ⛔ Block Date Range
               </button>
             </form>
             <ul className="space-y-2 text-sm max-h-48 overflow-y-auto">
