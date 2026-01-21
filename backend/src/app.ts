@@ -5,7 +5,7 @@ import { authenticateRequest, authenticateRequestAllowUnregistered } from './mid
 import { enforceTenantScope, requireRoles } from './middleware/authorization';
 import { getDrivingSchoolById, getDrivingSchools, createDrivingSchool } from './repositories/drivingSchools';
 import { findInvitationByToken, markInvitationAccepted, upsertInvitation, getPendingInvitations, getInvitationById, resendInvitation } from './repositories/invitations';
-import { countAdminsForSchool, createUserWithIdentity, createUserWithPassword } from './repositories/users';
+import { countAdminsForSchool, createUserWithIdentity, createUserWithPassword, getUserById } from './repositories/users';
 import {
   createDriverProfile,
   getDriverProfileById,
@@ -32,7 +32,7 @@ import { buildGoogleMapsTravelCalculatorFromEnv } from './services/travelProvide
 import { issueLocalJwt } from './services/jwtIssuer';
 import { verifyJwtFromRequest } from './services/jwtVerifier';
 import { hashPassword } from './services/password';
-import { sendInvitationEmail } from './services/email';
+import { sendInvitationEmail, sendBookingConfirmationEmail, sendBookingCancellationEmail, sendDriverBookingNotification } from './services/email';
 
 function resolveSchoolContext(req: AuthenticatedRequest, res: express.Response): number | null {
   const requestedSchoolId = Number(req.params.schoolId);
@@ -1439,6 +1439,53 @@ export function createApp() {
           endTime: endTime.toISOString(),
         });
 
+        // Send confirmation emails (non-blocking)
+        (async () => {
+          try {
+            const school = await getDrivingSchoolById(schoolId);
+            const studentUser = await getUserById(student.userId);
+            const driverUser = await getUserById(driver.userId);
+
+            const lessonDate = normalizedStart.toLocaleDateString('en-US', {
+              weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+            });
+            const lessonTime = normalizedStart.toLocaleTimeString('en-US', {
+              hour: '2-digit', minute: '2-digit'
+            });
+
+            const pickupAddr = `${pickupAddress.line1}, ${pickupAddress.city}`;
+            const dropoffAddr = `${dropoffAddress.line1}, ${dropoffAddress.city}`;
+
+            if (studentUser?.email) {
+              await sendBookingConfirmationEmail({
+                to: studentUser.email,
+                studentName: student.fullName,
+                driverName: driver.fullName,
+                schoolName: school?.name || 'Driving School',
+                lessonDate,
+                lessonTime,
+                pickupAddress: pickupAddr,
+                dropoffAddress: dropoffAddr,
+              });
+            }
+
+            if (driverUser?.email) {
+              await sendDriverBookingNotification(
+                driverUser.email,
+                driver.fullName,
+                student.fullName,
+                lessonDate,
+                lessonTime,
+                pickupAddr,
+                dropoffAddr,
+                school?.name || 'Driving School',
+              );
+            }
+          } catch (emailError) {
+            console.error('Failed to send booking notification emails:', emailError);
+          }
+        })();
+
         res.status(201).json(booking);
       } catch (error) {
         next(error);
@@ -1549,6 +1596,37 @@ export function createApp() {
               : 'cancelled_by_school';
 
         const cancelled = await cancelBooking(booking.id, schoolId, status, reason);
+
+        // Send cancellation email (non-blocking)
+        (async () => {
+          try {
+            const school = await getDrivingSchoolById(schoolId);
+            const student = await getStudentProfileById(booking.studentId, schoolId);
+            const studentUser = student ? await getUserById(student.userId) : null;
+
+            const lessonDate = booking.startTime.toLocaleDateString('en-US', {
+              weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+            });
+            const lessonTime = booking.startTime.toLocaleTimeString('en-US', {
+              hour: '2-digit', minute: '2-digit'
+            });
+
+            if (studentUser?.email && student) {
+              await sendBookingCancellationEmail({
+                to: studentUser.email,
+                studentName: student.fullName,
+                schoolName: school?.name || 'Driving School',
+                lessonDate,
+                lessonTime,
+                pickupAddress: booking.pickupAddressId?.toString() || 'N/A',
+                dropoffAddress: booking.dropoffAddressId?.toString() || 'N/A',
+              });
+            }
+          } catch (emailError) {
+            console.error('Failed to send cancellation email:', emailError);
+          }
+        })();
+
         res.json(cancelled);
       } catch (error) {
         next(error);

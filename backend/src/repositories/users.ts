@@ -35,6 +35,16 @@ export async function loadUserByIdentity(
   return mapUser(result.rows[0]);
 }
 
+export async function getUserById(id: number): Promise<User | null> {
+  const result = await getPool().query<UserRow>(
+    `SELECT * FROM users WHERE id = $1 LIMIT 1`,
+    [id],
+  );
+
+  if (result.rowCount === 0) return null;
+  return mapUser(result.rows[0]);
+}
+
 export async function createUserWithIdentity(
   params: {
     drivingSchoolId: number | null;

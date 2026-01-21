@@ -100,3 +100,169 @@ export async function sendPasswordResetEmail(to: string, resetToken: string): Pr
     throw error;
   }
 }
+
+// Booking confirmation email types
+export interface BookingEmailParams {
+  to: string;
+  studentName: string;
+  driverName: string;
+  schoolName: string;
+  lessonDate: string; // Formatted date string
+  lessonTime: string; // e.g., "10:00 AM"
+  pickupAddress: string;
+  dropoffAddress: string;
+}
+
+export async function sendBookingConfirmationEmail(params: BookingEmailParams): Promise<void> {
+  const { to, studentName, driverName, schoolName, lessonDate, lessonTime, pickupAddress, dropoffAddress } = params;
+
+  if (!process.env.RESEND_API_KEY) {
+    console.error('RESEND_API_KEY is not set! Booking confirmation email will not be sent.');
+    return;
+  }
+
+  console.log(`Sending booking confirmation email to ${to}...`);
+
+  try {
+    const result = await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject: `✅ Lesson Confirmed - ${lessonDate} at ${lessonTime}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #059669;">✅ Your Driving Lesson is Confirmed!</h2>
+          <p>Hi ${studentName},</p>
+          <p>Your driving lesson with <strong>${schoolName}</strong> has been booked!</p>
+          
+          <div style="background-color: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 16px; margin: 20px 0;">
+            <h3 style="margin: 0 0 12px 0; color: #166534;">📅 Lesson Details</h3>
+            <p style="margin: 4px 0;"><strong>Date:</strong> ${lessonDate}</p>
+            <p style="margin: 4px 0;"><strong>Time:</strong> ${lessonTime}</p>
+            <p style="margin: 4px 0;"><strong>Instructor:</strong> ${driverName}</p>
+            <p style="margin: 4px 0;"><strong>Pickup:</strong> ${pickupAddress}</p>
+            <p style="margin: 4px 0;"><strong>Drop-off:</strong> ${dropoffAddress}</p>
+          </div>
+          
+          <div style="background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 16px; margin: 20px 0;">
+            <h3 style="margin: 0 0 8px 0; color: #dc2626;">⚠️ IMPORTANT - Please Read!</h3>
+            <p style="margin: 0; font-weight: bold; color: #991b1b;">
+              You MUST bring your PHYSICAL driver's license (learner's permit) to your lesson.
+            </p>
+            <p style="margin: 8px 0 0 0; color: #991b1b;">
+              A digital copy, photo, or screenshot is <strong>NOT acceptable</strong>. 
+              Without your physical license, your lesson will be cancelled and you may be charged.
+            </p>
+          </div>
+          
+          <p style="color: #6b7280; font-size: 14px;">
+            Need to cancel or reschedule? Log in to your account at 
+            <a href="${FRONTEND_URL}">${FRONTEND_URL}</a>
+          </p>
+          
+          <p style="color: #6b7280; font-size: 12px; margin-top: 32px;">
+            See you on the road! 🚗<br>
+            - ${schoolName}
+          </p>
+        </div>
+      `,
+    });
+    console.log(`Booking confirmation email sent to ${to}`, result);
+  } catch (error) {
+    console.error('Failed to send booking confirmation email:', error);
+    // Don't throw - email failure shouldn't block booking
+  }
+}
+
+export async function sendBookingCancellationEmail(params: Omit<BookingEmailParams, 'driverName'>): Promise<void> {
+  const { to, studentName, schoolName, lessonDate, lessonTime, pickupAddress, dropoffAddress } = params;
+
+  if (!process.env.RESEND_API_KEY) {
+    console.error('RESEND_API_KEY is not set! Cancellation email will not be sent.');
+    return;
+  }
+
+  console.log(`Sending booking cancellation email to ${to}...`);
+
+  try {
+    const result = await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject: `❌ Lesson Cancelled - ${lessonDate}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #dc2626;">❌ Your Lesson Has Been Cancelled</h2>
+          <p>Hi ${studentName},</p>
+          <p>Your driving lesson has been cancelled.</p>
+          
+          <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin: 20px 0;">
+            <h3 style="margin: 0 0 12px 0; color: #991b1b;">Cancelled Lesson</h3>
+            <p style="margin: 4px 0;"><strong>Date:</strong> ${lessonDate}</p>
+            <p style="margin: 4px 0;"><strong>Time:</strong> ${lessonTime}</p>
+            <p style="margin: 4px 0;"><strong>Pickup:</strong> ${pickupAddress}</p>
+            <p style="margin: 4px 0;"><strong>Drop-off:</strong> ${dropoffAddress}</p>
+          </div>
+          
+          <p>
+            Want to book a new lesson? Log in to your account at 
+            <a href="${FRONTEND_URL}" style="color: #2563eb;">${FRONTEND_URL}</a>
+          </p>
+          
+          <p style="color: #6b7280; font-size: 12px; margin-top: 32px;">
+            - ${schoolName}
+          </p>
+        </div>
+      `,
+    });
+    console.log(`Booking cancellation email sent to ${to}`, result);
+  } catch (error) {
+    console.error('Failed to send booking cancellation email:', error);
+    // Don't throw - email failure shouldn't block cancellation
+  }
+}
+
+export async function sendDriverBookingNotification(
+  to: string,
+  driverName: string,
+  studentName: string,
+  lessonDate: string,
+  lessonTime: string,
+  pickupAddress: string,
+  dropoffAddress: string,
+  schoolName: string
+): Promise<void> {
+  if (!process.env.RESEND_API_KEY) {
+    console.error('RESEND_API_KEY is not set! Driver notification will not be sent.');
+    return;
+  }
+
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject: `📅 New Lesson Booked - ${lessonDate} at ${lessonTime}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #1e40af;">📅 New Lesson Assignment</h2>
+          <p>Hi ${driverName},</p>
+          <p>A new lesson has been booked with you!</p>
+          
+          <div style="background-color: #eff6ff; border: 1px solid #93c5fd; border-radius: 8px; padding: 16px; margin: 20px 0;">
+            <p style="margin: 4px 0;"><strong>Student:</strong> ${studentName}</p>
+            <p style="margin: 4px 0;"><strong>Date:</strong> ${lessonDate}</p>
+            <p style="margin: 4px 0;"><strong>Time:</strong> ${lessonTime}</p>
+            <p style="margin: 4px 0;"><strong>Pickup:</strong> ${pickupAddress}</p>
+            <p style="margin: 4px 0;"><strong>Drop-off:</strong> ${dropoffAddress}</p>
+          </div>
+          
+          <p style="color: #6b7280; font-size: 12px; margin-top: 32px;">
+            - ${schoolName}
+          </p>
+        </div>
+      `,
+    });
+    console.log(`Driver notification email sent to ${to}`);
+  } catch (error) {
+    console.error('Failed to send driver notification email:', error);
+  }
+}
+
