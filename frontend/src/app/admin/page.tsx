@@ -82,6 +82,7 @@ export default function AdminPage() {
   const [cancelReason, setCancelReason] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [rejectionNote, setRejectionNote] = useState('');
+  const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
 
   async function loadSettings() {
     if (!token || !schoolId) return;
@@ -203,6 +204,15 @@ export default function AdminPage() {
   async function handleCreateDriver(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!token || !schoolId) return;
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(driverForm.email)) {
+      setFormErrors({ ...formErrors, driverEmail: 'Please enter a valid email address' });
+      return;
+    }
+    setFormErrors({ ...formErrors, driverEmail: '' });
+
     setActionMessage('Sending invitation...');
     try {
       await apiFetch(`/schools/${schoolId}/invitations`, token, {
@@ -216,15 +226,28 @@ export default function AdminPage() {
       });
       setDriverForm({ email: '', fullName: '' });
       await loadPendingInvitations();
-      setActionMessage('Invitation sent! Driver will receive an email to complete registration.');
+      setActionMessage('✅ Invitation sent! Driver will receive an email to complete registration.');
     } catch (err) {
-      setActionMessage('Unable to send invitation.');
+      const message = err instanceof Error ? err.message : 'Unable to send invitation';
+      if (message.toLowerCase().includes('already') || message.toLowerCase().includes('exists')) {
+        setFormErrors({ ...formErrors, driverEmail: 'This email already has an account or pending invitation' });
+      }
+      setActionMessage(`❌ ${message}`);
     }
   }
 
   async function handleCreateStudent(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!token || !schoolId) return;
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(studentForm.email)) {
+      setFormErrors({ ...formErrors, studentEmail: 'Please enter a valid email address' });
+      return;
+    }
+    setFormErrors({ ...formErrors, studentEmail: '' });
+
     setActionMessage('Sending invitation...');
     try {
       await apiFetch(`/schools/${schoolId}/invitations`, token, {
@@ -239,9 +262,13 @@ export default function AdminPage() {
         }),
       });
       setStudentForm({ email: '', fullName: '', allowedHours: '', maxLessonsPerDay: '2' });
-      setActionMessage('Invitation sent! Student will receive an email to complete registration.');
+      setActionMessage('✅ Invitation sent! Student will receive an email to complete registration.');
     } catch (err) {
-      setActionMessage('Unable to send invitation.');
+      const message = err instanceof Error ? err.message : 'Unable to send invitation';
+      if (message.toLowerCase().includes('already') || message.toLowerCase().includes('exists')) {
+        setFormErrors({ ...formErrors, studentEmail: 'This email already has an account or pending invitation' });
+      }
+      setActionMessage(`❌ ${message}`);
     }
   }
 
@@ -381,14 +408,22 @@ export default function AdminPage() {
               </ul>
               <form className="mt-3 space-y-2" onSubmit={handleCreateDriver}>
                 <div className="text-xs font-medium text-slate-700 mb-1">Invite New Driver</div>
-                <input
-                  className="border rounded px-3 py-2 text-sm w-full"
-                  placeholder="Email *"
-                  type="email"
-                  value={driverForm.email}
-                  onChange={(e) => setDriverForm({ ...driverForm, email: e.target.value })}
-                  required
-                />
+                <div>
+                  <input
+                    className={`border rounded px-3 py-2 text-sm w-full ${formErrors.driverEmail ? 'border-red-500 bg-red-50' : ''}`}
+                    placeholder="Email *"
+                    type="email"
+                    value={driverForm.email}
+                    onChange={(e) => {
+                      setDriverForm({ ...driverForm, email: e.target.value });
+                      if (formErrors.driverEmail) setFormErrors({ ...formErrors, driverEmail: '' });
+                    }}
+                    required
+                  />
+                  {formErrors.driverEmail && (
+                    <p className="text-red-600 text-xs mt-1">{formErrors.driverEmail}</p>
+                  )}
+                </div>
                 <input
                   className="border rounded px-3 py-2 text-sm w-full"
                   placeholder="Full name (optional)"
@@ -615,14 +650,22 @@ export default function AdminPage() {
               )}
               <form className="mt-3 space-y-3" onSubmit={handleCreateStudent}>
                 <div className="text-xs font-medium text-slate-700 mb-1">Invite New Student</div>
-                <input
-                  className="border rounded px-3 py-2 text-sm w-full"
-                  placeholder="Email *"
-                  type="email"
-                  value={studentForm.email}
-                  onChange={(e) => setStudentForm({ ...studentForm, email: e.target.value })}
-                  required
-                />
+                <div>
+                  <input
+                    className={`border rounded px-3 py-2 text-sm w-full ${formErrors.studentEmail ? 'border-red-500 bg-red-50' : ''}`}
+                    placeholder="Email *"
+                    type="email"
+                    value={studentForm.email}
+                    onChange={(e) => {
+                      setStudentForm({ ...studentForm, email: e.target.value });
+                      if (formErrors.studentEmail) setFormErrors({ ...formErrors, studentEmail: '' });
+                    }}
+                    required
+                  />
+                  {formErrors.studentEmail && (
+                    <p className="text-red-600 text-xs mt-1">{formErrors.studentEmail}</p>
+                  )}
+                </div>
                 <input
                   className="border rounded px-3 py-2 text-sm w-full"
                   placeholder="Full name (optional)"
