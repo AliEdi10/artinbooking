@@ -1,5 +1,23 @@
 # Repository Agent Guide
 
+## ⚠️ IMPORTANT: READ FIRST
+
+**This app is PRODUCTION READY (January 2026).** Before asking clarifying questions or suggesting work:
+
+1. Read `docs/CURRENT_STATUS.md` - Shows what's actually complete
+2. Read `README.md` - Updated architecture overview
+3. **Ignore** the outdated planning docs in `/docs` that mention GCP, missing features, etc.
+
+**Currently deployed:**
+- Frontend: Vercel (https://artinbooking.vercel.app)
+- Backend: Railway
+- Database: Railway PostgreSQL
+- Email: Resend API (working)
+
+**All features are complete** including email notifications, booking flow, admin/driver/student portals.
+
+---
+
 These instructions apply to the entire repository. If a more specific AGENTS.md is added in a subdirectory, defer to that file for scoped changes.
 
 ## Contribution expectations
