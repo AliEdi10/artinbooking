@@ -28,6 +28,10 @@ function RegisterContent() {
     const [form, setForm] = useState({
         email: '',
         fullName: '',
+        phone: '',
+        isMinor: false,
+        guardianPhone: '',
+        guardianEmail: '',
         password: '',
         confirmPassword: '',
     });
@@ -82,11 +86,23 @@ function RegisterContent() {
                 : `${BACKEND_URL}/auth/register`;
 
             const body = token
-                ? { token, fullName: form.fullName, password: form.password }
+                ? {
+                    token,
+                    fullName: form.fullName,
+                    password: form.password,
+                    phone: form.phone,
+                    isMinor: form.isMinor,
+                    guardianPhone: form.isMinor ? form.guardianPhone : undefined,
+                    guardianEmail: form.isMinor ? form.guardianEmail : undefined,
+                }
                 : {
                     email: form.email,
                     password: form.password,
                     fullName: form.fullName,
+                    phone: form.phone,
+                    isMinor: form.isMinor,
+                    guardianPhone: form.isMinor ? form.guardianPhone : undefined,
+                    guardianEmail: form.isMinor ? form.guardianEmail : undefined,
                     role: 'STUDENT',
                     drivingSchoolId: 100
                 };
@@ -229,6 +245,81 @@ function RegisterContent() {
                             required
                         />
                     </div>
+
+                    {/* Phone Number - Only for STUDENT role */}
+                    {(!invitationInfo || invitationInfo.role === 'STUDENT') && (
+                        <>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Phone Number *</label>
+                                <input
+                                    type="tel"
+                                    className="w-full border rounded-lg px-4 py-2"
+                                    value={form.phone}
+                                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                                    placeholder="(123) 456-7890"
+                                    required
+                                />
+                            </div>
+
+                            {/* Age Selection */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">Are you 18 or older?</label>
+                                <div className="flex gap-4">
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="ageGroup"
+                                            checked={!form.isMinor}
+                                            onChange={() => setForm({ ...form, isMinor: false })}
+                                            className="w-4 h-4 text-blue-600"
+                                        />
+                                        <span className="text-sm">Yes, I'm 18+</span>
+                                    </label>
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="ageGroup"
+                                            checked={form.isMinor}
+                                            onChange={() => setForm({ ...form, isMinor: true })}
+                                            className="w-4 h-4 text-blue-600"
+                                        />
+                                        <span className="text-sm">No, I'm under 18</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            {/* Guardian Information - Show only for minors */}
+                            {form.isMinor && (
+                                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-3">
+                                    <p className="text-sm text-amber-800 font-medium">
+                                        👨‍👩‍👧 Parent/Guardian Information Required
+                                    </p>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Guardian Phone *</label>
+                                        <input
+                                            type="tel"
+                                            className="w-full border rounded-lg px-4 py-2"
+                                            value={form.guardianPhone}
+                                            onChange={(e) => setForm({ ...form, guardianPhone: e.target.value })}
+                                            placeholder="Parent/guardian phone number"
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Guardian Email *</label>
+                                        <input
+                                            type="email"
+                                            className="w-full border rounded-lg px-4 py-2"
+                                            value={form.guardianEmail}
+                                            onChange={(e) => setForm({ ...form, guardianEmail: e.target.value })}
+                                            placeholder="Parent/guardian email"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    )}
 
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>

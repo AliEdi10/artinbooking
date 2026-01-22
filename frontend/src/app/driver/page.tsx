@@ -23,7 +23,18 @@ type DriverProfile = {
 };
 type Availability = { id: number; date: string; startTime: string; endTime: string; type?: string };
 type Booking = { id: number; driverId: number; studentId: number; startTime: string; status: string; pickupAddressId?: number | null; dropoffAddressId?: number | null };
-type StudentProfile = { id: number; fullName: string };
+type StudentProfile = {
+  id: number;
+  fullName: string;
+  phone?: string | null;
+  email?: string | null;
+  licenceNumber?: string | null;
+  licenceStatus?: string;
+  licenceExpiryDate?: string | null;
+  isMinor?: boolean;
+  guardianPhone?: string | null;
+  guardianEmail?: string | null;
+};
 type Address = { id: number; latitude: number | null; longitude: number | null; label: string; line1: string; city: string };
 
 type AvailabilityForm = { dateStart: string; dateEnd: string; startTime: string; endTime: string };
@@ -555,6 +566,50 @@ export default function DriverPage() {
                   </option>
                 ))}
               </select>
+
+              {selectedStudentId && (() => {
+                const selectedStudent = driverState.students.find(s => s.id === selectedStudentId);
+                return selectedStudent && (
+                  <div className="bg-slate-50 border rounded-lg p-4 space-y-2">
+                    <p className="text-sm font-semibold text-slate-800">📋 Student Profile</p>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-slate-500">Name:</span>
+                        <p className="font-medium">{selectedStudent.fullName}</p>
+                      </div>
+                      <div>
+                        <span className="text-slate-500">Phone:</span>
+                        <p className="font-medium">{selectedStudent.phone || 'Not provided'}</p>
+                      </div>
+                      <div>
+                        <span className="text-slate-500">Licence #:</span>
+                        <p className="font-medium">{selectedStudent.licenceNumber || 'Not provided'}</p>
+                      </div>
+                      <div>
+                        <span className="text-slate-500">Licence Status:</span>
+                        <p className={`font-medium ${selectedStudent.licenceStatus === 'approved' ? 'text-green-600' : 'text-amber-600'}`}>
+                          {selectedStudent.licenceStatus?.replace(/_/g, ' ') || 'Pending'}
+                        </p>
+                      </div>
+                    </div>
+                    {selectedStudent.isMinor && (
+                      <div className="bg-amber-50 border border-amber-200 rounded p-2 mt-2">
+                        <p className="text-xs font-medium text-amber-800">👶 Minor (Under 18)</p>
+                        <div className="grid grid-cols-2 gap-2 text-xs mt-1">
+                          <div>
+                            <span className="text-slate-500">Guardian Phone:</span>
+                            <p className="font-medium">{selectedStudent.guardianPhone || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <span className="text-slate-500">Guardian Email:</span>
+                            <p className="font-medium">{selectedStudent.guardianEmail || 'N/A'}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {selectedStudentId && studentUsage && (
                 <div className="bg-blue-50 border border-blue-200 rounded p-3">

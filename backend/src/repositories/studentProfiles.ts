@@ -45,6 +45,9 @@ export interface CreateStudentProfileInput {
   licenceProvinceOrState?: string;
   licenceImageUrl?: string;
   licenceStatus?: string;
+  isMinor?: boolean;
+  guardianPhone?: string;
+  guardianEmail?: string;
   active?: boolean;
 }
 
@@ -62,9 +65,12 @@ export async function createStudentProfile(input: CreateStudentProfileInput): Pr
       licence_province_or_state,
       licence_image_url,
       licence_status,
+      is_minor,
+      guardian_phone,
+      guardian_email,
       active
     ) VALUES (
-      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12
+      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15
     ) RETURNING *`,
     [
       input.userId,
@@ -78,6 +84,9 @@ export async function createStudentProfile(input: CreateStudentProfileInput): Pr
       input.licenceProvinceOrState ?? null,
       input.licenceImageUrl ?? null,
       input.licenceStatus ?? 'pending_review',
+      input.isMinor ?? false,
+      input.guardianPhone ?? null,
+      input.guardianEmail ?? null,
       input.active ?? true,
     ],
   );

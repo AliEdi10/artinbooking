@@ -130,6 +130,9 @@ export interface StudentProfileRow {
   licence_rejection_note: string | null;
   allowed_hours: number | null;
   max_lessons_per_day: number | null;
+  is_minor: boolean;
+  guardian_phone: string | null;
+  guardian_email: string | null;
   active: boolean;
   created_at: Date;
   updated_at: Date;
@@ -151,6 +154,9 @@ export interface StudentProfile {
   licenceRejectionNote: string | null;
   allowedHours: number | null;
   maxLessonsPerDay: number | null;
+  isMinor: boolean;
+  guardianPhone: string | null;
+  guardianEmail: string | null;
   active: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -224,6 +230,9 @@ export const mapStudentProfile = (row: StudentProfileRow): StudentProfile => ({
   licenceRejectionNote: row.licence_rejection_note,
   allowedHours: row.allowed_hours,
   maxLessonsPerDay: row.max_lessons_per_day,
+  isMinor: row.is_minor ?? false,
+  guardianPhone: row.guardian_phone,
+  guardianEmail: row.guardian_email,
   active: row.active,
   createdAt: row.created_at,
   updatedAt: row.updated_at,

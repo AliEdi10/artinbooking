@@ -435,10 +435,14 @@ export function createApp() {
     '/invitations/accept',
     async (req: express.Request, res: express.Response, next: express.NextFunction) => {
       try {
-        const { token, password, fullName } = req.body as {
+        const { token, password, fullName, phone, isMinor, guardianPhone, guardianEmail } = req.body as {
           token?: string;
           password?: string;
           fullName?: string;
+          phone?: string;
+          isMinor?: boolean;
+          guardianPhone?: string;
+          guardianEmail?: string;
         };
 
         if (!token) {
@@ -498,8 +502,6 @@ export function createApp() {
           });
         }
 
-        // If fullName provided and role is Student, verify/create profile?\n        // Note: The original code didn't create profile here, relying on later steps?\n        // But for consistency with /register, we might want to create profile if Student.\n        // However, sticking to original behavior for now regarding profile creation \n        // (frontend calls /students endpoint or similar? No, only admin creates student?)\n        // Wait, if I am a student accepting invite, I need a profile.\n        // I will add profile creation if it's a student and user doesn't have one?\n        // Importing createStudentProfile is complicated here (circular deps?).\n        // I'll stick to minimum changes for now.
-
         // Create student profile if role is STUDENT
         if (invitation.role === 'STUDENT' && user) {
           try {
@@ -507,6 +509,10 @@ export function createApp() {
               userId: user.id,
               drivingSchoolId: invitation.drivingSchoolId,
               fullName: fullName || invitation.fullName || invitation.email.split('@')[0],
+              phone: phone,
+              isMinor: isMinor ?? false,
+              guardianPhone: isMinor ? guardianPhone : undefined,
+              guardianEmail: isMinor ? guardianEmail : undefined,
             });
           } catch (profileError) {
             console.error('Failed to create student profile:', profileError);
