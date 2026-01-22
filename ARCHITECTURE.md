@@ -1,50 +1,93 @@
-# Architecture overview
+# Architecture Overview
 
-This repository contains three main packages plus infra assets:
+**Updated: January 2026**
 
-- `db/` – Postgres DDL and migrations (applied via backend scripts) plus seed helpers.
-- `backend/` – Express API in TypeScript with authentication/authorization middleware, Postgres client, and booking/availability logic.
-- `frontend/` – Next.js 13+ app with role-aware dashboards and a login flow that accepts Google Identity Platform tokens or locally issued JWTs.
-- `infra/` – Deployment scaffolding (Dockerfiles, Cloud Build, Terraform) targeting Google Cloud Run + Cloud SQL + Artifact Registry + Secret Manager + Cloud Storage.
+## Production Deployment
 
-## Data layer (`db/`)
-- Migrations live in `db/migrations` and define the current schema for driving schools, users/roles, driver & student profiles, addresses, bookings, availability, and school settings (including lead times and daily caps).
-- Seeds under `db/seeds` can insert a superadmin, a sample school, and demo data when combined with the auth emulator/local JWT options.
-- Migration scripts are invoked through backend package scripts (see `backend/README.md`).
+| Component | Platform | URL |
+|-----------|----------|-----|
+| Frontend | Vercel | https://artinbooking.vercel.app |
+| Backend | Railway | (auto-assigned) |
+| Database | Railway PostgreSQL | (internal) |
+| Email | Resend API | (service) |
 
-## Backend (`backend/`)
-- Express server (`src/app.ts`) with CORS and JSON parsing.
-- Authentication middleware validates RS256 JWTs (Google Identity Platform by default) or uses the emulator/local JWT paths for development. Requests populate `req.user` with role and `drivingSchoolId` for downstream tenant checks.
-- Authorization middleware enforces role guards and tenant scoping on routes. Superadmins may cross tenant boundaries; all other roles are restricted to their `driving_school_id`.
-- Core routes:
-  - `/health`, `/hello` – basic probes.
-  - `/auth/local-token` – emits RS256 tokens when `AUTH_LOCAL_JWT=true` (dev/test only).
-  - `/schools` – lists schools (scoped to tenant unless SUPERADMIN).
-  - `/schools/:schoolId/...` – drivers, students, addresses, invitations, availability, and bookings endpoints with tenant enforcement.
-  - Availability and booking flows enforce licence status, service radius, buffers, travel feasibility (Google Maps provider with haversine fallback), lead time, and daily booking caps.
-- Integration tests spin up Postgres in Docker, run migrations, and exercise the `/schools` endpoint and auth/tenant guards.
+## Repository Structure
 
-## Frontend (`frontend/`)
-- Next.js app with shared `<AuthProvider>` storing JWTs, plus `<Protected>` route guards that check role allowances before rendering pages.
-- Pages:
-  - `/login` – Google Identity sign-in button and manual JWT entry for local tokens.
-  - `/` – overview shell with navigation.
-  - `/admin`, `/driver`, `/student`, `/bookings` – dashboards with mocked tables/cards, calling backend APIs where available (e.g., school settings fetch) and falling back to placeholder data.
-- Styling uses Tailwind classes co-located in components.
+```
+artinbk-main/
+├── backend/src/
+│   ├── app.ts              # Express routes (1600+ lines)
+│   ├── models.ts           # TypeScript types & mappers
+│   ├── middleware/         # Auth & authorization
+│   ├── repositories/       # Database access layer
+│   └── services/
+│       ├── email.ts        # Resend email (booking confirm, cancel)
+│       └── availability.ts # Travel-aware slot engine
+├── frontend/src/app/
+│   ├── admin/page.tsx      # Full admin dashboard
+│   ├── driver/page.tsx     # Driver portal with student viewer
+│   ├── student/page.tsx    # Student booking portal
+│   ├── register/page.tsx   # Registration with guardian fields
+│   ├── components/         # Reusable UI (MapPicker, Calendar, etc)
+│   └── auth/               # AuthProvider, Protected routes
+├── db/migrations/          # 11 SQL migrations
+└── docs/                   # Legacy design docs (outdated)
+```
 
-## Infrastructure (`infra/`)
-- Root `.dockerignore` plus Dockerfiles for backend and frontend (production builds with TypeScript compilation/Next build).
-- `cloudbuild.yaml` builds/pushes images to Artifact Registry and includes a migration placeholder step for future Cloud SQL wiring.
-- Terraform modules under `infra/terraform` provision Artifact Registry, Cloud SQL Postgres, Secret Manager, Cloud Storage, and Cloud Run services with IAM bindings. Variables cover auth config, image tags, and networking.
-- `infra/README.md` documents apply steps, environment promotion, and remaining wiring for migrations/secrets.
+## Backend Architecture
 
-## Local development flow
-1. Install dependencies in `backend/` and `frontend/` and apply `db/migrations` via `npm run migrate` in `backend` (Postgres env vars required).
-2. Start backend with `npm run dev` (configure auth emulator or Google Identity settings as needed). API listens on `http://localhost:3001`.
-3. Start frontend with `npm run dev` in `frontend` (listens on `http://localhost:3000`).
-4. Authenticate via `/login`, then browse role-guarded dashboards or call the availability/booking endpoints; mocked UI panels remain for data not yet exposed via APIs.
+- **Express 5** with TypeScript
+- **JWT Authentication** (local password + Google Identity)
+- **Multi-tenant** - all data scoped by `driving_school_id`
+- **Role-based access** - SUPERADMIN, SCHOOL_ADMIN, DRIVER, STUDENT
 
-## Notable gaps / future work
-- Frontend dashboards still use mocked data for drivers/students/bookings; wire full CRUD to backend APIs.
-- Deployment pipeline needs project-specific values, database migration wiring in Cloud Build, and environment secrets before production cutover.
-- Additional test coverage is needed for booking/availability edge cases and UI flows.
+### Key Services
+
+| Service | Purpose |
+|---------|---------|
+| `availability.ts` | Travel-aware slot computation with Google Maps |
+| `email.ts` | Resend integration for booking notifications |
+| `travelProvider.ts` | Google Maps distance/time API |
+
+## Frontend Architecture
+
+- **Next.js 16** with App Router
+- **TailwindCSS** for styling
+- **Google Maps** integration (MapPicker, MapViewer components)
+- **Role-protected routes** via AuthProvider
+
+### Pages & Features
+
+| Page | Features |
+|------|----------|
+| `/admin` | Driver/student management, invitations, settings, licence review |
+| `/driver` | Availability, service center, working hours, student profile viewer |
+| `/student` | Profile, addresses, licence upload, booking flow |
+| `/register` | Phone (required), age selection, guardian info for minors |
+
+## Database Schema
+
+11 migrations covering:
+- Users & authentication
+- Driving schools (multi-tenant)
+- Driver profiles (service center, radius, working hours)
+- Student profiles (phone, isMinor, guardian info)
+- Addresses with GPS coordinates
+- Bookings with status tracking
+- Availability slots & holidays
+- School settings (caps, policies)
+
+## Email Notifications
+
+Via **Resend API**:
+- ✅ Booking confirmation (with physical license reminder!)
+- ✅ Booking cancellation
+- ✅ Driver notification on new booking
+- ✅ Invitation emails
+
+## What's NOT Implemented
+
+- SMS notifications
+- Password reset flow
+- E2E test automation
+- GCP deployment (using Vercel/Railway instead)

@@ -1,112 +1,97 @@
-# artinbk
+# artinbk - Driving School Booking Platform
 
-artinbk is a multi-tenant driving school platform. It is built as a Node.js/TypeScript backend (Express) with a Postgres database and migration set, plus a Next.js/TypeScript frontend. The target deployment is Google Cloud (Cloud Run + Cloud SQL + Cloud Storage).
+**Status: Production Ready (January 2026)**
 
-This repository now ships with a working local development environment backed by Postgres, authentication middleware (Google Identity Platform–compatible with an emulator for local use), and booking/availability logic that enforces service-radius and lead-time rules. The `/docs` folder continues to capture the broader product vision and deployment targets.
+artinbk is a multi-tenant driving school platform deployed on:
+- **Frontend**: Vercel (https://artinbooking.vercel.app)
+- **Backend**: Railway (Node.js/Express)
+- **Database**: Railway PostgreSQL
+- **Email**: Resend API
 
-## 1. Read this first (onboarding order)
+## Current Production Status
 
-After cloning the repo, read documents in this order:
+| Feature | Status |
+|---------|--------|
+| Multi-tenant architecture | ✅ Complete |
+| User roles (Superadmin, Admin, Driver, Student) | ✅ Complete |
+| JWT authentication (Google + local password) | ✅ Complete |
+| Invitation-based registration | ✅ Complete |
+| Admin dashboard (full CRUD) | ✅ Complete |
+| Driver portal (availability, service center, student view) | ✅ Complete |
+| Student portal (profile, addresses, licence upload, booking) | ✅ Complete |
+| Booking system (travel-aware, service radius) | ✅ Complete |
+| Email notifications (confirmation, cancellation, driver alerts) | ✅ Complete |
+| Student phone + minor/guardian support | ✅ Complete |
+| Physical license reminder in emails | ✅ Complete |
 
-1. `ARCHITECTURE.md`  
-   Current high-level architecture and what is already implemented locally.
+## Tech Stack
 
-2. `docs/requirements.md`  
-   Product goals, roles, and key functional requirements.
+- **Backend**: Express 5, TypeScript, pg, Resend (email)
+- **Frontend**: Next.js 16, React, TypeScript, TailwindCSS
+- **Database**: PostgreSQL with 11 migrations
+- **Auth**: JWT (local password + Google Identity)
+- **Maps**: Google Maps API
 
-3. `docs/domain-model.md`  
-   Main entities (schools, users, drivers, students, bookings, availability, settings) and how they relate.
+## Quick Start (Local Development)
 
-4. `docs/availability-engine.md`  
-   Target behaviour of the travel and availability logic.
+```bash
+# Backend
+cd backend
+npm install
+npm run dev  # http://localhost:3001
 
-5. `docs/gcp-architecture.md`
-   Target Google Cloud deployment model and environments.
+# Frontend  
+cd frontend
+npm install
+npm run dev  # http://localhost:3000
+```
 
-For a turnkey path to GCP, follow `docs/gcp-launch-guide.md`, which pairs an automation script with manual validation steps.
+## File Structure
 
-These documents define what the final application must do and how it is expected to be deployed.
+```
+artinbk-main/
+├── backend/
+│   └── src/
+│       ├── app.ts           # Express routes
+│       ├── models.ts        # TypeScript types
+│       ├── repositories/    # Database access
+│       └── services/        # Business logic (email, availability)
+├── frontend/
+│   └── src/app/
+│       ├── admin/page.tsx   # Admin portal
+│       ├── driver/page.tsx  # Driver portal
+│       ├── student/page.tsx # Student portal
+│       ├── register/page.tsx # Registration with guardian fields
+│       └── login/page.tsx   # Login
+├── db/
+│   └── migrations/          # SQL migrations (0001-0011)
+└── docs/                    # Legacy design docs
+```
 
-## 2. Local development – quick start
+## Environment Variables
 
-For a step-by-step setup (Postgres via Docker, migrations, auth emulator, and JWT helper), see [`docs/local-launch.md`](docs/local-launch.md).
+### Backend (Railway)
+```
+DATABASE_URL=postgresql://...
+JWT_SECRET=your-secret
+FRONTEND_URL=https://artinbooking.vercel.app
+RESEND_API_KEY=your-resend-key
+GOOGLE_MAPS_API_KEY=your-maps-key
+```
 
-Prerequisites:
+### Frontend (Vercel)
+```
+NEXT_PUBLIC_BACKEND_URL=https://backend.railway.app
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your-maps-key
+```
 
-- Git
-- Node.js 22.x and npm
-- A running Postgres instance (set `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE` as needed)
-- Docker (optional) for integration tests
+## Deployment
 
-Steps:
+Frontend auto-deploys via Vercel on push to `master`.
+Backend auto-deploys via Railway on push to `master`.
 
-1. Clone the repository from GitHub.
-2. Install dependencies for backend and frontend:
-
-   ```bash
-   cd backend
-   npm install
-
-   cd ../frontend
-   npm install
-   ```
-
-3. Apply the database migrations from `db/migrations` using the backend script (defaults to Postgres on `localhost:5432`):
-
-   ```bash
-   cd ../backend
-   npm run migrate
-   ```
-
-   The migration utility reads standard Postgres environment variables. See `backend/README.md` and `db/README.md` for configuration details.
-
-4. Run the backend (set auth emulator vars for quick local calls or configure Google Identity Platform env vars as in `backend/README.md`):
-
-   ```bash
-   npm run dev
-   ```
-
-   The backend listens on http://localhost:3001 and currently exposes authenticated JSON APIs for schools, drivers, addresses, availability, and bookings. Highlights:
-
-   - `GET /health` – health check
-   - `GET /hello` – test endpoint
-   - `GET /schools` – returns driving school rows from Postgres via the migration-defined schema
-   - `GET /schools/:schoolId/drivers/:driverId/available-slots?date=YYYY-MM-DD&pickupAddressId=...&dropoffAddressId=...` – computes 15-minute slots using working hours/overrides, travel time, service-radius limits, lead-time rules, and daily caps
-   - `POST /schools/:schoolId/bookings` – validates service radius, licence status, and lead-time policy before creating a booking
-
-5. In a second terminal, run the frontend:
-
-   ```bash
-   cd ../frontend
-   npm run dev
-   ```
-
-   The frontend listens on http://localhost:3000 and includes:
-
-   - A `/login` screen that accepts Google Identity Platform tokens or locally issued JWTs
-   - Protected dashboards for admins (`/admin`), drivers (`/driver`), and students (`/student`)
-   - A bookings workspace (`/bookings`) that queries availability/booking APIs when reachable and falls back to mocked data when offline
-
-## 3. Current scope vs. future work
-
-Implemented:
-
-- Mono-repo layout with `db/`, `backend/`, `frontend/`
-- Postgres schema and migrations under `db/migrations`
-- Express backend with CORS enabled, Postgres client, authentication middleware (Google Identity Platform-compatible with a local emulator), and JSON endpoints backed by the database
-- Booking and availability workflows that enforce licence status, service-radius rules, travel-time feasibility (Google Maps provider with haversine fallback), lead-time cutoffs, and driver daily booking caps
-- Integration tests that spin up Postgres, apply migrations, and validate the `/schools` endpoint
-- Next.js frontend with role-aware dashboards (`/admin`, `/driver`, `/student`), a bookings workspace, and a `/login` screen that supports Google Identity Platform tokens or locally issued JWTs
-- Documentation describing requirements, domain, availability logic, and target GCP architecture
-
-Not implemented yet (high level):
-
-- Read/write UI for the new dashboards and booking pages. The current screens are read-only and expect backend APIs to be online; creating or updating schools, drivers, students, addresses, and bookings still needs form flows and mutation handlers.
-- Frontend test coverage. Add component/e2e tests for login, role-guarded navigation, availability search, booking creation/cancellation, and roster updates.
-- Production deployment cutover. Dockerfiles, Cloud Build, and Terraform scaffolding exist under `backend/`, `frontend/`, `cloudbuild.yaml`, and `infra/terraform`, but they still need project-specific wiring, secret values, and CI/CD automation before use, plus post-deploy smoke tests.
-- Backend-powered CRUD on the new dashboards and booking pages (currently backed by mocked data when APIs are unavailable)
-- Production deployment cutover (Dockerfiles, Cloud Build, and Terraform scaffolding now exist under `backend/`, `frontend/`, `cloudbuild.yaml`, and `infra/terraform`, but they still need project-specific wiring, secret values, and CI/CD automation before use)
-- Full frontend experiences beyond the `/schools` list (e.g., dashboards, booking flows)
-- Docker, Terraform, Cloud Build, and deployment to GCP
-
-Refer to the documents under `docs/` for the intended end state before starting major implementation work.
+## NOT Implemented (Optional/Future)
+- SMS notifications (Twilio)
+- Password reset flow
+- E2E test coverage
+- Lesson reminder emails (day before)
