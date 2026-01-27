@@ -497,6 +497,75 @@ export default function DriverPage() {
             {actionMessage ? <p className="text-[11px] text-emerald-600 font-medium">{actionMessage}</p> : null}
           </div>
 
+          {/* Today's Schedule - Prominent at the top */}
+          {upcomingLessons.length > 0 && (
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 shadow-sm">
+              <h2 className="text-lg font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                🚗 Today's Schedule
+                <span className="text-xs font-normal bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                  {upcomingLessons.filter(l => {
+                    const lessonDate = new Date(l.rawStartTime).toDateString();
+                    const today = new Date().toDateString();
+                    return lessonDate === today;
+                  }).length} lesson(s) today
+                </span>
+              </h2>
+              <div className="space-y-3">
+                {upcomingLessons
+                  .filter(l => {
+                    const lessonDate = new Date(l.rawStartTime).toDateString();
+                    const today = new Date().toDateString();
+                    return lessonDate === today;
+                  })
+                  .sort((a, b) => new Date(a.rawStartTime).getTime() - new Date(b.rawStartTime).getTime())
+                  .map((lesson) => (
+                    <div key={`today-${lesson.id}`} className="bg-white rounded-lg p-3 border border-blue-100 shadow-sm">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-lg font-semibold text-slate-900">
+                              {new Date(lesson.rawStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${lesson.status === 'scheduled' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'
+                              }`}>
+                              {lesson.status}
+                            </span>
+                          </div>
+                          <p className="font-medium text-slate-800">{lesson.student}</p>
+                          {lesson.pickupAddress && (
+                            <p className="text-xs text-slate-600 mt-1">
+                              📍 Pickup: {lesson.pickupAddress}
+                            </p>
+                          )}
+                          {lesson.dropoffAddress && lesson.dropoffAddress !== lesson.pickupAddress && (
+                            <p className="text-xs text-slate-600">
+                              🏁 Dropoff: {lesson.dropoffAddress}
+                            </p>
+                          )}
+                        </div>
+                        <AddToCalendarButton
+                          event={createDriverLessonEvent(
+                            lesson.student,
+                            new Date(lesson.rawStartTime),
+                            new Date(new Date(lesson.rawStartTime).getTime() + 90 * 60 * 1000),
+                            lesson.pickupAddress,
+                            lesson.dropoffAddress,
+                          )}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                {upcomingLessons.filter(l => {
+                  const lessonDate = new Date(l.rawStartTime).toDateString();
+                  const today = new Date().toDateString();
+                  return lessonDate === today;
+                }).length === 0 && (
+                    <p className="text-sm text-slate-600 text-center py-2">No lessons scheduled for today.</p>
+                  )}
+              </div>
+            </div>
+          )}
+
           {/* Tab Navigation - scrollable on mobile */}
           <div className="overflow-x-auto -mx-2 px-2 pb-1">
             <div className="flex gap-1 p-1 bg-slate-100 rounded-lg w-fit min-w-full sm:min-w-0">
@@ -659,6 +728,12 @@ export default function DriverPage() {
                             <p className="font-medium">{lesson.time}</p>
                             <p className="text-xs text-slate-700">{lesson.status}</p>
                             <p className="text-[11px] text-slate-700">Student: {lesson.student}</p>
+                            {lesson.pickupAddress && (
+                              <p className="text-[11px] text-blue-600">📍 Pickup: {lesson.pickupAddress}</p>
+                            )}
+                            {lesson.dropoffAddress && lesson.dropoffAddress !== lesson.pickupAddress && (
+                              <p className="text-[11px] text-green-600">🏁 Dropoff: {lesson.dropoffAddress}</p>
+                            )}
                           </div>
                         </div>
                         <div className="flex flex-wrap gap-2 text-xs items-center">
