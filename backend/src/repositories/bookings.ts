@@ -212,3 +212,35 @@ export async function cancelBooking(
   if (result.rowCount === 0) return null;
   return mapBooking(result.rows[0]);
 }
+
+/**
+ * Get bookings that need reminder emails sent
+ * Finds scheduled bookings starting in 23-25 hours that haven't received a reminder yet
+ */
+export async function getBookingsForReminder(): Promise<BookingRow[]> {
+  const now = new Date();
+  const in23Hours = new Date(now.getTime() + 23 * 60 * 60 * 1000);
+  const in25Hours = new Date(now.getTime() + 25 * 60 * 60 * 1000);
+
+  const result = await getPool().query<BookingRow>(
+    `SELECT * FROM bookings
+     WHERE status = 'scheduled'
+       AND reminder_sent_at IS NULL
+       AND start_time >= $1
+       AND start_time <= $2
+     ORDER BY start_time ASC`,
+    [in23Hours.toISOString(), in25Hours.toISOString()],
+  );
+
+  return result.rows;
+}
+
+/**
+ * Mark a booking as having had its reminder sent
+ */
+export async function markReminderSent(bookingId: number): Promise<void> {
+  await getPool().query(
+    `UPDATE bookings SET reminder_sent_at = NOW() WHERE id = $1`,
+    [bookingId],
+  );
+}

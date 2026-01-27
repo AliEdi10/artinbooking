@@ -266,3 +266,126 @@ export async function sendDriverBookingNotification(
   }
 }
 
+// Lesson reminder email types
+export interface LessonReminderEmailParams {
+  to: string;
+  recipientName: string;
+  studentName: string;
+  driverName: string;
+  schoolName: string;
+  lessonDate: string;
+  lessonTime: string;
+  pickupAddress: string;
+}
+
+/**
+ * Send a lesson reminder email to a student (24 hours before)
+ */
+export async function sendStudentLessonReminderEmail(params: LessonReminderEmailParams): Promise<void> {
+  const { to, recipientName, driverName, schoolName, lessonDate, lessonTime, pickupAddress } = params;
+
+  if (!process.env.RESEND_API_KEY) {
+    console.error('RESEND_API_KEY is not set! Student reminder email will not be sent.');
+    return;
+  }
+
+  console.log(`Sending student lesson reminder email to ${to}...`);
+
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject: `⏰ Reminder: Driving Lesson Tomorrow at ${lessonTime}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #1e40af;">⏰ Lesson Reminder</h2>
+          <p>Hi ${recipientName},</p>
+          <p>This is a friendly reminder that you have a driving lesson scheduled for <strong>tomorrow</strong>!</p>
+          
+          <div style="background-color: #eff6ff; border: 1px solid #93c5fd; border-radius: 8px; padding: 16px; margin: 20px 0;">
+            <h3 style="margin: 0 0 12px 0; color: #1e40af;">📅 Lesson Details</h3>
+            <p style="margin: 4px 0;"><strong>Date:</strong> ${lessonDate}</p>
+            <p style="margin: 4px 0;"><strong>Time:</strong> ${lessonTime}</p>
+            <p style="margin: 4px 0;"><strong>Instructor:</strong> ${driverName}</p>
+            <p style="margin: 4px 0;"><strong>Pickup Location:</strong> ${pickupAddress}</p>
+          </div>
+          
+          <div style="background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 16px; margin: 20px 0;">
+            <h3 style="margin: 0 0 8px 0; color: #dc2626;">⚠️ IMPORTANT REMINDER</h3>
+            <p style="margin: 0; font-weight: bold; color: #991b1b;">
+              Please bring your PHYSICAL driver's license (learner's permit) to your lesson.
+            </p>
+            <p style="margin: 8px 0 0 0; color: #991b1b;">
+              A digital copy or photo is <strong>NOT acceptable</strong>. Without your physical license, 
+              your lesson will be cancelled.
+            </p>
+          </div>
+          
+          <p style="color: #6b7280; font-size: 14px;">
+            Need to cancel or reschedule? Log in to your account at 
+            <a href="${FRONTEND_URL}">${FRONTEND_URL}</a>
+          </p>
+          
+          <p style="color: #6b7280; font-size: 12px; margin-top: 32px;">
+            See you tomorrow! 🚗<br>
+            - ${schoolName}
+          </p>
+        </div>
+      `,
+    });
+    console.log(`Student lesson reminder email sent to ${to}`);
+  } catch (error) {
+    console.error('Failed to send student lesson reminder email:', error);
+    // Don't throw - email failure shouldn't crash the scheduler
+  }
+}
+
+/**
+ * Send a lesson reminder email to a driver/instructor (24 hours before)
+ */
+export async function sendDriverLessonReminderEmail(params: LessonReminderEmailParams): Promise<void> {
+  const { to, recipientName, studentName, schoolName, lessonDate, lessonTime, pickupAddress } = params;
+
+  if (!process.env.RESEND_API_KEY) {
+    console.error('RESEND_API_KEY is not set! Driver reminder email will not be sent.');
+    return;
+  }
+
+  console.log(`Sending driver lesson reminder email to ${to}...`);
+
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject: `⏰ Reminder: Lesson Tomorrow with ${studentName} at ${lessonTime}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #1e40af;">⏰ Lesson Reminder</h2>
+          <p>Hi ${recipientName},</p>
+          <p>This is a reminder that you have a lesson scheduled for <strong>tomorrow</strong>.</p>
+          
+          <div style="background-color: #eff6ff; border: 1px solid #93c5fd; border-radius: 8px; padding: 16px; margin: 20px 0;">
+            <h3 style="margin: 0 0 12px 0; color: #1e40af;">📅 Lesson Details</h3>
+            <p style="margin: 4px 0;"><strong>Student:</strong> ${studentName}</p>
+            <p style="margin: 4px 0;"><strong>Date:</strong> ${lessonDate}</p>
+            <p style="margin: 4px 0;"><strong>Time:</strong> ${lessonTime}</p>
+            <p style="margin: 4px 0;"><strong>Pickup Location:</strong> ${pickupAddress}</p>
+          </div>
+          
+          <p style="color: #6b7280; font-size: 14px;">
+            View your full schedule at 
+            <a href="${FRONTEND_URL}/driver">${FRONTEND_URL}/driver</a>
+          </p>
+          
+          <p style="color: #6b7280; font-size: 12px; margin-top: 32px;">
+            - ${schoolName}
+          </p>
+        </div>
+      `,
+    });
+    console.log(`Driver lesson reminder email sent to ${to}`);
+  } catch (error) {
+    console.error('Failed to send driver lesson reminder email:', error);
+    // Don't throw - email failure shouldn't crash the scheduler
+  }
+}

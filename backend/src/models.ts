@@ -312,6 +312,7 @@ export interface BookingRow {
   price_amount: string | null;
   notes: string | null;
   cancelled_at: Date | null;
+  reminder_sent_at: Date | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -330,6 +331,7 @@ export interface Booking {
   priceAmount: string | null;
   notes: string | null;
   cancelledAt: Date | null;
+  reminderSentAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -348,6 +350,7 @@ export const mapBooking = (row: BookingRow): Booking => ({
   priceAmount: row.price_amount,
   notes: row.notes,
   cancelledAt: row.cancelled_at,
+  reminderSentAt: row.reminder_sent_at,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });

@@ -47,64 +47,34 @@ Allow users to reset their password if they forget it. The email infrastructure 
 
 **Priority:** 🟡 MEDIUM  
 **Estimated Time:** 2-3 hours  
-**Status:** ⬜ Not Started
+**Status:** ✅ COMPLETED (January 27, 2026)
 
 ### Description
 Send email reminders to students and drivers 24 hours before scheduled lessons.
 
-### Files to Create/Modify
+### Files Created/Modified
 
 | File | Action | Description |
 |------|--------|-------------|
-| `backend/src/services/email.ts` | Modify | Add `sendLessonReminderEmail()` function |
-| `backend/src/services/reminderScheduler.ts` | Create | Job to find and send reminders |
-| `backend/src/repositories/bookings.ts` | Modify | Add `getBookingsForReminder()` query |
-| `db/migrations/0013_add_reminder_sent_flag.sql` | Create | Track which reminders sent |
-| `backend/src/index.ts` | Modify | Schedule the reminder job |
+| `backend/src/services/email.ts` | Modified | Added `sendStudentLessonReminderEmail()` and `sendDriverLessonReminderEmail()` |
+| `backend/src/services/reminderScheduler.ts` | Created | Scheduler job that runs every 15 minutes |
+| `backend/src/repositories/bookings.ts` | Modified | Added `getBookingsForReminder()` and `markReminderSent()` |
+| `backend/src/models.ts` | Modified | Added `reminderSentAt` field to Booking interface |
+| `db/migrations/0013_add_reminder_sent_flag.sql` | Created | Added `reminder_sent_at` column with partial index |
+| `backend/src/index.ts` | Modified | Starts scheduler in production or when enabled |
 
-### Implementation Steps
-
-#### Step 2.1: Add Database Column
-```sql
--- db/migrations/0013_add_reminder_sent_flag.sql
-ALTER TABLE bookings ADD COLUMN reminder_sent_at TIMESTAMP;
-CREATE INDEX idx_bookings_reminder ON bookings(start_time, reminder_sent_at) 
-  WHERE status = 'scheduled' AND reminder_sent_at IS NULL;
-```
-
-#### Step 2.2: Add Query Function
-```typescript
-// Find bookings starting in 24-25 hours that haven't had reminder sent
-async function getBookingsForReminder(): Promise<Booking[]>
-```
-
-#### Step 2.3: Create Reminder Email Template
-```typescript
-sendLessonReminderEmail({
-  to: string,
-  studentName: string,
-  driverName: string,
-  lessonDate: string,
-  lessonTime: string,
-  pickupAddress: string,
-  schoolName: string,
-})
-```
-
-#### Step 2.4: Create Scheduler
-- Run every 15 minutes via `setInterval` or external cron
-- Find upcoming bookings (24 hours ahead)
-- Send reminder to student
-- Send reminder to driver
-- Mark `reminder_sent_at` timestamp
+### Configuration
+The scheduler is controlled by environment variables:
+- **Production**: Automatically enabled when `NODE_ENV=production`  
+- **Development**: Set `ENABLE_REMINDER_SCHEDULER=true` to enable
 
 ### Acceptance Criteria
-- [ ] Reminders sent ~24 hours before lesson
-- [ ] Both student and driver receive reminders
-- [ ] Reminders not sent for cancelled bookings
-- [ ] Each booking only gets one reminder
-- [ ] Email includes lesson details and pickup address
-- [ ] Include "Remember to bring your physical licence" for students
+- [x] Reminders sent ~24 hours before lesson (23-25 hour window)
+- [x] Both student and driver receive reminders
+- [x] Reminders not sent for cancelled bookings (only 'scheduled' status)
+- [x] Each booking only gets one reminder (tracked via `reminder_sent_at`)
+- [x] Email includes lesson details and pickup address
+- [x] Include "Remember to bring your physical licence" for students
 
 ---
 
@@ -262,14 +232,14 @@ Add OpenAPI/Swagger documentation for API endpoints.
 | Order | Task | Priority | Status |
 |-------|------|----------|--------|
 | 1 | [Task 1] Password Reset Flow | 🟡 HIGH | ✅ Complete |
-| 2 | [Task 2] Lesson Reminder Emails | 🟡 MEDIUM | ⬜ Not Started |
+| 2 | [Task 2] Lesson Reminder Emails | 🟡 MEDIUM | ✅ Complete |
 | 3 | [Task 3] Mobile Responsiveness Audit | 🟢 LOW | ⬜ Not Started |
 | 4 | [Task 4] Error Handling Improvements | 🟢 LOW | ⬜ Not Started |
 | 5 | [Task 5] Loading State Improvements | 🟢 LOW | ⬜ Not Started |
 | 6 | [Task 6] SMS Notifications | 🔵 OPTIONAL | ⬜ Not Started |
 | 7 | [Task 7] API Documentation | 🔵 OPTIONAL | ⬜ Not Started |
 
-**Total Estimated Time:** 6-8 hours remaining (required) + 5-7 hours (optional)
+**Total Estimated Time:** 4-6 hours remaining (required) + 5-7 hours (optional)
 
 ---
 
@@ -277,7 +247,7 @@ Add OpenAPI/Swagger documentation for API endpoints.
 
 ### Required Tasks
 - [x] Task 1: Password Reset Flow ✅
-- [ ] Task 2: Lesson Reminder Emails
+- [x] Task 2: Lesson Reminder Emails ✅
 - [ ] Task 3: Mobile Responsiveness Audit
 - [ ] Task 4: Error Handling Improvements
 - [ ] Task 5: Loading State Improvements
@@ -290,7 +260,6 @@ Add OpenAPI/Swagger documentation for API endpoints.
 
 ## 🚀 Next Steps
 
-**Task 1 is complete!** The next task is **Task 2: Lesson Reminder Emails**.
+**Tasks 1 & 2 are complete!** The next task is **Task 3: Mobile Responsiveness Audit**.
 
-**Command to continue:** Tell me "Let's start Task 2" and I'll begin implementation.
-
+**Command to continue:** Tell me "Let's start Task 3" and I'll begin implementation.
