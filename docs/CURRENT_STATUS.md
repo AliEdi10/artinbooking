@@ -49,12 +49,19 @@ All the other docs in this folder are **OUTDATED** from the original planning ph
 
 ---
 
-## ❌ NOT IMPLEMENTED (Optional/Future)
+## ❌ NOT IMPLEMENTED (Planned)
 
-- SMS notifications (Twilio)
-- Password reset flow  
-- E2E test automation
-- Lesson reminder emails (day before)
+**See: [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md) for detailed tasks**
+
+| Feature | Priority | Status |
+|---------|----------|--------|
+| Password reset flow | 🟡 HIGH | Planned |
+| Lesson reminder emails | 🟡 MEDIUM | Planned |
+| Mobile responsiveness audit | 🟢 LOW | Planned |
+| Error handling improvements | 🟢 LOW | Planned |
+| Loading state improvements | 🟢 LOW | Planned |
+| SMS notifications (Twilio) | 🔵 OPTIONAL | Not started |
+| API documentation | 🔵 OPTIONAL | Not started |
 
 ---
 
