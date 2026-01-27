@@ -1,0 +1,1205 @@
+openapi: 3.0.3
+info:
+  title: Artinbk Driving School API
+  version: 1.0.0
+  description: |
+    REST API for the Artinbk driving school booking platform.
+    
+    ## Authentication
+    All endpoints (except public auth endpoints) require a Bearer token in the Authorization header.
+    
+    ## Roles
+    - **SUPERADMIN**: Full access to all schools and system settings
+    - **SCHOOL_ADMIN**: Full access to their school's data
+    - **DRIVER**: Access to their schedule and assigned students
+    - **STUDENT**: Access to their profile and bookings
+
+servers:
+  - url: http://localhost:3001
+    description: Local development server
+  - url: https://your-production-url.railway.app
+    description: Production server
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Authentication
+    description: User authentication and registration
+  - name: Schools
+    description: Driving school management
+  - name: Invitations
+    description: User invitation management
+  - name: Drivers
+    description: Driver/instructor management
+  - name: Students
+    description: Student management
+  - name: Addresses
+    description: Student address management
+  - name: Availability
+    description: Driver availability management
+  - name: Bookings
+    description: Lesson booking management
+  - name: Settings
+    description: School settings management
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token issued by /auth/login or /auth/register
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+      example:
+        error: "Invalid request"
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [SUPERADMIN, SCHOOL_ADMIN, DRIVER, STUDENT]
+        drivingSchoolId:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT access token
+        user:
+          $ref: '#/components/schemas/User'
+
+    DrivingSchool:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        contactEmail:
+          type: string
+          format: email
+          nullable: true
+
+    Driver:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        fullName:
+          type: string
+        phoneNumber:
+          type: string
+          nullable: true
+        active:
+          type: boolean
+        serviceCenterLatitude:
+          type: number
+          nullable: true
+        serviceCenterLongitude:
+          type: number
+          nullable: true
+
+    Student:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        fullName:
+          type: string
+        phoneNumber:
+          type: string
+          nullable: true
+        dateOfBirth:
+          type: string
+          format: date
+          nullable: true
+        licenceStatus:
+          type: string
+          enum: [pending_review, approved, rejected]
+        licenceNumber:
+          type: string
+          nullable: true
+        licenceExpiryDate:
+          type: string
+          format: date
+          nullable: true
+        licenceProvinceOrState:
+          type: string
+          nullable: true
+        allowedHours:
+          type: number
+          nullable: true
+        maxLessonsPerDay:
+          type: integer
+          nullable: true
+        active:
+          type: boolean
+
+    Address:
+      type: object
+      properties:
+        id:
+          type: integer
+        studentProfileId:
+          type: integer
+        label:
+          type: string
+        line1:
+          type: string
+        city:
+          type: string
+        provinceOrState:
+          type: string
+        latitude:
+          type: number
+          nullable: true
+        longitude:
+          type: number
+          nullable: true
+        isDefaultPickup:
+          type: boolean
+        isDefaultDropoff:
+          type: boolean
+
+    Availability:
+      type: object
+      properties:
+        id:
+          type: integer
+        driverProfileId:
+          type: integer
+        dayOfWeek:
+          type: integer
+          minimum: 0
+          maximum: 6
+          description: "0=Sunday, 6=Saturday"
+        startTime:
+          type: string
+          pattern: "^([01]?[0-9]|2[0-3]):[0-5][0-9]$"
+          example: "09:00"
+        endTime:
+          type: string
+          pattern: "^([01]?[0-9]|2[0-3]):[0-5][0-9]$"
+          example: "17:00"
+        effectiveFrom:
+          type: string
+          format: date
+          nullable: true
+        effectiveUntil:
+          type: string
+          format: date
+          nullable: true
+
+    Booking:
+      type: object
+      properties:
+        id:
+          type: integer
+        driverId:
+          type: integer
+        studentId:
+          type: integer
+        pickupAddressId:
+          type: integer
+        dropoffAddressId:
+          type: integer
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [scheduled, in_progress, completed, cancelled_by_student, cancelled_by_driver, cancelled_by_admin]
+        createdAt:
+          type: string
+          format: date-time
+
+    SchoolSettings:
+      type: object
+      properties:
+        id:
+          type: integer
+        minBookingLeadTimeHours:
+          type: integer
+          nullable: true
+        cancellationCutoffHours:
+          type: integer
+          nullable: true
+        defaultLessonDurationMinutes:
+          type: integer
+          nullable: true
+        defaultBufferMinutesBetweenLessons:
+          type: integer
+          nullable: true
+        defaultServiceRadiusKm:
+          type: string
+          nullable: true
+        dailyBookingCapPerDriver:
+          type: integer
+          nullable: true
+        allowStudentToPickDriver:
+          type: boolean
+        allowDriverSelfAvailabilityEdit:
+          type: boolean
+
+    Invitation:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [DRIVER, STUDENT]
+        fullName:
+          type: string
+          nullable: true
+        expiresAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: OK
+
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register a new student account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, role, drivingSchoolId, fullName]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                role:
+                  type: string
+                  enum: [STUDENT]
+                drivingSchoolId:
+                  type: integer
+                fullName:
+                  type: string
+      responses:
+        '201':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid request or email already in use
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Login with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/forgot-password:
+    post:
+      tags: [Authentication]
+      summary: Request password reset email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: Reset email sent (always returns success for security)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /auth/reset-password:
+    post:
+      tags: [Authentication]
+      summary: Reset password with token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, password]
+              properties:
+                token:
+                  type: string
+                password:
+                  type: string
+                  minLength: 8
+      responses:
+        '200':
+          description: Password reset successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /schools:
+    get:
+      tags: [Schools]
+      summary: List driving schools
+      description: Superadmins see all schools, others see only their school
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of schools
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DrivingSchool'
+    post:
+      tags: [Schools]
+      summary: Create a new driving school (Superadmin only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                contactEmail:
+                  type: string
+                  format: email
+      responses:
+        '201':
+          description: School created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DrivingSchool'
+
+  /schools/{schoolId}/drivers:
+    get:
+      tags: [Drivers]
+      summary: List drivers for a school
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of drivers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Driver'
+    post:
+      tags: [Drivers]
+      summary: Create a driver profile
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, fullName]
+              properties:
+                userId:
+                  type: integer
+                fullName:
+                  type: string
+                phoneNumber:
+                  type: string
+      responses:
+        '201':
+          description: Driver created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Driver'
+
+  /schools/{schoolId}/drivers/{driverId}:
+    patch:
+      tags: [Drivers]
+      summary: Update driver profile
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: driverId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fullName:
+                  type: string
+                phoneNumber:
+                  type: string
+                active:
+                  type: boolean
+                serviceCenterLatitude:
+                  type: number
+                serviceCenterLongitude:
+                  type: number
+      responses:
+        '200':
+          description: Driver updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Driver'
+
+  /schools/{schoolId}/students:
+    get:
+      tags: [Students]
+      summary: List students for a school
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of students
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Student'
+    post:
+      tags: [Students]
+      summary: Create a student profile
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, fullName]
+              properties:
+                userId:
+                  type: integer
+                fullName:
+                  type: string
+                phoneNumber:
+                  type: string
+                dateOfBirth:
+                  type: string
+                  format: date
+      responses:
+        '201':
+          description: Student created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Student'
+
+  /schools/{schoolId}/students/{studentId}:
+    patch:
+      tags: [Students]
+      summary: Update student profile
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: studentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fullName:
+                  type: string
+                phoneNumber:
+                  type: string
+                licenceStatus:
+                  type: string
+                  enum: [pending_review, approved, rejected]
+                licenceNumber:
+                  type: string
+                licenceExpiryDate:
+                  type: string
+                  format: date
+                allowedHours:
+                  type: number
+                maxLessonsPerDay:
+                  type: integer
+      responses:
+        '200':
+          description: Student updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Student'
+
+  /schools/{schoolId}/students/{studentId}/usage:
+    get:
+      tags: [Students]
+      summary: Get student usage statistics
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: studentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Usage statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  usedHours:
+                    type: number
+                  allowedHours:
+                    type: number
+                    nullable: true
+                  todayBookings:
+                    type: integer
+                  maxLessonsPerDay:
+                    type: integer
+                    nullable: true
+
+  /schools/{schoolId}/students/{studentId}/addresses:
+    get:
+      tags: [Addresses]
+      summary: List addresses for a student
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: studentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of addresses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Address'
+    post:
+      tags: [Addresses]
+      summary: Add an address for a student
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: studentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [label, line1, city, provinceOrState]
+              properties:
+                label:
+                  type: string
+                line1:
+                  type: string
+                city:
+                  type: string
+                provinceOrState:
+                  type: string
+                latitude:
+                  type: number
+                longitude:
+                  type: number
+                isDefaultPickup:
+                  type: boolean
+                isDefaultDropoff:
+                  type: boolean
+      responses:
+        '201':
+          description: Address created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Address'
+
+  /schools/{schoolId}/drivers/{driverId}/availability:
+    get:
+      tags: [Availability]
+      summary: List availability for a driver
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: driverId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of availability slots
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Availability'
+    post:
+      tags: [Availability]
+      summary: Add availability for a driver
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: driverId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [dayOfWeek, startTime, endTime]
+              properties:
+                dayOfWeek:
+                  type: integer
+                  minimum: 0
+                  maximum: 6
+                startTime:
+                  type: string
+                  example: "09:00"
+                endTime:
+                  type: string
+                  example: "17:00"
+                effectiveFrom:
+                  type: string
+                  format: date
+                effectiveUntil:
+                  type: string
+                  format: date
+      responses:
+        '201':
+          description: Availability created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Availability'
+
+  /schools/{schoolId}/drivers/{driverId}/available-slots:
+    get:
+      tags: [Availability]
+      summary: Get available booking slots for a driver
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: driverId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: pickupAddressId
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: dropoffAddressId
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of available time slots
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  format: date-time
+
+  /schools/{schoolId}/bookings:
+    get:
+      tags: [Bookings]
+      summary: List bookings for a school
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [upcoming, past, all]
+        - name: driverId
+          in: query
+          schema:
+            type: integer
+        - name: studentId
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of bookings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Booking'
+    post:
+      tags: [Bookings]
+      summary: Create a new booking
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [driverId, studentId, pickupAddressId, dropoffAddressId, startTime]
+              properties:
+                driverId:
+                  type: integer
+                studentId:
+                  type: integer
+                pickupAddressId:
+                  type: integer
+                dropoffAddressId:
+                  type: integer
+                startTime:
+                  type: string
+                  format: date-time
+      responses:
+        '201':
+          description: Booking created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          description: Booking validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /schools/{schoolId}/bookings/{bookingId}:
+    get:
+      tags: [Bookings]
+      summary: Get booking details
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Booking details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+    patch:
+      tags: [Bookings]
+      summary: Update a booking
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                startTime:
+                  type: string
+                  format: date-time
+                driverId:
+                  type: integer
+      responses:
+        '200':
+          description: Booking updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+
+  /schools/{schoolId}/bookings/{bookingId}/cancel:
+    post:
+      tags: [Bookings]
+      summary: Cancel a booking
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reasonCode:
+                  type: string
+      responses:
+        '200':
+          description: Booking cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+
+  /schools/{schoolId}/settings:
+    get:
+      tags: [Settings]
+      summary: Get school settings
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: School settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchoolSettings'
+    put:
+      tags: [Settings]
+      summary: Update school settings
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SchoolSettings'
+      responses:
+        '200':
+          description: Settings updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchoolSettings'
+
+  /schools/{schoolId}/invitations:
+    post:
+      tags: [Invitations]
+      summary: Create an invitation for a driver or student
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, role]
+              properties:
+                email:
+                  type: string
+                  format: email
+                role:
+                  type: string
+                  enum: [DRIVER, STUDENT]
+                fullName:
+                  type: string
+                allowedHours:
+                  type: number
+                maxLessonsPerDay:
+                  type: integer
+      responses:
+        '201':
+          description: Invitation created and email sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invitation'
+
+  /schools/{schoolId}/invitations/pending:
+    get:
+      tags: [Invitations]
+      summary: List pending invitations
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of pending invitations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Invitation'
+
+  /schools/{schoolId}/invitations/{invitationId}/resend:
+    post:
+      tags: [Invitations]
+      summary: Resend invitation email
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: invitationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Invitation resent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
