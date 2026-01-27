@@ -7,6 +7,8 @@ import { AppShell } from '../components/AppShell';
 import { SummaryCard } from '../components/SummaryCard';
 import { MapPicker } from '../components/MapPicker';
 import { MapViewer } from '../components/MapViewer';
+import { AddToCalendarButton } from '../components/AddToCalendarButton';
+import { createStudentLessonEvent } from '../utils/calendar';
 import { useAuth } from '../auth/AuthProvider';
 import { apiFetch } from '../apiClient';
 
@@ -694,6 +696,13 @@ export default function StudentPage() {
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2 text-xs items-center">
+                    <AddToCalendarButton
+                      event={createStudentLessonEvent(
+                        drivers.find((d) => d.id === booking.driverId)?.fullName ?? 'Instructor',
+                        new Date(booking.startTime),
+                        new Date(new Date(booking.startTime).getTime() + 90 * 60 * 1000), // 90 min lesson
+                      )}
+                    />
                     <input
                       className="border rounded px-2 py-1"
                       type="datetime-local"
@@ -702,7 +711,7 @@ export default function StudentPage() {
                       placeholder="New start time"
                     />
                     <button
-                      className="px-3 py-1 rounded bg-white border border-slate-300 hover:bg-slate-100"
+                      className="px-3 py-1 rounded bg-white border border-slate-300 hover:bg-slate-100 min-h-[32px]"
                       type="button"
                       disabled={!reschedule[booking.id]}
                       onClick={() => rescheduleBooking(booking.id)}
@@ -716,7 +725,7 @@ export default function StudentPage() {
                       onChange={(e) => setCancelReason((prev) => ({ ...prev, [booking.id]: e.target.value }))}
                     />
                     <button
-                      className="px-3 py-1 rounded bg-red-600 text-white hover:bg-red-500"
+                      className="px-3 py-1 rounded bg-red-600 text-white hover:bg-red-500 min-h-[32px]"
                       type="button"
                       onClick={() => cancelBooking(booking.id)}
                     >

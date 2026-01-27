@@ -9,6 +9,8 @@ import { WeeklyCalendar } from '../components/WeeklyCalendar';
 import { MapViewer } from '../components/MapViewer';
 import { MapPicker } from '../components/MapPicker';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { AddToCalendarButton } from '../components/AddToCalendarButton';
+import { createDriverLessonEvent } from '../utils/calendar';
 import { useAuth } from '../auth/AuthProvider';
 import { apiFetch } from '../apiClient';
 
@@ -107,6 +109,7 @@ export default function DriverPage() {
 
   const upcomingLessons = driverState.bookings.map((booking) => ({
     time: new Date(booking.startTime).toLocaleString(),
+    rawStartTime: booking.startTime,
     status: booking.status,
     id: booking.id,
     student: driverState.students.find((student) => student.id === booking.studentId)?.fullName ?? 'Student',
@@ -554,6 +557,13 @@ export default function DriverPage() {
                           </div>
                         </div>
                         <div className="flex flex-wrap gap-2 text-xs items-center">
+                          <AddToCalendarButton
+                            event={createDriverLessonEvent(
+                              lesson.student,
+                              new Date(lesson.rawStartTime),
+                              new Date(new Date(lesson.rawStartTime).getTime() + 90 * 60 * 1000), // 90 min lesson
+                            )}
+                          />
                           <input
                             className="border rounded px-2 py-1"
                             type="datetime-local"
@@ -562,7 +572,7 @@ export default function DriverPage() {
                             placeholder="New start time"
                           />
                           <button
-                            className="px-3 py-1 rounded bg-white border border-slate-300 hover:bg-slate-100"
+                            className="px-3 py-1 rounded bg-white border border-slate-300 hover:bg-slate-100 min-h-[32px]"
                             onClick={() => updateBooking(lesson.id, reschedule[lesson.id])}
                             type="button"
                             disabled={!reschedule[lesson.id]}
@@ -576,14 +586,14 @@ export default function DriverPage() {
                             onChange={(e) => setCancelReason((prev) => ({ ...prev, [lesson.id]: e.target.value }))}
                           />
                           <button
-                            className="px-3 py-1 rounded bg-red-600 text-white hover:bg-red-500"
+                            className="px-3 py-1 rounded bg-red-600 text-white hover:bg-red-500 min-h-[32px]"
                             type="button"
                             onClick={() => setConfirmCancel({ bookingId: lesson.id, studentName: lesson.student })}
                           >
                             Cancel
                           </button>
                           <button
-                            className="px-3 py-1 rounded bg-green-600 text-white hover:bg-green-500"
+                            className="px-3 py-1 rounded bg-green-600 text-white hover:bg-green-500 min-h-[32px]"
                             type="button"
                             onClick={() => markCompleted(lesson.id)}
                           >
