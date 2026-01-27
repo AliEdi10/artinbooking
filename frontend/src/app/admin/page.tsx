@@ -559,7 +559,7 @@ export default function AdminPage() {
                           <p className="font-medium text-lg">{selectedStudent.fullName}</p>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                           <div>
                             <p className="text-slate-700">Licence Number</p>
                             <p className="font-medium">{selectedStudent.licenceNumber ?? 'Not provided'}</p>
@@ -617,7 +617,7 @@ export default function AdminPage() {
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="flex gap-2 pt-2">
+                        <div className="flex flex-col sm:flex-row gap-2 pt-2">
                           <button
                             onClick={() => updateLicenceStatus(selectedStudent.id, 'approved')}
                             className="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-lg px-4 py-2 text-sm font-medium"
@@ -672,7 +672,7 @@ export default function AdminPage() {
                   value={studentForm.fullName}
                   onChange={(e) => setStudentForm({ ...studentForm, fullName: e.target.value })}
                 />
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div>
                     <label className="text-xs text-slate-700">Allowed Hours</label>
                     <input
@@ -711,7 +711,7 @@ export default function AdminPage() {
               footer={loadingSettings ? 'Loading settings...' : error ?? 'Data comes from /schools/:id/settings'}
             >
               <form className="space-y-2 text-sm" onSubmit={handleUpdateSettings}>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <label className="text-xs text-slate-700">
                     Lead time (hrs)
                     <input
@@ -770,7 +770,7 @@ export default function AdminPage() {
                     />
                   </label>
                 </div>
-                <div className="flex items-center gap-3 text-xs text-slate-700">
+                <div className="flex flex-wrap items-center gap-3 text-xs text-slate-700">
                   <label className="flex items-center gap-1">
                     <input
                       type="checkbox"

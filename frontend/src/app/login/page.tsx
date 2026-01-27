@@ -218,7 +218,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loadingUser === 'password-login'}
-            className="w-full bg-blue-600 text-white rounded py-2 font-medium hover:bg-blue-700 disabled:opacity-50"
+            className="w-full bg-blue-600 text-white rounded py-3 min-h-[44px] font-medium hover:bg-blue-700 disabled:opacity-50"
           >
             {loadingUser === 'password-login' ? 'Signing in...' : 'Sign in'}
           </button>
@@ -231,14 +231,14 @@ export default function LoginPage() {
               <p className="text-sm font-medium text-emerald-800">🚀 Development Accounts</p>
               <p className="text-xs text-emerald-600">Click to login as any role (dev mode only)</p>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {DEV_USERS.map((user) => (
                 <button
                   key={user.email}
                   type="button"
                   onClick={() => handleDevLogin(user)}
                   disabled={loadingUser !== null}
-                  className={`text-sm font-medium text-white rounded py-2 px-3 ${user.color} disabled:opacity-50 disabled:cursor-not-allowed transition-colors`}
+                  className={`text-sm font-medium text-white rounded py-3 px-3 min-h-[44px] ${user.color} disabled:opacity-50 disabled:cursor-not-allowed transition-colors`}
                 >
                   {loadingUser === user.email ? 'Logging in...' : user.label}
                 </button>

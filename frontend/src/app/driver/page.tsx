@@ -389,40 +389,42 @@ export default function DriverPage() {
             {actionMessage ? <p className="text-[11px] text-emerald-600 font-medium">{actionMessage}</p> : null}
           </div>
 
-          {/* Tab Navigation */}
-          <div className="flex gap-1 p-1 bg-slate-100 rounded-lg w-fit">
-            <button
-              onClick={() => setActiveTab('overview')}
-              className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${activeTab === 'overview'
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                }`}
-            >
-              📊 Overview
-            </button>
-            <button
-              onClick={() => setActiveTab('schedule')}
-              className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${activeTab === 'schedule'
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                }`}
-            >
-              📅 My Schedule
-            </button>
-            <button
-              onClick={() => setActiveTab('students')}
-              className={`px-4 py-2 text-sm font-medium rounded-md transition-all flex items-center gap-1 ${activeTab === 'students'
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                }`}
-            >
-              👥 Students
-              {driverState.students.length > 0 && (
-                <span className="bg-blue-100 text-blue-700 text-xs px-1.5 py-0.5 rounded-full">
-                  {driverState.students.length}
-                </span>
-              )}
-            </button>
+          {/* Tab Navigation - scrollable on mobile */}
+          <div className="overflow-x-auto -mx-2 px-2 pb-1">
+            <div className="flex gap-1 p-1 bg-slate-100 rounded-lg w-fit min-w-full sm:min-w-0">
+              <button
+                onClick={() => setActiveTab('overview')}
+                className={`px-4 py-2.5 min-h-[44px] text-sm font-medium rounded-md transition-all whitespace-nowrap ${activeTab === 'overview'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  }`}
+              >
+                📊 Overview
+              </button>
+              <button
+                onClick={() => setActiveTab('schedule')}
+                className={`px-4 py-2.5 min-h-[44px] text-sm font-medium rounded-md transition-all whitespace-nowrap ${activeTab === 'schedule'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  }`}
+              >
+                📅 My Schedule
+              </button>
+              <button
+                onClick={() => setActiveTab('students')}
+                className={`px-4 py-2.5 min-h-[44px] text-sm font-medium rounded-md transition-all flex items-center gap-1 whitespace-nowrap ${activeTab === 'students'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  }`}
+              >
+                👥 Students
+                {driverState.students.length > 0 && (
+                  <span className="bg-blue-100 text-blue-700 text-xs px-1.5 py-0.5 rounded-full">
+                    {driverState.students.length}
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Overview Tab Content */}

@@ -202,7 +202,7 @@ function RegisterContent() {
 
                 {invitationInfo && (
                     <div className="bg-blue-50 rounded-lg p-4 mb-6">
-                        <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                             <div>
                                 <span className="text-slate-700">Email:</span>
                                 <p className="font-medium">{invitationInfo.email}</p>
@@ -264,7 +264,7 @@ function RegisterContent() {
                             {/* Age Selection */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-2">Are you 18 or older?</label>
-                                <div className="flex gap-4">
+                                <div className="flex flex-wrap gap-4">
                                     <label className="flex items-center gap-2 cursor-pointer">
                                         <input
                                             type="radio"
@@ -374,7 +374,7 @@ function RegisterContent() {
                     <button
                         type="submit"
                         disabled={submitting}
-                        className="w-full bg-blue-600 text-white rounded-lg px-4 py-3 font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full bg-blue-600 text-white rounded-lg px-4 py-3 min-h-[48px] font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {submitting ? 'Creating Account...' : 'Complete Registration'}
                     </button>

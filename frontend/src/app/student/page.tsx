@@ -325,7 +325,7 @@ export default function StudentPage() {
           {student && (student.allowedHours !== null || student.maxLessonsPerDay !== null) && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
               <h3 className="text-sm font-semibold text-blue-800 mb-2">📊 Your Booking Limits</h3>
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 {student.allowedHours !== null && (
                   <div>
                     <p className="text-slate-700">Hours Used</p>
@@ -552,7 +552,7 @@ export default function StudentPage() {
                       required
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
                       <label className="block text-xs text-slate-700 mb-1">Province/State</label>
                       <input
@@ -588,7 +588,7 @@ export default function StudentPage() {
               footer={status || 'Loaded from /drivers/:id/available-slots'}
             >
               <div className="space-y-2 text-sm">
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <select
                     className="border rounded px-2 py-1 text-slate-700"
                     value={slotQuery.driverId}
