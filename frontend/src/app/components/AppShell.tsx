@@ -9,7 +9,7 @@ const navItems = [
   { href: '/', label: 'Overview', roles: ['superadmin', 'school_admin', 'driver', 'student'] },
   { href: '/superadmin', label: '🔧 Superadmin', roles: ['superadmin'] },
   { href: '/admin', label: 'Admin', roles: ['superadmin', 'school_admin'] },
-  { href: '/driver', label: 'My Schedule', roles: ['driver'] },
+  { href: '/driver', label: 'Dashboard', roles: ['driver'] },
   { href: '/student', label: 'My Portal', roles: ['student'] },
   { href: '/bookings', label: 'Bookings', roles: ['superadmin', 'school_admin'] },
 ];

@@ -283,31 +283,82 @@ export default function DriverPage() {
       return;
     }
 
+    // Check for conflicts
+    const conflictDates: string[] = [];
+    const alreadyBlockedDates: string[] = [];
+    const checkDate = new Date(startDate);
+    while (checkDate <= endDate) {
+      const dateStr = checkDate.toISOString().slice(0, 10);
+
+      // Check if already blocked
+      if (driverState.availability.some(a => a.date === dateStr && a.type === 'override_closed')) {
+        alreadyBlockedDates.push(new Date(dateStr).toLocaleDateString());
+      }
+
+      // Check if has open slots
+      if (driverState.availability.some(a => a.date === dateStr && a.type === 'working_hours')) {
+        conflictDates.push(new Date(dateStr).toLocaleDateString());
+      }
+
+      checkDate.setDate(checkDate.getDate() + 1);
+    }
+
+    // Error if all dates are already blocked
+    if (alreadyBlockedDates.length === Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1) {
+      setActionMessage(`⚠️ All selected dates are already blocked: ${alreadyBlockedDates.join(', ')}`);
+      return;
+    }
+
     const dayCount = Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    setActionMessage(`Adding time off for ${dayCount} day(s)...`);
+
+    // Show warning but proceed if there are open slots that will be overridden
+    let warningMsg = '';
+    if (conflictDates.length > 0) {
+      warningMsg = ` (Note: This will block ${conflictDates.length} day(s) that had open availability)`;
+    }
+
+    setActionMessage(`Adding time off for ${dayCount} day(s)...${warningMsg}`);
 
     try {
       const currentDate = new Date(startDate);
       while (currentDate <= endDate) {
         const dateStr = currentDate.toISOString().slice(0, 10);
-        await apiFetch(`/schools/${schoolId}/drivers/${driverState.driver.id}/availability`, token, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            date: dateStr,
-            startTime: '00:00',
-            endTime: '23:59',
-            type: 'override_closed',
-          }),
-        });
+
+        // Skip if already blocked
+        if (!driverState.availability.some(a => a.date === dateStr && a.type === 'override_closed')) {
+          await apiFetch(`/schools/${schoolId}/drivers/${driverState.driver.id}/availability`, token, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              date: dateStr,
+              startTime: '00:00',
+              endTime: '23:59',
+              type: 'override_closed',
+            }),
+          });
+        }
         currentDate.setDate(currentDate.getDate() + 1);
       }
       setHolidayRange({ start: '', end: '' });
       await loadDriverContext();
-      setActionMessage(`Time off added for ${dayCount} day(s)!`);
+      setActionMessage(`Time off added for ${dayCount} day(s)!${warningMsg}`);
     } catch (err) {
       setActionMessage('Unable to add time off.');
     }
+  }
+
+  // Check if a date has existing working_hours availability
+  function hasOpenSlotOnDate(dateStr: string): boolean {
+    return driverState.availability.some(
+      a => a.date === dateStr && a.type === 'working_hours'
+    );
+  }
+
+  // Check if a date is already blocked
+  function hasBlockedSlotOnDate(dateStr: string): boolean {
+    return driverState.availability.some(
+      a => a.date === dateStr && a.type === 'override_closed'
+    );
   }
 
   async function removeHoliday(availabilityId: number) {
@@ -321,6 +372,20 @@ export default function DriverPage() {
       setActionMessage('Time off removed.');
     } catch (err) {
       setActionMessage('Unable to remove time off.');
+    }
+  }
+
+  async function removeAvailabilitySlot(availabilityId: number) {
+    if (!token || !schoolId || !driverState.driver) return;
+    setActionMessage('Removing availability slot...');
+    try {
+      await apiFetch(`/schools/${schoolId}/drivers/${driverState.driver.id}/availability/${availabilityId}`, token, {
+        method: 'DELETE',
+      });
+      await loadDriverContext();
+      setActionMessage('Availability slot removed.');
+    } catch (err) {
+      setActionMessage('Unable to remove availability slot.');
     }
   }
 
@@ -977,6 +1042,40 @@ export default function DriverPage() {
                     📆 Publish Availability
                   </button>
                 </form>
+
+                {/* List of published availability slots */}
+                <div className="mt-4 pt-4 border-t border-slate-200">
+                  <h4 className="text-sm font-medium text-slate-700 mb-2">
+                    📋 Published Availability ({driverState.availability.filter(a => a.type === 'working_hours').length} slot(s))
+                  </h4>
+                  <ul className="space-y-2 text-sm max-h-48 overflow-y-auto">
+                    {driverState.availability
+                      .filter(a => a.type === 'working_hours')
+                      .sort((a, b) => a.date.localeCompare(b.date))
+                      .map((slot) => (
+                        <li key={slot.id} className="flex justify-between items-center border rounded p-2 bg-green-50">
+                          <div>
+                            <span className="font-medium">{new Date(slot.date).toLocaleDateString()}</span>
+                            <span className="text-xs text-slate-600 ml-2">
+                              {slot.startTime} - {slot.endTime}
+                            </span>
+                            <span className="text-xs text-green-600 ml-2">✓ Available</span>
+                          </div>
+                          <button
+                            className="text-xs px-2 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200"
+                            onClick={() => removeAvailabilitySlot(slot.id)}
+                          >
+                            🗑️ Remove
+                          </button>
+                        </li>
+                      ))}
+                    {driverState.availability.filter(a => a.type === 'working_hours').length === 0 ? (
+                      <li className="text-xs text-slate-500 text-center py-2">
+                        No availability published yet. Use the form above to add availability.
+                      </li>
+                    ) : null}
+                  </ul>
+                </div>
               </SummaryCard>
               <SummaryCard
                 title="🏖️ Time Off / Holidays"
