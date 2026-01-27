@@ -1,7 +1,8 @@
 'use client';
 /* eslint-disable react-hooks/set-state-in-effect */
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { Suspense, useEffect, useMemo, useState } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Protected } from '../auth/Protected';
 import { AppShell } from '../components/AppShell';
 import { SummaryCard } from '../components/SummaryCard';
@@ -65,9 +66,20 @@ type DriverState = {
   students: StudentProfile[];
 };
 
+// Wrapper component with Suspense for useSearchParams
 export default function DriverPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <DriverPageContent />
+    </Suspense>
+  );
+}
+
+function DriverPageContent() {
   const { token, user } = useAuth();
   const schoolId = useMemo(() => user?.schoolId, [user?.schoolId]);
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
   const [driverState, setDriverState] = useState<DriverState>({
     driver: null,
@@ -102,8 +114,9 @@ export default function DriverPage() {
   const [workingHours, setWorkingHours] = useState<{ start: string; end: string }>({ start: '09:00', end: '17:00' });
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
-  // Tab navigation state
-  const [activeTab, setActiveTab] = useState<'overview' | 'schedule' | 'students'>('overview');
+  // Tab navigation - read from URL query param
+  const tabFromUrl = searchParams.get('tab') as 'overview' | 'schedule' | 'students' | null;
+  const activeTab = tabFromUrl || 'overview';
 
   const availabilitySummary = driverState.availability.map((slot) => ({
     day: new Date(slot.date).toLocaleDateString(),
@@ -570,7 +583,7 @@ export default function DriverPage() {
           <div className="overflow-x-auto -mx-2 px-2 pb-1">
             <div className="flex gap-1 p-1 bg-slate-100 rounded-lg w-fit min-w-full sm:min-w-0">
               <button
-                onClick={() => setActiveTab('overview')}
+                onClick={() => router.push('/driver')}
                 className={`px-4 py-2.5 min-h-[44px] text-sm font-medium rounded-md transition-all whitespace-nowrap ${activeTab === 'overview'
                   ? 'bg-white text-slate-900 shadow-sm'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
@@ -579,7 +592,7 @@ export default function DriverPage() {
                 📊 Overview
               </button>
               <button
-                onClick={() => setActiveTab('schedule')}
+                onClick={() => router.push('/driver?tab=schedule')}
                 className={`px-4 py-2.5 min-h-[44px] text-sm font-medium rounded-md transition-all whitespace-nowrap ${activeTab === 'schedule'
                   ? 'bg-white text-slate-900 shadow-sm'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
@@ -588,7 +601,7 @@ export default function DriverPage() {
                 📅 My Schedule
               </button>
               <button
-                onClick={() => setActiveTab('students')}
+                onClick={() => router.push('/driver?tab=students')}
                 className={`px-4 py-2.5 min-h-[44px] text-sm font-medium rounded-md transition-all flex items-center gap-1 whitespace-nowrap ${activeTab === 'students'
                   ? 'bg-white text-slate-900 shadow-sm'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'

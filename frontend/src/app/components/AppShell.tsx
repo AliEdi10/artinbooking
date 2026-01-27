@@ -5,12 +5,13 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '../auth/AuthProvider';
 
 // Define which roles can see each nav item
-// Note: Drivers don't see 'Overview' because their Dashboard has its own Overview tab
 const navItems = [
-  { href: '/', label: 'Overview', roles: ['superadmin', 'school_admin', 'student'] },
+  { href: '/', label: '🏠 Home', roles: ['superadmin', 'school_admin', 'driver', 'student'] },
   { href: '/superadmin', label: '🔧 Superadmin', roles: ['superadmin'] },
   { href: '/admin', label: 'Admin', roles: ['superadmin', 'school_admin'] },
-  { href: '/driver', label: 'Dashboard', roles: ['driver'] },
+  { href: '/driver', label: '📊 Dashboard', roles: ['driver'] },
+  { href: '/driver?tab=schedule', label: '📅 Schedule', roles: ['driver'] },
+  { href: '/driver?tab=students', label: '👥 Students', roles: ['driver'] },
   { href: '/student', label: 'My Portal', roles: ['student'] },
   { href: '/bookings', label: 'Bookings', roles: ['superadmin', 'school_admin'] },
 ];
@@ -51,7 +52,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <nav className="mx-auto max-w-6xl px-4 pb-3 overflow-x-auto">
           <div className="flex space-x-2 min-w-max">
             {getNavItemsForRole(user?.role).map((item) => {
-              const active = pathname === item.href;
+              // Handle active state for items with query params
+              const itemPath = item.href.split('?')[0];
+              const itemTab = item.href.includes('?tab=') ? item.href.split('?tab=')[1] : null;
+              const active = itemTab
+                ? pathname === itemPath && typeof window !== 'undefined' && window.location.search.includes(`tab=${itemTab}`)
+                : pathname === item.href;
               return (
                 <Link
                   key={item.href}
