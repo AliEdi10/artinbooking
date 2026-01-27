@@ -89,6 +89,9 @@ export default function DriverPage() {
   const [studentUsage, setStudentUsage] = useState<{ usedHours: number; allowedHours: number | null } | null>(null);
   const [studentAddresses, setStudentAddresses] = useState<StudentAddress[]>([]);
 
+  // All addresses lookup (for calendar events)
+  const [allAddresses, setAllAddresses] = useState<Map<number, StudentAddress>>(new Map());
+
   // Phase 4: Confirmation dialog state
   const [confirmCancel, setConfirmCancel] = useState<{ bookingId: number; studentName: string } | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
@@ -107,13 +110,28 @@ export default function DriverPage() {
     window: `${slot.startTime}–${slot.endTime}`,
   }));
 
-  const upcomingLessons = driverState.bookings.map((booking) => ({
-    time: new Date(booking.startTime).toLocaleString(),
-    rawStartTime: booking.startTime,
-    status: booking.status,
-    id: booking.id,
-    student: driverState.students.find((student) => student.id === booking.studentId)?.fullName ?? 'Student',
-  }));
+  const upcomingLessons = driverState.bookings.map((booking) => {
+    const pickupAddr = booking.pickupAddressId ? allAddresses.get(booking.pickupAddressId) : null;
+    const dropoffAddr = booking.dropoffAddressId ? allAddresses.get(booking.dropoffAddressId) : null;
+
+    const formatAddress = (addr: StudentAddress | null | undefined): string | undefined => {
+      if (!addr) return undefined;
+      const parts = [addr.line1];
+      if (addr.city) parts.push(addr.city);
+      if (addr.provinceOrState) parts.push(addr.provinceOrState);
+      return parts.join(', ');
+    };
+
+    return {
+      time: new Date(booking.startTime).toLocaleString(),
+      rawStartTime: booking.startTime,
+      status: booking.status,
+      id: booking.id,
+      student: driverState.students.find((student) => student.id === booking.studentId)?.fullName ?? 'Student',
+      pickupAddress: formatAddress(pickupAddr),
+      dropoffAddress: formatAddress(dropoffAddr),
+    };
+  });
 
   async function loadDriverContext() {
     if (!token || !schoolId) return;
@@ -158,6 +176,28 @@ export default function DriverPage() {
         pastBookings: pastResults.filter((booking) => booking.driverId === activeDriver.id),
         students: studentResults,
       });
+
+      // Fetch addresses for students who have bookings with this driver
+      const driverBookings = upcomingResults.filter((booking) => booking.driverId === activeDriver.id);
+      const studentIdsWithBookings = [...new Set(driverBookings.map(b => b.studentId))];
+      const addressMap = new Map<number, StudentAddress>();
+
+      // Fetch addresses for each student with a booking
+      await Promise.all(
+        studentIdsWithBookings.map(async (studentId) => {
+          try {
+            const addresses = await apiFetch<StudentAddress[]>(
+              `/schools/${schoolId}/students/${studentId}/addresses`,
+              token
+            );
+            addresses.forEach(addr => addressMap.set(addr.id, addr));
+          } catch {
+            // Ignore address fetch errors
+          }
+        })
+      );
+
+      setAllAddresses(addressMap);
       setStatus('');
     } catch (err) {
       setStatus('Unable to load driver profile. Check your token and backend availability.');
@@ -627,6 +667,8 @@ export default function DriverPage() {
                               lesson.student,
                               new Date(lesson.rawStartTime),
                               new Date(new Date(lesson.rawStartTime).getTime() + 90 * 60 * 1000), // 90 min lesson
+                              lesson.pickupAddress,
+                              lesson.dropoffAddress,
                             )}
                           />
                           <input
