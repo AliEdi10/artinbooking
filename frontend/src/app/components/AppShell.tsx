@@ -5,8 +5,9 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '../auth/AuthProvider';
 
 // Define which roles can see each nav item
+// Note: Drivers don't see 'Overview' because their Dashboard has its own Overview tab
 const navItems = [
-  { href: '/', label: 'Overview', roles: ['superadmin', 'school_admin', 'driver', 'student'] },
+  { href: '/', label: 'Overview', roles: ['superadmin', 'school_admin', 'student'] },
   { href: '/superadmin', label: '🔧 Superadmin', roles: ['superadmin'] },
   { href: '/admin', label: 'Admin', roles: ['superadmin', 'school_admin'] },
   { href: '/driver', label: 'Dashboard', roles: ['driver'] },
