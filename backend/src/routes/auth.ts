@@ -3,6 +3,13 @@ import { createUserWithPassword, loadUserByIdentity } from '../repositories/user
 import { createStudentProfile } from '../repositories/studentProfiles';
 import { hashPassword, comparePassword } from '../services/password';
 import { issueLocalJwt } from '../services/jwtIssuer';
+import { sendPasswordResetEmail } from '../services/email';
+import {
+    createPasswordResetToken,
+    findValidPasswordResetToken,
+    markTokenUsed,
+    updateUserPassword,
+} from '../repositories/passwordResetTokens';
 
 const router = express.Router();
 
@@ -86,6 +93,72 @@ router.post('/login', async (req, res, next) => {
         });
 
         res.json({ token, user });
+
+    } catch (err) {
+        next(err);
+    }
+});
+
+// Request password reset email
+router.post('/forgot-password', async (req, res, next) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            res.status(400).json({ error: 'Email is required' });
+            return;
+        }
+
+        // Always return same response to prevent email enumeration
+        const successMessage = 'If an account exists with this email, you will receive a password reset link.';
+
+        const user = await loadUserByIdentity(undefined, email);
+
+        // Only send email if user exists and has a password (local auth)
+        if (user && user.passwordHash) {
+            const token = await createPasswordResetToken(user.id);
+            await sendPasswordResetEmail(email, token);
+        }
+
+        // Always return success to prevent user enumeration
+        res.json({ message: successMessage });
+
+    } catch (err) {
+        next(err);
+    }
+});
+
+// Reset password with token
+router.post('/reset-password', async (req, res, next) => {
+    try {
+        const { token, password } = req.body;
+
+        if (!token || !password) {
+            res.status(400).json({ error: 'Token and password are required' });
+            return;
+        }
+
+        // Validate password strength
+        if (password.length < 8) {
+            res.status(400).json({ error: 'Password must be at least 8 characters long' });
+            return;
+        }
+
+        const resetToken = await findValidPasswordResetToken(token);
+
+        if (!resetToken) {
+            res.status(400).json({ error: 'Invalid or expired reset token. Please request a new password reset.' });
+            return;
+        }
+
+        // Hash new password and update user
+        const passwordHash = await hashPassword(password);
+        await updateUserPassword(resetToken.userId, passwordHash);
+
+        // Mark token as used
+        await markTokenUsed(resetToken.id);
+
+        res.json({ message: 'Password has been reset successfully. You can now login with your new password.' });
 
     } catch (err) {
         next(err);

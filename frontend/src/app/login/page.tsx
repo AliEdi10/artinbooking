@@ -209,6 +209,11 @@ export default function LoginPage() {
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
             <input name="password" type="password" required className="w-full border rounded p-2 text-slate-900" />
+            <div className="mt-1 text-right">
+              <a href="/login/forgot-password" className="text-sm text-blue-600 hover:text-blue-800">
+                Forgot password?
+              </a>
+            </div>
           </div>
           <button
             type="submit"

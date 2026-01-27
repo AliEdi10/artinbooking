@@ -16,69 +16,30 @@ This document outlines the remaining features to implement for artinbk. Tasks ar
 
 **Priority:** 🟡 HIGH  
 **Estimated Time:** 2-3 hours  
-**Status:** ⬜ Not Started
+**Status:** ✅ COMPLETED (January 27, 2026)
 
 ### Description
 Allow users to reset their password if they forget it. The email infrastructure already exists (Resend API).
 
-### Files to Create/Modify
+### Files Created/Modified
 
 | File | Action | Description |
 |------|--------|-------------|
-| `backend/src/routes/auth.ts` | Modify | Add `/forgot-password` and `/reset-password` endpoints |
-| `backend/src/repositories/users.ts` | Modify | Add password reset token functions |
-| `backend/src/services/email.ts` | ✅ Exists | `sendPasswordResetEmail()` already implemented |
-| `db/migrations/0012_add_password_reset_tokens.sql` | Create | Store reset tokens with expiry |
-| `frontend/src/app/login/forgot-password/page.tsx` | Create | Forgot password form UI |
-| `frontend/src/app/login/reset-password/page.tsx` | Create | Reset password form UI |
-| `frontend/src/app/login/page.tsx` | Modify | Add "Forgot Password?" link |
-
-### Implementation Steps
-
-#### Step 1.1: Create Database Migration
-```sql
--- db/migrations/0012_add_password_reset_tokens.sql
-CREATE TABLE password_reset_tokens (
-  id SERIAL PRIMARY KEY,
-  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  token VARCHAR(255) NOT NULL UNIQUE,
-  expires_at TIMESTAMP NOT NULL,
-  used_at TIMESTAMP,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-CREATE INDEX idx_password_reset_tokens_token ON password_reset_tokens(token);
-CREATE INDEX idx_password_reset_tokens_user_id ON password_reset_tokens(user_id);
-```
-
-#### Step 1.2: Add Repository Functions
-- `createPasswordResetToken(userId: number): Promise<string>` - Generate and store token
-- `findPasswordResetToken(token: string): Promise<ResetToken | null>` - Validate token
-- `markTokenUsed(tokenId: number): Promise<void>` - Mark token as consumed
-- `updateUserPassword(userId: number, passwordHash: string): Promise<void>` - Update password
-
-#### Step 1.3: Add API Endpoints
-```
-POST /auth/forgot-password
-  Body: { email: string }
-  Response: { message: "If account exists, reset email sent" }
-
-POST /auth/reset-password
-  Body: { token: string, password: string }
-  Response: { message: "Password updated successfully" }
-```
-
-#### Step 1.4: Create Frontend Pages
-- Forgot Password page with email input
-- Reset Password page with token validation + new password form
-- Add "Forgot Password?" link to login page
+| `backend/src/routes/auth.ts` | Modified | Added `/forgot-password` and `/reset-password` endpoints |
+| `backend/src/repositories/passwordResetTokens.ts` | Created | Password reset token functions |
+| `backend/src/services/email.ts` | ✅ Existed | `sendPasswordResetEmail()` already implemented |
+| `db/migrations/0012_add_password_reset_tokens.sql` | Created | Store reset tokens with expiry |
+| `frontend/src/app/login/forgot-password/page.tsx` | Created | Forgot password form UI |
+| `frontend/src/app/reset-password/page.tsx` | Created | Reset password form UI with strength indicators |
+| `frontend/src/app/login/page.tsx` | Modified | Added "Forgot Password?" link |
 
 ### Acceptance Criteria
-- [ ] User can request password reset via email
-- [ ] Reset email contains valid link with token
-- [ ] Token expires after 1 hour
-- [ ] Token is single-use only
-- [ ] Password is properly hashed before storage
-- [ ] User gets success/error feedback
+- [x] User can request password reset via email
+- [x] Reset email contains valid link with token
+- [x] Token expires after 1 hour
+- [x] Token is single-use only
+- [x] Password is properly hashed before storage
+- [x] User gets success/error feedback
 
 ---
 
@@ -298,24 +259,24 @@ Add OpenAPI/Swagger documentation for API endpoints.
 
 ## 📊 Implementation Order
 
-| Order | Task | Priority | Est. Time |
-|-------|------|----------|-----------|
-| 1 | [Task 1] Password Reset Flow | 🟡 HIGH | 2-3 hrs |
-| 2 | [Task 2] Lesson Reminder Emails | 🟡 MEDIUM | 2-3 hrs |
-| 3 | [Task 3] Mobile Responsiveness Audit | 🟢 LOW | 1-2 hrs |
-| 4 | [Task 4] Error Handling Improvements | 🟢 LOW | 1-2 hrs |
-| 5 | [Task 5] Loading State Improvements | 🟢 LOW | 1-2 hrs |
-| 6 | [Task 6] SMS Notifications | 🔵 OPTIONAL | 3-4 hrs |
-| 7 | [Task 7] API Documentation | 🔵 OPTIONAL | 2-3 hrs |
+| Order | Task | Priority | Status |
+|-------|------|----------|--------|
+| 1 | [Task 1] Password Reset Flow | 🟡 HIGH | ✅ Complete |
+| 2 | [Task 2] Lesson Reminder Emails | 🟡 MEDIUM | ⬜ Not Started |
+| 3 | [Task 3] Mobile Responsiveness Audit | 🟢 LOW | ⬜ Not Started |
+| 4 | [Task 4] Error Handling Improvements | 🟢 LOW | ⬜ Not Started |
+| 5 | [Task 5] Loading State Improvements | 🟢 LOW | ⬜ Not Started |
+| 6 | [Task 6] SMS Notifications | 🔵 OPTIONAL | ⬜ Not Started |
+| 7 | [Task 7] API Documentation | 🔵 OPTIONAL | ⬜ Not Started |
 
-**Total Estimated Time:** 8-11 hours (required) + 5-7 hours (optional)
+**Total Estimated Time:** 6-8 hours remaining (required) + 5-7 hours (optional)
 
 ---
 
 ## ✅ Completion Checklist
 
 ### Required Tasks
-- [ ] Task 1: Password Reset Flow
+- [x] Task 1: Password Reset Flow ✅
 - [ ] Task 2: Lesson Reminder Emails
 - [ ] Task 3: Mobile Responsiveness Audit
 - [ ] Task 4: Error Handling Improvements
@@ -327,8 +288,9 @@ Add OpenAPI/Swagger documentation for API endpoints.
 
 ---
 
-## 🚀 Ready to Begin
+## 🚀 Next Steps
 
-Start with **Task 1: Password Reset Flow** as it's the highest priority feature that users will need for account recovery.
+**Task 1 is complete!** The next task is **Task 2: Lesson Reminder Emails**.
 
-**Command to start:** Tell me "Let's start Task 1" and I'll begin implementation.
+**Command to continue:** Tell me "Let's start Task 2" and I'll begin implementation.
+
