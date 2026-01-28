@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import { useAuth } from '../auth/AuthProvider';
 
 // Define which roles can see each nav item
@@ -9,9 +10,9 @@ const navItems = [
   { href: '/', label: '🏠 Home', roles: ['superadmin', 'school_admin', 'driver', 'student'] },
   { href: '/superadmin', label: '🔧 Superadmin', roles: ['superadmin'] },
   { href: '/admin', label: 'Admin', roles: ['superadmin', 'school_admin'] },
-  { href: '/driver', label: '📊 Dashboard', roles: ['driver'] },
-  { href: '/driver?tab=schedule', label: '📅 Schedule', roles: ['driver'] },
-  { href: '/driver?tab=students', label: '👥 Students', roles: ['driver'] },
+  { href: '/driver', label: '📊 Dashboard', roles: ['driver'], tab: null },
+  { href: '/driver?tab=schedule', label: '📅 Schedule', roles: ['driver'], tab: 'schedule' },
+  { href: '/driver?tab=students', label: '👥 Students', roles: ['driver'], tab: 'students' },
   { href: '/student', label: 'My Portal', roles: ['student'] },
   { href: '/bookings', label: 'Bookings', roles: ['superadmin', 'school_admin'] },
 ];
@@ -22,9 +23,52 @@ function getNavItemsForRole(role: string | undefined): typeof navItems {
   return navItems.filter(item => item.roles.includes(normalizedRole));
 }
 
+function NavigationLinks({ role }: { role: string | undefined }) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentTab = searchParams.get('tab');
+
+  return (
+    <>
+      {getNavItemsForRole(role).map((item) => {
+        // Handle active state for items with query params
+        const itemPath = item.href.split('?')[0];
+        const itemTab = 'tab' in item ? item.tab : undefined;
+
+        let active = false;
+        if (pathname === itemPath) {
+          // For driver page, check the tab parameter
+          if (itemPath === '/driver') {
+            // Dashboard is active only when there's no tab or tab is not schedule/students
+            if (itemTab === null) {
+              active = !currentTab || (currentTab !== 'schedule' && currentTab !== 'students');
+            } else {
+              // Schedule or Students is active when tab matches
+              active = currentTab === itemTab;
+            }
+          } else {
+            // For other pages, just match the pathname
+            active = pathname === item.href;
+          }
+        }
+
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`px-3 py-2 min-h-[40px] text-sm rounded border whitespace-nowrap flex items-center ${active ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200'
+              }`}
+          >
+            {item.label}
+          </Link>
+        );
+      })}
+    </>
+  );
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, signOut } = useAuth();
-  const pathname = usePathname();
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -51,24 +95,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Scrollable navigation on mobile */}
         <nav className="mx-auto max-w-6xl px-4 pb-3 overflow-x-auto">
           <div className="flex space-x-2 min-w-max">
-            {getNavItemsForRole(user?.role).map((item) => {
-              // Handle active state for items with query params
-              const itemPath = item.href.split('?')[0];
-              const itemTab = item.href.includes('?tab=') ? item.href.split('?tab=')[1] : null;
-              const active = itemTab
-                ? pathname === itemPath && typeof window !== 'undefined' && window.location.search.includes(`tab=${itemTab}`)
-                : pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`px-3 py-2 min-h-[40px] text-sm rounded border whitespace-nowrap flex items-center ${active ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200'
-                    }`}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
+            <Suspense fallback={null}>
+              <NavigationLinks role={user?.role} />
+            </Suspense>
           </div>
         </nav>
       </header>
@@ -76,3 +105,4 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+
