@@ -68,6 +68,18 @@ type DriverState = {
   students: StudentProfile[];
 };
 
+type SchoolSettings = {
+  id: number;
+  minBookingLeadTimeHours: number | null;
+  cancellationCutoffHours: number | null;
+  defaultLessonDurationMinutes: number | null;
+  defaultBufferMinutesBetweenLessons: number | null;
+  defaultServiceRadiusKm: string | null;
+  dailyBookingCapPerDriver: number | null;
+  allowStudentToPickDriver: boolean;
+  allowDriverSelfAvailabilityEdit: boolean;
+};
+
 // Wrapper component with Suspense for useSearchParams
 export default function DriverPage() {
   return (
@@ -126,6 +138,20 @@ function DriverPageContent() {
     bufferMinutesBetweenLessons: '15',
     dailyBookingCap: '8',
   });
+
+  // School Settings state
+  const [schoolSettings, setSchoolSettings] = useState<SchoolSettings | null>(null);
+  const [schoolSettingsForm, setSchoolSettingsForm] = useState({
+    minBookingLeadTimeHours: '',
+    cancellationCutoffHours: '',
+    defaultLessonDurationMinutes: '',
+    defaultBufferMinutesBetweenLessons: '',
+    defaultServiceRadiusKm: '',
+    dailyBookingCapPerDriver: '',
+    allowStudentToPickDriver: true,
+    allowDriverSelfAvailabilityEdit: true,
+  });
+  const [isSavingSchoolSettings, setIsSavingSchoolSettings] = useState(false);
 
   // Tab navigation - read from URL query param
   const tabFromUrl = searchParams.get('tab') as 'overview' | 'schedule' | 'students' | null;
@@ -304,8 +330,67 @@ function DriverPageContent() {
     }
   }
 
+  async function loadSchoolSettings() {
+    if (!token || !schoolId) return;
+    try {
+      const settings = await apiFetch<SchoolSettings>(`/schools/${schoolId}/settings`, token);
+      setSchoolSettings(settings);
+      setSchoolSettingsForm({
+        minBookingLeadTimeHours: settings.minBookingLeadTimeHours?.toString() ?? '',
+        cancellationCutoffHours: settings.cancellationCutoffHours?.toString() ?? '',
+        defaultLessonDurationMinutes: settings.defaultLessonDurationMinutes?.toString() ?? '',
+        defaultBufferMinutesBetweenLessons: settings.defaultBufferMinutesBetweenLessons?.toString() ?? '',
+        defaultServiceRadiusKm: settings.defaultServiceRadiusKm ?? '',
+        dailyBookingCapPerDriver: settings.dailyBookingCapPerDriver?.toString() ?? '',
+        allowStudentToPickDriver: settings.allowStudentToPickDriver ?? true,
+        allowDriverSelfAvailabilityEdit: settings.allowDriverSelfAvailabilityEdit ?? true,
+      });
+    } catch {
+      // Ignore - settings may not be accessible to drivers
+    }
+  }
+
+  async function saveSchoolSettings() {
+    if (!token || !schoolId) return;
+    setIsSavingSchoolSettings(true);
+    setActionMessage('Saving settings...');
+    try {
+      await apiFetch(`/schools/${schoolId}/settings`, token, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          minBookingLeadTimeHours: schoolSettingsForm.minBookingLeadTimeHours
+            ? Number(schoolSettingsForm.minBookingLeadTimeHours)
+            : null,
+          cancellationCutoffHours: schoolSettingsForm.cancellationCutoffHours
+            ? Number(schoolSettingsForm.cancellationCutoffHours)
+            : null,
+          defaultLessonDurationMinutes: schoolSettingsForm.defaultLessonDurationMinutes
+            ? Number(schoolSettingsForm.defaultLessonDurationMinutes)
+            : null,
+          defaultBufferMinutesBetweenLessons: schoolSettingsForm.defaultBufferMinutesBetweenLessons
+            ? Number(schoolSettingsForm.defaultBufferMinutesBetweenLessons)
+            : null,
+          defaultServiceRadiusKm: schoolSettingsForm.defaultServiceRadiusKm || null,
+          dailyBookingCapPerDriver: schoolSettingsForm.dailyBookingCapPerDriver
+            ? Number(schoolSettingsForm.dailyBookingCapPerDriver)
+            : null,
+          allowStudentToPickDriver: schoolSettingsForm.allowStudentToPickDriver,
+          allowDriverSelfAvailabilityEdit: schoolSettingsForm.allowDriverSelfAvailabilityEdit,
+        }),
+      });
+      await loadSchoolSettings();
+      setActionMessage('Settings saved!');
+    } catch {
+      setActionMessage('Unable to save settings.');
+    } finally {
+      setIsSavingSchoolSettings(false);
+    }
+  }
+
   useEffect(() => {
     loadDriverContext();
+    loadSchoolSettings();
   }, [schoolId, token]);
 
   // Phase 3: Load selected student's history and profile details
@@ -786,6 +871,103 @@ function DriverPageContent() {
                     💡 Defaults: 90 min lessons, 15 min buffer, 8 lessons/day max.
                   </p>
                 </div>
+              </SummaryCard>
+
+              {/* Instructor Settings (School-level policies) */}
+              <SummaryCard
+                title="Instructor settings"
+                description="Lead times, cancellation windows, and caps for your lessons."
+                footer={`Current: lead time ${schoolSettings?.minBookingLeadTimeHours ?? '—'} hrs, cancellation cutoff ${schoolSettings?.cancellationCutoffHours ?? '—'} hrs, radius ${schoolSettings?.defaultServiceRadiusKm ?? '—'} km`}
+              >
+                <form className="space-y-3 text-sm" onSubmit={(e) => { e.preventDefault(); saveSchoolSettings(); }}>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <label className="text-xs text-slate-700">
+                      Lead time (hrs)
+                      <input
+                        className="border rounded px-2 py-2 w-full text-slate-900"
+                        type="number"
+                        value={schoolSettingsForm.minBookingLeadTimeHours}
+                        onChange={(e) => setSchoolSettingsForm({ ...schoolSettingsForm, minBookingLeadTimeHours: e.target.value })}
+                        placeholder="24"
+                      />
+                    </label>
+                    <label className="text-xs text-slate-700">
+                      Cancellation cutoff (hrs)
+                      <input
+                        className="border rounded px-2 py-2 w-full text-slate-900"
+                        type="number"
+                        value={schoolSettingsForm.cancellationCutoffHours}
+                        onChange={(e) => setSchoolSettingsForm({ ...schoolSettingsForm, cancellationCutoffHours: e.target.value })}
+                        placeholder="24"
+                      />
+                    </label>
+                    <label className="text-xs text-slate-700">
+                      Lesson duration (min)
+                      <input
+                        className="border rounded px-2 py-2 w-full text-slate-900"
+                        type="number"
+                        value={schoolSettingsForm.defaultLessonDurationMinutes}
+                        onChange={(e) => setSchoolSettingsForm({ ...schoolSettingsForm, defaultLessonDurationMinutes: e.target.value })}
+                        placeholder="90"
+                      />
+                    </label>
+                    <label className="text-xs text-slate-700">
+                      Buffer between lessons (min)
+                      <input
+                        className="border rounded px-2 py-2 w-full text-slate-900"
+                        type="number"
+                        value={schoolSettingsForm.defaultBufferMinutesBetweenLessons}
+                        onChange={(e) => setSchoolSettingsForm({ ...schoolSettingsForm, defaultBufferMinutesBetweenLessons: e.target.value })}
+                        placeholder="15"
+                      />
+                    </label>
+                    <label className="text-xs text-slate-700">
+                      Service radius (km)
+                      <input
+                        className="border rounded px-2 py-2 w-full text-slate-900"
+                        type="number"
+                        value={schoolSettingsForm.defaultServiceRadiusKm}
+                        onChange={(e) => setSchoolSettingsForm({ ...schoolSettingsForm, defaultServiceRadiusKm: e.target.value })}
+                        placeholder="25"
+                      />
+                    </label>
+                    <label className="text-xs text-slate-700">
+                      Daily booking cap
+                      <input
+                        className="border rounded px-2 py-2 w-full text-slate-900"
+                        type="number"
+                        value={schoolSettingsForm.dailyBookingCapPerDriver}
+                        onChange={(e) => setSchoolSettingsForm({ ...schoolSettingsForm, dailyBookingCapPerDriver: e.target.value })}
+                        placeholder="8"
+                      />
+                    </label>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-slate-700">
+                    <label className="flex items-center gap-1">
+                      <input
+                        type="checkbox"
+                        checked={schoolSettingsForm.allowStudentToPickDriver}
+                        onChange={(e) => setSchoolSettingsForm({ ...schoolSettingsForm, allowStudentToPickDriver: e.target.checked })}
+                      />
+                      Allow students to pick driver
+                    </label>
+                    <label className="flex items-center gap-1">
+                      <input
+                        type="checkbox"
+                        checked={schoolSettingsForm.allowDriverSelfAvailabilityEdit}
+                        onChange={(e) => setSchoolSettingsForm({ ...schoolSettingsForm, allowDriverSelfAvailabilityEdit: e.target.checked })}
+                      />
+                      Driver self-edit availability
+                    </label>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={isSavingSchoolSettings}
+                    className="w-full bg-slate-900 text-white rounded px-3 py-2 text-sm hover:bg-slate-800 disabled:opacity-50"
+                  >
+                    {isSavingSchoolSettings ? 'Saving...' : 'Save settings'}
+                  </button>
+                </form>
               </SummaryCard>
 
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
