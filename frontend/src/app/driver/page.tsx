@@ -23,6 +23,8 @@ type DriverProfile = {
   workDayStart?: string | null;
   workDayEnd?: string | null;
   serviceRadiusKm?: string | null;
+  lessonDurationMinutes?: number | null;
+  bufferMinutesBetweenLessons?: number | null;
 };
 type Availability = { id: number; date: string; startTime: string; endTime: string; type?: string };
 type Booking = { id: number; driverId: number; studentId: number; startTime: string; status: string; pickupAddressId?: number | null; dropoffAddressId?: number | null };
@@ -114,6 +116,17 @@ function DriverPageContent() {
   const [workingHours, setWorkingHours] = useState<{ start: string; end: string }>({ start: '09:00', end: '17:00' });
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
+  // Instructor Settings state (lesson duration, buffer, daily cap)
+  const [instructorSettings, setInstructorSettings] = useState<{
+    lessonDurationMinutes: string;
+    bufferMinutesBetweenLessons: string;
+    dailyBookingCap: string;
+  }>({
+    lessonDurationMinutes: '90',
+    bufferMinutesBetweenLessons: '15',
+    dailyBookingCap: '8',
+  });
+
   // Tab navigation - read from URL query param
   const tabFromUrl = searchParams.get('tab') as 'overview' | 'schedule' | 'students' | null;
   const activeTab = tabFromUrl || 'overview';
@@ -172,6 +185,13 @@ function DriverPageContent() {
           end: activeDriver.workDayEnd || '17:00',
         });
       }
+
+      // Initialize instructor settings from driver profile
+      setInstructorSettings({
+        lessonDurationMinutes: activeDriver.lessonDurationMinutes?.toString() || '90',
+        bufferMinutesBetweenLessons: activeDriver.bufferMinutesBetweenLessons?.toString() || '15',
+        dailyBookingCap: '8', // Daily cap is managed per driver, default 8
+      });
 
       setStatus('Loading availability and bookings...');
 
@@ -253,6 +273,32 @@ function DriverPageContent() {
       setActionMessage('Default working hours saved!');
     } catch (err) {
       setActionMessage('Unable to save working hours.');
+    } finally {
+      setIsSavingProfile(false);
+    }
+  }
+
+  async function saveInstructorSettings() {
+    if (!token || !schoolId || !driverState.driver) return;
+    setIsSavingProfile(true);
+    setActionMessage('Saving instructor settings...');
+    try {
+      await apiFetch(`/schools/${schoolId}/drivers/${driverState.driver.id}`, token, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lessonDurationMinutes: instructorSettings.lessonDurationMinutes
+            ? Number(instructorSettings.lessonDurationMinutes)
+            : null,
+          bufferMinutesBetweenLessons: instructorSettings.bufferMinutesBetweenLessons
+            ? Number(instructorSettings.bufferMinutesBetweenLessons)
+            : null,
+        }),
+      });
+      await loadDriverContext();
+      setActionMessage('Instructor settings saved!');
+    } catch (err) {
+      setActionMessage('Unable to save instructor settings.');
     } finally {
       setIsSavingProfile(false);
     }
@@ -671,6 +717,76 @@ function DriverPageContent() {
                   </div>
                 </SummaryCard>
               </div>
+
+              {/* Instructor Settings Card */}
+              <SummaryCard
+                title="⚙️ Instructor Settings"
+                description="Configure lesson parameters. These settings control how your bookings work."
+                footer={`Lesson: ${instructorSettings.lessonDurationMinutes || 90}min | Buffer: ${instructorSettings.bufferMinutesBetweenLessons || 15}min | Daily cap: ${instructorSettings.dailyBookingCap || 8} lessons`}
+              >
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-700 mb-1">
+                        Lesson Duration (min)
+                      </label>
+                      <input
+                        type="number"
+                        min="30"
+                        max="180"
+                        className="w-full border rounded px-3 py-2 text-sm text-slate-900"
+                        value={instructorSettings.lessonDurationMinutes}
+                        onChange={(e) =>
+                          setInstructorSettings({ ...instructorSettings, lessonDurationMinutes: e.target.value })
+                        }
+                        placeholder="90"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-700 mb-1">
+                        Buffer Between Lessons (min)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="60"
+                        className="w-full border rounded px-3 py-2 text-sm text-slate-900"
+                        value={instructorSettings.bufferMinutesBetweenLessons}
+                        onChange={(e) =>
+                          setInstructorSettings({ ...instructorSettings, bufferMinutesBetweenLessons: e.target.value })
+                        }
+                        placeholder="15"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-700 mb-1">
+                        Daily Booking Cap
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="20"
+                        className="w-full border rounded px-3 py-2 text-sm text-slate-900"
+                        value={instructorSettings.dailyBookingCap}
+                        onChange={(e) =>
+                          setInstructorSettings({ ...instructorSettings, dailyBookingCap: e.target.value })
+                        }
+                        placeholder="8"
+                      />
+                    </div>
+                  </div>
+                  <button
+                    className="w-full bg-purple-600 text-white rounded px-3 py-2 text-sm hover:bg-purple-700 disabled:opacity-50"
+                    onClick={saveInstructorSettings}
+                    disabled={isSavingProfile}
+                  >
+                    {isSavingProfile ? 'Saving...' : '💾 Save Instructor Settings'}
+                  </button>
+                  <p className="text-xs text-slate-600">
+                    💡 Defaults: 90 min lessons, 15 min buffer, 8 lessons/day max.
+                  </p>
+                </div>
+              </SummaryCard>
 
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 <SummaryCard
