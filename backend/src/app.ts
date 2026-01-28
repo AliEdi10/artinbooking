@@ -1318,8 +1318,10 @@ export function createApp() {
         // Check student's total allowed hours
         if (student.allowedHours !== null) {
           const totalHours = await getTotalBookedHoursForStudent(schoolId, student.id);
-          // Assume 1 hour per lesson for new booking
-          const estimatedNewHours = 1;
+          // Use actual lesson duration for new booking
+          const lessonDuration = driver.lessonDurationMinutes ?? settings?.defaultLessonDurationMinutes ?? 60;
+          const estimatedNewHours = lessonDuration / 60;
+
           if (totalHours + estimatedNewHours > student.allowedHours) {
             res.status(403).json({
               error: `Total hours limit reached. You have used ${totalHours.toFixed(1)} of ${student.allowedHours} allowed hours.`,
@@ -1617,6 +1619,23 @@ export function createApp() {
               hour: '2-digit', minute: '2-digit'
             });
 
+            // Resolve addresses for email (using ID from booking)
+            let pickupAddr = booking.pickupAddressId?.toString() || 'N/A';
+            let dropoffAddr = booking.dropoffAddressId?.toString() || 'N/A';
+
+            try {
+              if (booking.pickupAddressId) {
+                const pAddr = await getAddressById(booking.pickupAddressId, schoolId);
+                if (pAddr) pickupAddr = `${pAddr.line1}, ${pAddr.city}`;
+              }
+              if (booking.dropoffAddressId) {
+                const dAddr = await getAddressById(booking.dropoffAddressId, schoolId);
+                if (dAddr) dropoffAddr = `${dAddr.line1}, ${dAddr.city}`;
+              }
+            } catch (addrErr) {
+              console.warn('Could not resolve addresses for cancellation email', addrErr);
+            }
+
             if (studentUser?.email && student) {
               await sendBookingCancellationEmail({
                 to: studentUser.email,
@@ -1624,8 +1643,8 @@ export function createApp() {
                 schoolName: school?.name || 'Driving School',
                 lessonDate,
                 lessonTime,
-                pickupAddress: booking.pickupAddressId?.toString() || 'N/A',
-                dropoffAddress: booking.dropoffAddressId?.toString() || 'N/A',
+                pickupAddress: pickupAddr,
+                dropoffAddress: dropoffAddr,
               });
             }
           } catch (emailError) {
