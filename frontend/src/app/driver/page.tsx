@@ -454,13 +454,13 @@ function DriverPageContent() {
 
     const dayCount = Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
-    // Show warning but proceed if there are open slots that will be overridden
-    let warningMsg = '';
+    // ERROR if any dates have published availability - user must delete availability first
     if (conflictDates.length > 0) {
-      warningMsg = ` (Note: This will block ${conflictDates.length} day(s) that had open availability)`;
+      setActionMessage(`⚠️ Cannot block ${conflictDates.join(', ')} - you have published availability on these dates. Delete availability first before blocking.`);
+      return;
     }
 
-    setActionMessage(`Adding time off for ${dayCount} day(s)...${warningMsg}`);
+    setActionMessage(`Adding time off for ${dayCount} day(s)...`);
 
     try {
       const currentDate = new Date(startDate);
@@ -484,7 +484,7 @@ function DriverPageContent() {
       }
       setHolidayRange({ start: '', end: '' });
       await loadDriverContext();
-      setActionMessage(`Time off added for ${dayCount} day(s)!${warningMsg}`);
+      setActionMessage(`Time off added for ${dayCount} day(s)!`);
     } catch (err) {
       setActionMessage('Unable to add time off.');
     }
@@ -1403,7 +1403,7 @@ function DriverPageContent() {
                           <span className="text-xs text-red-700 font-medium ml-2">⛔ Unavailable</span>
                         </div>
                         <button
-                          className="text-xs px-2 py-1 rounded bg-slate-200 hover:bg-slate-300"
+                          className="text-xs px-2 py-1 rounded bg-red-600 text-white hover:bg-red-700"
                           onClick={() => removeHoliday(holiday.id)}
                         >
                           Remove

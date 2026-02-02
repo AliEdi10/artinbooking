@@ -4,7 +4,7 @@ import express from 'express';
 import { authenticateRequest, authenticateRequestAllowUnregistered } from './middleware/authentication';
 import { enforceTenantScope, requireRoles } from './middleware/authorization';
 import { getDrivingSchoolById, getDrivingSchools, createDrivingSchool } from './repositories/drivingSchools';
-import { findInvitationByToken, markInvitationAccepted, upsertInvitation, getPendingInvitations, getInvitationById, resendInvitation } from './repositories/invitations';
+import { findInvitationByToken, markInvitationAccepted, upsertInvitation, getPendingInvitations, getInvitationById, resendInvitation, deleteInvitation } from './repositories/invitations';
 import { countAdminsForSchool, createUserWithIdentity, createUserWithPassword, getUserById } from './repositories/users';
 import {
   createDriverProfile,
@@ -383,6 +383,35 @@ export function createApp() {
         }
 
         res.json({ invitation: updated });
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
+
+  // Phase 3: Delete/Cancel an invitation
+  app.delete(
+    '/schools/:schoolId/invitations/:invitationId',
+    authenticateRequest,
+    requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN']),
+    async (req: AuthenticatedRequest, res, next) => {
+      try {
+        const schoolId = resolveSchoolContext(req, res);
+        if (!schoolId) return;
+
+        const invitationId = Number(req.params.invitationId);
+        if (Number.isNaN(invitationId)) {
+          res.status(400).json({ error: 'Invalid invitation id' });
+          return;
+        }
+
+        const deleted = await deleteInvitation(invitationId, schoolId);
+        if (!deleted) {
+          res.status(404).json({ error: 'Invitation not found or already accepted' });
+          return;
+        }
+
+        res.json({ message: 'Invitation cancelled' });
       } catch (error) {
         next(error);
       }

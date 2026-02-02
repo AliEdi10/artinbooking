@@ -196,6 +196,22 @@ export default function AdminPage() {
     }
   }
 
+  // Phase 3: Cancel invitation
+  async function handleCancelInvitation(invitationId: number) {
+    if (!token || !schoolId) return;
+    if (!confirm('Are you sure you want to cancel this invitation?')) return;
+    setActionMessage('Cancelling invitation...');
+    try {
+      await apiFetch(`/schools/${schoolId}/invitations/${invitationId}`, token, {
+        method: 'DELETE',
+      });
+      await loadPendingInvitations();
+      setActionMessage('Invitation cancelled.');
+    } catch (err) {
+      setActionMessage('Unable to cancel invitation.');
+    }
+  }
+
   useEffect(() => {
     loadDriverHolidays();
     loadPendingInvitations();
@@ -482,12 +498,20 @@ export default function AdminPage() {
                           Expires: {new Date(invite.expiresAt).toLocaleDateString()}
                         </p>
                       </div>
-                      <button
-                        onClick={() => handleResendInvitation(invite.id)}
-                        className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
-                      >
-                        Resend
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleResendInvitation(invite.id)}
+                          className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                        >
+                          Resend
+                        </button>
+                        <button
+                          onClick={() => handleCancelInvitation(invite.id)}
+                          className="text-xs px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+                        >
+                          Cancel
+                        </button>
+                      </div>
                     </div>
                   </li>
                 ))}
@@ -833,7 +857,7 @@ export default function AdminPage() {
                 <form className="space-y-2" onSubmit={handleReschedule}>
                   <h3 className="text-sm font-semibold">Reschedule booking</h3>
                   <select
-                    className="border rounded px-2 py-1 w-full"
+                    className="border rounded px-2 py-1 w-full text-slate-900"
                     value={selectedBookingId ?? ''}
                     onChange={(e) => setSelectedBookingId(Number(e.target.value))}
                   >
@@ -844,14 +868,14 @@ export default function AdminPage() {
                     ))}
                   </select>
                   <input
-                    className="border rounded px-2 py-1 w-full"
+                    className="border rounded px-2 py-1 w-full text-slate-900"
                     type="datetime-local"
                     value={rescheduleStart}
                     onChange={(e) => setRescheduleStart(e.target.value)}
                     required
                   />
                   <select
-                    className="border rounded px-2 py-1 w-full"
+                    className="border rounded px-2 py-1 w-full text-slate-900"
                     value={rescheduleDriverId}
                     onChange={(e) => setRescheduleDriverId(e.target.value)}
                   >
@@ -864,7 +888,7 @@ export default function AdminPage() {
                   </select>
                   <button
                     type="submit"
-                    className="w-full bg-white border border-slate-300 rounded px-3 py-2 hover:bg-slate-50"
+                    className="w-full bg-slate-900 text-white rounded px-3 py-2 hover:bg-slate-800"
                   >
                     Save new time
                   </button>
@@ -872,7 +896,7 @@ export default function AdminPage() {
                 <form className="space-y-2" onSubmit={handleCancel}>
                   <h3 className="text-sm font-semibold">Cancel booking</h3>
                   <select
-                    className="border rounded px-2 py-1 w-full"
+                    className="border rounded px-2 py-1 w-full text-slate-900"
                     value={selectedBookingId ?? ''}
                     onChange={(e) => setSelectedBookingId(Number(e.target.value))}
                   >
@@ -883,7 +907,7 @@ export default function AdminPage() {
                     ))}
                   </select>
                   <input
-                    className="border rounded px-2 py-1 w-full"
+                    className="border rounded px-2 py-1 w-full text-slate-900"
                     placeholder="Reason code (optional)"
                     value={cancelReason}
                     onChange={(e) => setCancelReason(e.target.value)}

@@ -364,7 +364,7 @@ export default function StudentPage() {
             <SummaryCard
               title="Addresses"
               description="Select pickup/dropoff locations that will be validated against the service radius."
-              footer={status || 'Loaded from /students/:id/addresses'}
+              footer={addresses.length > 0 ? `${addresses.length} address(es) saved` : ''}
             >
               <ul className="space-y-1 text-sm text-slate-700">
                 {addresses.map((address) => (
@@ -547,8 +547,8 @@ export default function StudentPage() {
                     <label className="block text-xs text-slate-700 mb-1">Licence Number *</label>
                     <input
                       type="text"
-                      className="w-full border rounded px-3 py-2 text-sm"
-                      placeholder="e.g. G1-1234567"
+                      className="w-full border rounded px-3 py-2 text-sm text-slate-900"
+                      placeholder="ABCDE123456789"
                       value={licenceForm.licenceNumber}
                       onChange={(e) => setLicenceForm({ ...licenceForm, licenceNumber: e.target.value })}
                       required
@@ -592,7 +592,7 @@ export default function StudentPage() {
               <div className="space-y-2 text-sm">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <select
-                    className="border rounded px-2 py-1 text-slate-700"
+                    className="border rounded px-2 py-1 text-slate-900"
                     value={slotQuery.driverId}
                     onChange={(e) => setSlotQuery({ ...slotQuery, driverId: e.target.value })}
                   >
@@ -604,13 +604,13 @@ export default function StudentPage() {
                     ))}
                   </select>
                   <input
-                    className="border rounded px-2 py-1 text-slate-700"
+                    className="border rounded px-2 py-1 text-slate-900"
                     type="date"
                     value={slotQuery.date}
                     onChange={(e) => setSlotQuery({ ...slotQuery, date: e.target.value })}
                   />
                   <select
-                    className="border rounded px-2 py-1 text-slate-700"
+                    className="border rounded px-2 py-1 text-slate-900"
                     value={slotQuery.pickupId}
                     onChange={(e) => setSlotQuery({ ...slotQuery, pickupId: e.target.value })}
                   >
@@ -622,7 +622,7 @@ export default function StudentPage() {
                     ))}
                   </select>
                   <select
-                    className="border rounded px-2 py-1 text-slate-700"
+                    className="border rounded px-2 py-1 text-slate-900"
                     value={slotQuery.dropoffId}
                     onChange={(e) => setSlotQuery({ ...slotQuery, dropoffId: e.target.value })}
                   >
@@ -635,7 +635,7 @@ export default function StudentPage() {
                   </select>
                 </div>
                 <button
-                  className="w-full bg-white border border-slate-300 rounded px-3 py-2 hover:bg-slate-50"
+                  className="w-full bg-slate-900 text-white rounded px-3 py-2 hover:bg-slate-800"
                   type="button"
                   onClick={() =>
                     slotQuery.driverId &&

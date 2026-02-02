@@ -88,3 +88,13 @@ export async function resendInvitation(
   if (result.rowCount === 0) return null;
   return mapSchoolInvitation(result.rows[0]);
 }
+
+export async function deleteInvitation(id: number, drivingSchoolId: number): Promise<boolean> {
+  const result = await getPool().query(
+    `DELETE FROM school_invitations
+     WHERE id = $1 AND driving_school_id = $2 AND accepted_at IS NULL`,
+    [id, drivingSchoolId],
+  );
+
+  return (result.rowCount ?? 0) > 0;
+}
