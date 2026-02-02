@@ -369,9 +369,9 @@ export default function StudentPage() {
               <ul className="space-y-1 text-sm text-slate-700">
                 {addresses.map((address) => (
                   <li key={address.id} className="border rounded p-2 bg-slate-50">
-                    <p className="font-medium">{address.label}</p>
-                    <p className="text-xs text-slate-700">{address.line1}</p>
-                    <p className="text-xs text-slate-700">
+                    <p className="font-medium text-slate-800">{address.label}</p>
+                    <p className="text-xs text-slate-600">{address.line1}</p>
+                    <p className="text-xs text-slate-600">
                       {address.city}, {address.provinceOrState}
                     </p>
                     <p className="text-[11px] text-slate-700">
@@ -417,8 +417,8 @@ export default function StudentPage() {
                 {/* Display auto-filled address or allow manual entry */}
                 {(addressForm.line1 || addressForm.city) && (
                   <div className="bg-slate-50 border rounded-lg p-3 text-slate-700">
-                    <p className="text-xs font-medium text-slate-700 mb-1">📍 Selected Address:</p>
-                    <p className="font-medium">{addressForm.line1 || 'Street not detected'}</p>
+                    <p className="text-xs font-medium text-slate-600 mb-1">📍 Selected Address:</p>
+                    <p className="font-medium text-slate-800">{addressForm.line1 || 'Street not detected'}</p>
                     <p className="text-sm">{addressForm.city}{addressForm.city && addressForm.provinceOrState ? ', ' : ''}{addressForm.provinceOrState}</p>
                   </div>
                 )}

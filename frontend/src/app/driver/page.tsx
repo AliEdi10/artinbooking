@@ -1334,11 +1334,11 @@ function DriverPageContent() {
                       .map((slot) => (
                         <li key={slot.id} className="flex justify-between items-center border rounded p-2 bg-green-50">
                           <div>
-                            <span className="font-medium">{new Date(slot.date).toLocaleDateString()}</span>
-                            <span className="text-xs text-slate-600 ml-2">
+                            <span className="font-medium text-slate-800">{new Date(slot.date).toLocaleDateString()}</span>
+                            <span className="text-xs text-slate-700 ml-2">
                               {slot.startTime} - {slot.endTime}
                             </span>
-                            <span className="text-xs text-green-600 ml-2">✓ Available</span>
+                            <span className="text-xs text-green-700 font-medium ml-2">✓ Available</span>
                           </div>
                           <button
                             className="text-xs px-2 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200"
@@ -1399,8 +1399,8 @@ function DriverPageContent() {
                     .map((holiday) => (
                       <li key={holiday.id} className="flex justify-between items-center border rounded p-2 bg-red-50">
                         <div>
-                          <span className="font-medium">{new Date(holiday.date).toLocaleDateString()}</span>
-                          <span className="text-xs text-red-600 ml-2">⛔ Unavailable</span>
+                          <span className="font-medium text-slate-800">{new Date(holiday.date).toLocaleDateString()}</span>
+                          <span className="text-xs text-red-700 font-medium ml-2">⛔ Unavailable</span>
                         </div>
                         <button
                           className="text-xs px-2 py-1 rounded bg-slate-200 hover:bg-slate-300"

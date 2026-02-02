@@ -515,8 +515,8 @@ export default function AdminPage() {
                   >
                     <div className="flex justify-between items-center">
                       <div>
-                        <p className="font-medium">{student.fullName}</p>
-                        <p className="text-xs text-slate-700">
+                        <p className="font-medium text-slate-800">{student.fullName}</p>
+                        <p className="text-xs text-slate-600">
                           Licence: {student.licenceNumber ?? 'Not provided'}
                         </p>
                       </div>
@@ -815,11 +815,11 @@ export default function AdminPage() {
 
                 return (
                   <div key={booking.id} className="border rounded p-3 bg-slate-50">
-                    <p className="font-medium">
+                    <p className="font-medium text-slate-800">
                       {studentName} with {driverName}
                     </p>
-                    <p className="text-xs text-slate-700">{booking.status}</p>
-                    <p className="text-xs text-slate-700">Starts at {new Date(booking.startTime).toLocaleString()}</p>
+                    <p className="text-xs text-slate-600">{booking.status}</p>
+                    <p className="text-xs text-slate-600">Starts at {new Date(booking.startTime).toLocaleString()}</p>
                   </div>
                 );
               })}

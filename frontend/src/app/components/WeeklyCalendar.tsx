@@ -111,28 +111,28 @@ export function WeeklyCalendar({ availability, bookings, students }: WeeklyCalen
             <div className="flex items-center justify-between">
                 <button
                     onClick={() => setWeekOffset(w => w - 1)}
-                    className="px-3 py-1 text-sm rounded border hover:bg-slate-50"
+                    className="px-3 py-1 text-sm rounded border text-slate-700 hover:bg-slate-100"
                 >
                     ← Previous
                 </button>
-                <span className="text-sm font-medium">{weekLabel}</span>
+                <span className="text-sm font-medium text-slate-800">{weekLabel}</span>
                 <button
                     onClick={() => setWeekOffset(w => w + 1)}
-                    className="px-3 py-1 text-sm rounded border hover:bg-slate-50"
+                    className="px-3 py-1 text-sm rounded border text-slate-700 hover:bg-slate-100"
                 >
                     Next →
                 </button>
             </div>
 
             {/* Legend */}
-            <div className="flex gap-4 text-xs">
+            <div className="flex gap-4 text-xs text-slate-700">
                 <div className="flex items-center gap-1">
                     <div className="w-4 h-4 bg-green-100 border border-green-300 rounded" />
-                    <span>Available</span>
+                    <span className="text-slate-700">Available</span>
                 </div>
                 <div className="flex items-center gap-1">
                     <div className="w-4 h-4 bg-blue-500 rounded" />
-                    <span>Booked Lesson</span>
+                    <span className="text-slate-700">Booked Lesson</span>
                 </div>
             </div>
 
