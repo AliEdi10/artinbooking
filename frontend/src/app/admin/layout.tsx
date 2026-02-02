@@ -1,0 +1,9 @@
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+    title: 'Admin Dashboard | Artin Driving School',
+};
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+    return children;
+}

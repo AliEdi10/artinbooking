@@ -1,10 +1,10 @@
 # ⚠️ CURRENT STATUS - READ THIS FIRST
 
-**Last Updated: January 22, 2026**
+**Last Updated: February 2, 2026**
 
-## The App is PRODUCTION READY
+## The App is PRODUCTION READY 🚀
 
-All the other docs in this folder are **OUTDATED** from the original planning phase. Here's the actual current status:
+**Brand:** Artin Driving School Booking System
 
 ---
 
@@ -14,7 +14,7 @@ All the other docs in this folder are **OUTDATED** from the original planning ph
 |-----------|----------|--------|
 | Frontend | **Vercel** | ✅ Live at https://artinbooking.vercel.app |
 | Backend | **Railway** | ✅ Running |
-| Database | **Railway PostgreSQL** | ✅ 11 migrations applied |
+| Database | **Railway PostgreSQL** | ✅ 13 migrations applied |
 | Email | **Resend API** | ✅ Configured |
 
 **NOT using GCP** - ignore all GCP/Terraform docs.
@@ -30,38 +30,35 @@ All the other docs in this folder are **OUTDATED** from the original planning ph
 | Driver portal (availability, service center, student view) | ✅ Complete |
 | Student portal (profile, addresses, licence, booking) | ✅ Complete |
 | Booking system (travel-aware) | ✅ Complete |
-| Email notifications | ✅ Complete |
-| Student phone + minor/guardian | ✅ Complete |
-| Physical license reminder | ✅ Complete |
+| Email notifications (booking + reminders) | ✅ Complete |
+| Password reset flow | ✅ Complete |
+| Lesson reminder emails (24hr) | ✅ Complete |
 | Google Maps integration | ✅ Working |
 | Service radius visualization | ✅ Working |
-| All UI issues | ✅ Fixed |
+| Mobile responsive UI | ✅ Complete |
+| Error handling & loading states | ✅ Complete |
+| API documentation | ✅ Complete |
 
 ---
 
-## ✅ PREVIOUS ISSUES - ALL RESOLVED
+## ✅ RECENT UPDATES (Feb 2, 2026)
 
-| Issue | Status |
-|-------|--------|
-| Grey login text | ✅ FIXED |
-| Service center save | ✅ WORKING |
-| Visual service radius | ✅ WORKING |
+| Update | Status |
+|--------|--------|
+| Rebranded to "Artin Driving School" | ✅ Done |
+| New logo & favicon (AD steering wheel) | ✅ Done |
+| Cancel button on pending invitations | ✅ Done |
+| Prevent blocking days with published availability | ✅ Done |
+| All grey text issues fixed | ✅ Done |
+| License placeholder changed to ABCDE123456789 | ✅ Done |
 
 ---
 
-## ❌ NOT IMPLEMENTED (Planned)
+## ⏭️ NOT IMPLEMENTED (Decided to skip)
 
-**See: [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md) for detailed tasks**
-
-| Feature | Priority | Status |
-|---------|----------|--------|
-| Password reset flow | 🟡 HIGH | Planned |
-| Lesson reminder emails | 🟡 MEDIUM | Planned |
-| Mobile responsiveness audit | 🟢 LOW | Planned |
-| Error handling improvements | 🟢 LOW | Planned |
-| Loading state improvements | 🟢 LOW | Planned |
-| SMS notifications (Twilio) | 🔵 OPTIONAL | Not started |
-| API documentation | 🔵 OPTIONAL | Not started |
+| Feature | Reason |
+|---------|--------|
+| SMS notifications (Twilio) | Cost/complexity - not needed now |
 
 ---
 
@@ -85,9 +82,11 @@ All the other docs in this folder are **OUTDATED** from the original planning ph
 The main code is in:
 - `backend/src/app.ts` - All API routes
 - `backend/src/services/email.ts` - Email notifications
+- `backend/src/services/reminderScheduler.ts` - 24hr lesson reminders
 - `frontend/src/app/admin/page.tsx` - Admin portal
 - `frontend/src/app/driver/page.tsx` - Driver portal  
 - `frontend/src/app/student/page.tsx` - Student portal
-- `db/migrations/` - 11 SQL migrations (all applied)
+- `db/migrations/` - 13 SQL migrations (all applied)
+- `docs/api/openapi.yaml` - API documentation
 
 **Ignore** the other docs in this folder - they are from the original design phase.
