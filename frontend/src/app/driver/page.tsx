@@ -1,6 +1,8 @@
 'use client';
 /* eslint-disable react-hooks/set-state-in-effect */
 
+import toast from 'react-hot-toast';
+
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Protected } from '../auth/Protected';
@@ -251,7 +253,7 @@ function DriverPageContent() {
   async function saveServiceCenter() {
     if (!token || !schoolId || !driverState.driver || !serviceCenterCoords) return;
     setIsSavingProfile(true);
-    setActionMessage('Saving service center location...');
+    const toastId = toast.loading('Saving service center...');
     try {
       await apiFetch(`/schools/${schoolId}/drivers/${driverState.driver.id}`, token, {
         method: 'PATCH',
@@ -262,9 +264,9 @@ function DriverPageContent() {
         }),
       });
       await loadDriverContext();
-      setActionMessage('Service center location and radius saved!');
+      toast.success('Service center saved!', { id: toastId });
     } catch (err) {
-      setActionMessage('Unable to save service center location.');
+      toast.error('Unable to save service center.', { id: toastId });
     } finally {
       setIsSavingProfile(false);
     }
@@ -273,7 +275,7 @@ function DriverPageContent() {
   async function saveWorkingHours() {
     if (!token || !schoolId || !driverState.driver) return;
     setIsSavingProfile(true);
-    setActionMessage('Saving default working hours...');
+    const toastId = toast.loading('Saving working hours...');
     try {
       await apiFetch(`/schools/${schoolId}/drivers/${driverState.driver.id}`, token, {
         method: 'PATCH',
@@ -281,9 +283,9 @@ function DriverPageContent() {
         body: JSON.stringify({ workDayStart: workingHours.start, workDayEnd: workingHours.end }),
       });
       await loadDriverContext();
-      setActionMessage('Default working hours saved!');
+      toast.success('Working hours saved!', { id: toastId });
     } catch (err) {
-      setActionMessage('Unable to save working hours.');
+      toast.error('Unable to save working hours.', { id: toastId });
     } finally {
       setIsSavingProfile(false);
     }
@@ -314,7 +316,7 @@ function DriverPageContent() {
   async function saveSchoolSettings() {
     if (!token || !schoolId) return;
     setIsSavingSchoolSettings(true);
-    setActionMessage('Saving settings...');
+    const toastId = toast.loading('Saving settings...');
     try {
       await apiFetch(`/schools/${schoolId}/settings`, token, {
         method: 'PUT',
@@ -341,9 +343,9 @@ function DriverPageContent() {
         }),
       });
       await loadSchoolSettings();
-      setActionMessage('Settings saved!');
+      toast.success('Settings saved!', { id: toastId });
     } catch {
-      setActionMessage('Unable to save settings.');
+      toast.error('Unable to save settings.', { id: toastId });
     } finally {
       setIsSavingSchoolSettings(false);
     }
@@ -384,12 +386,12 @@ function DriverPageContent() {
     const endDate = new Date(availabilityForm.dateEnd || availabilityForm.dateStart);
 
     if (endDate < startDate) {
-      setActionMessage('End date must be after start date.');
+      toast.error('End date must be after start date.');
       return;
     }
 
     const dayCount = Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    setActionMessage(`Publishing availability for ${dayCount} day(s)...`);
+    const toastId = toast.loading(`Publishing availability for ${dayCount} day(s)...`);
 
     try {
       // Create entries for each day in the range
@@ -410,9 +412,9 @@ function DriverPageContent() {
       }
       setAvailabilityForm({ dateStart: '', dateEnd: '', startTime: '', endTime: '' });
       await loadDriverContext();
-      setActionMessage(`Availability published for ${dayCount} day(s)!`);
+      toast.success(`Availability published for ${dayCount} day(s)!`, { id: toastId });
     } catch (err) {
-      setActionMessage('Unable to publish availability.');
+      toast.error('Unable to publish availability.', { id: toastId });
     }
   }
 
@@ -424,7 +426,7 @@ function DriverPageContent() {
     const endDate = new Date(holidayRange.end || holidayRange.start);
 
     if (endDate < startDate) {
-      setActionMessage('End date must be after start date.');
+      toast.error('End date must be after start date.');
       return;
     }
 
@@ -450,7 +452,7 @@ function DriverPageContent() {
 
     // Error if all dates are already blocked
     if (alreadyBlockedDates.length === Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1) {
-      setActionMessage(`⚠️ All selected dates are already blocked: ${alreadyBlockedDates.join(', ')}`);
+      toast.error(`All selected dates are already blocked: ${alreadyBlockedDates.join(', ')}`);
       return;
     }
 
@@ -458,11 +460,11 @@ function DriverPageContent() {
 
     // ERROR if any dates have published availability - user must delete availability first
     if (conflictDates.length > 0) {
-      setActionMessage(`⚠️ Cannot block ${conflictDates.join(', ')} - you have published availability on these dates. Delete availability first before blocking.`);
+      toast.error(`Cannot block ${conflictDates.join(', ')} - delete availability first.`);
       return;
     }
 
-    setActionMessage(`Adding time off for ${dayCount} day(s)...`);
+    const toastId = toast.loading(`Adding time off for ${dayCount} day(s)...`);
 
     try {
       const currentDate = new Date(startDate);
@@ -486,9 +488,9 @@ function DriverPageContent() {
       }
       setHolidayRange({ start: '', end: '' });
       await loadDriverContext();
-      setActionMessage(`Time off added for ${dayCount} day(s)!`);
+      toast.success(`Time off added for ${dayCount} day(s)!`, { id: toastId });
     } catch (err) {
-      setActionMessage('Unable to add time off.');
+      toast.error('Unable to add time off.', { id: toastId });
     }
   }
 
@@ -508,35 +510,35 @@ function DriverPageContent() {
 
   async function removeHoliday(availabilityId: number) {
     if (!token || !schoolId || !driverState.driver) return;
-    setActionMessage('Removing time off...');
+    const toastId = toast.loading('Removing time off...');
     try {
       await apiFetch(`/schools/${schoolId}/drivers/${driverState.driver.id}/availability/${availabilityId}`, token, {
         method: 'DELETE',
       });
       await loadDriverContext();
-      setActionMessage('Time off removed.');
+      toast.success('Time off removed.', { id: toastId });
     } catch (err) {
-      setActionMessage('Unable to remove time off.');
+      toast.error('Unable to remove time off.', { id: toastId });
     }
   }
 
   async function removeAvailabilitySlot(availabilityId: number) {
     if (!token || !schoolId || !driverState.driver) return;
-    setActionMessage('Removing availability slot...');
+    const toastId = toast.loading('Removing availability...');
     try {
       await apiFetch(`/schools/${schoolId}/drivers/${driverState.driver.id}/availability/${availabilityId}`, token, {
         method: 'DELETE',
       });
       await loadDriverContext();
-      setActionMessage('Availability slot removed.');
+      toast.success('Availability removed.', { id: toastId });
     } catch (err) {
-      setActionMessage('Unable to remove availability slot.');
+      toast.error('Unable to remove availability.', { id: toastId });
     }
   }
 
   async function updateBooking(bookingId: number, newStart: string) {
     if (!token || !schoolId || !newStart) return;
-    setActionMessage('Updating booking...');
+    const toastId = toast.loading('Rescheduling...');
     try {
       await apiFetch(`/schools/${schoolId}/bookings/${bookingId}`, token, {
         method: 'PATCH',
@@ -545,9 +547,9 @@ function DriverPageContent() {
       });
       setReschedule((prev) => ({ ...prev, [bookingId]: '' }));
       await loadDriverContext();
-      setActionMessage('Booking rescheduled.');
+      toast.success('Booking rescheduled!', { id: toastId });
     } catch (err) {
-      setActionMessage('Unable to reschedule booking.');
+      toast.error('Unable to reschedule.', { id: toastId });
     }
   }
 
@@ -562,9 +564,9 @@ function DriverPageContent() {
       });
       setCancelReason((prev) => ({ ...prev, [bookingId]: '' }));
       await loadDriverContext();
-      setActionMessage('Booking cancelled.');
+      toast.success('Booking cancelled.');
     } catch (err) {
-      setActionMessage('Unable to cancel booking.');
+      toast.error('Unable to cancel booking.');
     } finally {
       setIsCancelling(false);
       setConfirmCancel(null);
@@ -573,7 +575,7 @@ function DriverPageContent() {
 
   async function markCompleted(bookingId: number) {
     if (!token || !schoolId) return;
-    setActionMessage('Marking lesson as completed...');
+    const toastId = toast.loading('Marking lesson as completed...');
     try {
       await apiFetch(`/schools/${schoolId}/bookings/${bookingId}`, token, {
         method: 'PATCH',
@@ -581,9 +583,9 @@ function DriverPageContent() {
         body: JSON.stringify({ status: 'completed' }),
       });
       await loadDriverContext();
-      setActionMessage('Lesson marked as completed!');
+      toast.success('Lesson marked as completed!', { id: toastId });
     } catch (err) {
-      setActionMessage('Unable to mark lesson as completed.');
+      toast.error('Unable to mark lesson as completed.', { id: toastId });
     }
   }
 
