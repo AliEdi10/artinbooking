@@ -1,5 +1,6 @@
 'use client';
 
+import toast from 'react-hot-toast';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Protected } from '../auth/Protected';
 import { AppShell } from '../components/AppShell';
@@ -184,15 +185,15 @@ export default function AdminPage() {
   // Phase 3: Resend invitation
   async function handleResendInvitation(invitationId: number) {
     if (!token || !schoolId) return;
-    setActionMessage('Resending invitation...');
+    const toastId = toast.loading('Resending invitation...');
     try {
       await apiFetch(`/schools/${schoolId}/invitations/${invitationId}/resend`, token, {
         method: 'POST',
       });
       await loadPendingInvitations();
-      setActionMessage('Invitation resent successfully!');
+      toast.success('Invitation resent!', { id: toastId });
     } catch (err) {
-      setActionMessage('Unable to resend invitation.');
+      toast.error('Unable to resend invitation.', { id: toastId });
     }
   }
 
@@ -200,15 +201,15 @@ export default function AdminPage() {
   async function handleCancelInvitation(invitationId: number) {
     if (!token || !schoolId) return;
     if (!confirm('Are you sure you want to cancel this invitation?')) return;
-    setActionMessage('Cancelling invitation...');
+    const toastId = toast.loading('Cancelling invitation...');
     try {
       await apiFetch(`/schools/${schoolId}/invitations/${invitationId}`, token, {
         method: 'DELETE',
       });
       await loadPendingInvitations();
-      setActionMessage('Invitation cancelled.');
+      toast.success('Invitation cancelled.', { id: toastId });
     } catch (err) {
-      setActionMessage('Unable to cancel invitation.');
+      toast.error('Unable to cancel invitation.', { id: toastId });
     }
   }
 
@@ -229,7 +230,7 @@ export default function AdminPage() {
     }
     setFormErrors({ ...formErrors, driverEmail: '' });
 
-    setActionMessage('Sending invitation...');
+    const toastId = toast.loading('Sending invitation...');
     try {
       await apiFetch(`/schools/${schoolId}/invitations`, token, {
         method: 'POST',
@@ -242,13 +243,13 @@ export default function AdminPage() {
       });
       setDriverForm({ email: '', fullName: '' });
       await loadPendingInvitations();
-      setActionMessage('✅ Invitation sent! Driver will receive an email to complete registration.');
+      toast.success('Invitation sent! Driver will receive an email.', { id: toastId });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to send invitation';
       if (message.toLowerCase().includes('already') || message.toLowerCase().includes('exists')) {
         setFormErrors({ ...formErrors, driverEmail: 'This email already has an account or pending invitation' });
       }
-      setActionMessage(`❌ ${message}`);
+      toast.error(message, { id: toastId });
     }
   }
 
@@ -264,7 +265,7 @@ export default function AdminPage() {
     }
     setFormErrors({ ...formErrors, studentEmail: '' });
 
-    setActionMessage('Sending invitation...');
+    const toastId = toast.loading('Sending invitation...');
     try {
       await apiFetch(`/schools/${schoolId}/invitations`, token, {
         method: 'POST',
@@ -278,20 +279,20 @@ export default function AdminPage() {
         }),
       });
       setStudentForm({ email: '', fullName: '', allowedHours: '', maxLessonsPerDay: '2' });
-      setActionMessage('✅ Invitation sent! Student will receive an email to complete registration.');
+      toast.success('Invitation sent! Student will receive an email.', { id: toastId });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to send invitation';
       if (message.toLowerCase().includes('already') || message.toLowerCase().includes('exists')) {
         setFormErrors({ ...formErrors, studentEmail: 'This email already has an account or pending invitation' });
       }
-      setActionMessage(`❌ ${message}`);
+      toast.error(message, { id: toastId });
     }
   }
 
   async function handleUpdateSettings(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!token || !schoolId) return;
-    setActionMessage('Saving settings...');
+    const toastId = toast.loading('Saving settings...');
     try {
       await apiFetch(`/schools/${schoolId}/settings`, token, {
         method: 'PUT',
@@ -326,16 +327,16 @@ export default function AdminPage() {
         }),
       });
       await loadSettings();
-      setActionMessage('School settings saved.');
+      toast.success('Settings saved!', { id: toastId });
     } catch (err) {
-      setActionMessage('Unable to save settings.');
+      toast.error('Unable to save settings.', { id: toastId });
     }
   }
 
   async function handleReschedule(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!token || !schoolId || !selectedBookingId) return;
-    setActionMessage('Updating booking...');
+    const toastId = toast.loading('Updating booking...');
     try {
       const patch: Record<string, string | number> = {};
       if (rescheduleStart) patch.startTime = new Date(rescheduleStart).toISOString();
@@ -348,16 +349,16 @@ export default function AdminPage() {
       setRescheduleStart('');
       setRescheduleDriverId('');
       await loadBookings();
-      setActionMessage('Booking updated.');
+      toast.success('Booking updated!', { id: toastId });
     } catch (err) {
-      setActionMessage('Unable to update booking.');
+      toast.error('Unable to update booking.', { id: toastId });
     }
   }
 
   async function handleCancel(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!token || !schoolId || !selectedBookingId) return;
-    setActionMessage('Cancelling booking...');
+    const toastId = toast.loading('Cancelling booking...');
     try {
       await apiFetch(`/schools/${schoolId}/bookings/${selectedBookingId}/cancel`, token, {
         method: 'POST',
@@ -366,15 +367,15 @@ export default function AdminPage() {
       });
       setCancelReason('');
       await loadBookings();
-      setActionMessage('Booking cancelled.');
+      toast.success('Booking cancelled.', { id: toastId });
     } catch (err) {
-      setActionMessage('Unable to cancel booking.');
+      toast.error('Unable to cancel booking.', { id: toastId });
     }
   }
 
   async function updateLicenceStatus(studentId: number, newStatus: 'approved' | 'rejected' | 'pending_review', note?: string) {
     if (!token || !schoolId) return;
-    setActionMessage(`Updating licence status to ${newStatus}...`);
+    const toastId = toast.loading(`Updating licence status...`);
     try {
       await apiFetch(`/schools/${schoolId}/students/${studentId}`, token, {
         method: 'PATCH',
@@ -387,9 +388,9 @@ export default function AdminPage() {
       await loadRoster();
       setSelectedStudent(null);
       setRejectionNote('');
-      setActionMessage(`Licence status updated to ${newStatus}.`);
+      toast.success(`Licence ${newStatus}!`, { id: toastId });
     } catch (err) {
-      setActionMessage('Unable to update licence status.');
+      toast.error('Unable to update licence status.', { id: toastId });
     }
   }
 
