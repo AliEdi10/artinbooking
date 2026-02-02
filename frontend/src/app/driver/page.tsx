@@ -121,6 +121,8 @@ function DriverPageContent() {
   // Phase 4: Confirmation dialog state
   const [confirmCancel, setConfirmCancel] = useState<{ bookingId: number; studentName: string } | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [confirmDeleteSlot, setConfirmDeleteSlot] = useState<{ id: number; date: string } | null>(null);
+  const [confirmDeleteBlock, setConfirmDeleteBlock] = useState<{ id: number; date: string } | null>(null);
 
   // Service Center and Working Hours state
   const [serviceCenterCoords, setServiceCenterCoords] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -1342,7 +1344,7 @@ function DriverPageContent() {
                           </div>
                           <button
                             className="text-xs px-2 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200"
-                            onClick={() => removeAvailabilitySlot(slot.id)}
+                            onClick={() => setConfirmDeleteSlot({ id: slot.id, date: new Date(slot.date).toLocaleDateString() })}
                           >
                             🗑️ Remove
                           </button>
@@ -1404,7 +1406,7 @@ function DriverPageContent() {
                         </div>
                         <button
                           className="text-xs px-2 py-1 rounded bg-red-600 text-white hover:bg-red-700"
-                          onClick={() => removeHoliday(holiday.id)}
+                          onClick={() => setConfirmDeleteBlock({ id: holiday.id, date: new Date(holiday.date).toLocaleDateString() })}
                         >
                           Remove
                         </button>
@@ -1462,6 +1464,40 @@ function DriverPageContent() {
         loading={isCancelling}
         onConfirm={() => confirmCancel && cancelBooking(confirmCancel.bookingId)}
         onCancel={() => setConfirmCancel(null)}
+      />
+
+      {/* Confirmation Dialog for removing availability slot */}
+      <ConfirmDialog
+        isOpen={confirmDeleteSlot !== null}
+        title="Remove Availability"
+        message={confirmDeleteSlot ? `Remove your availability on ${confirmDeleteSlot.date}? Students will no longer be able to book this slot.` : ''}
+        confirmLabel="Yes, Remove"
+        cancelLabel="Keep It"
+        variant="warning"
+        onConfirm={() => {
+          if (confirmDeleteSlot) {
+            removeAvailabilitySlot(confirmDeleteSlot.id);
+            setConfirmDeleteSlot(null);
+          }
+        }}
+        onCancel={() => setConfirmDeleteSlot(null)}
+      />
+
+      {/* Confirmation Dialog for removing blocked date */}
+      <ConfirmDialog
+        isOpen={confirmDeleteBlock !== null}
+        title="Remove Block"
+        message={confirmDeleteBlock ? `Remove the block on ${confirmDeleteBlock.date}? You will become available for bookings on this date.` : ''}
+        confirmLabel="Yes, Remove Block"
+        cancelLabel="Keep Blocked"
+        variant="info"
+        onConfirm={() => {
+          if (confirmDeleteBlock) {
+            removeHoliday(confirmDeleteBlock.id);
+            setConfirmDeleteBlock(null);
+          }
+        }}
+        onCancel={() => setConfirmDeleteBlock(null)}
       />
     </Protected>
   );
