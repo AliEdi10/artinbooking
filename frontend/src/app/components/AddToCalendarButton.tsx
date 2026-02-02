@@ -95,7 +95,7 @@ export function AddToCalendarButton({
                         <span className="text-lg">📥</span>
                         <span>Download .ics file</span>
                     </button>
-                    <div className="px-3 py-1.5 text-xs text-slate-500 bg-slate-50 border-t border-slate-100">
+                    <div className="px-3 py-1.5 text-xs text-slate-600 bg-slate-50 border-t border-slate-100">
                         .ics works with Apple, Outlook, etc.
                     </div>
                 </div>
@@ -103,3 +103,4 @@ export function AddToCalendarButton({
         </div>
     );
 }
+

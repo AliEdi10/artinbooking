@@ -131,7 +131,7 @@ export function MapPicker({ latitude, longitude, radiusKm, onLocationSelect }: M
     if (!isLoaded) {
         return (
             <div className="bg-slate-100 rounded-lg p-4 h-[300px] flex items-center justify-center">
-                <div className="text-slate-500 text-sm">Loading map...</div>
+                <div className="text-slate-600 text-sm">Loading map...</div>
             </div>
         );
     }

@@ -14,8 +14,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "artinbk portal",
+  title: "Artin Driving School Booking System",
   description: "Role-aware dashboards and booking flows for driving schools",
+  icons: {
+    icon: '/favicon.png',
+    apple: '/logo.png',
+  },
 };
 
 export default function RootLayout({

@@ -688,8 +688,8 @@ export default function StudentPage() {
                 <li key={booking.id} className="border rounded p-3 bg-slate-50 space-y-2">
                   <div className="flex justify-between items-center">
                     <div>
-                      <p className="font-medium">{new Date(booking.startTime).toLocaleString()}</p>
-                      <p className="text-xs text-slate-700">Status: {booking.status}</p>
+                      <p className="font-medium text-slate-800">{new Date(booking.startTime).toLocaleString()}</p>
+                      <p className="text-xs text-slate-600">Status: {booking.status}</p>
                     </div>
                     <p className="text-xs text-slate-700">
                       Driver: {drivers.find((driver) => driver.id === booking.driverId)?.fullName ?? 'Driver'}
@@ -704,7 +704,7 @@ export default function StudentPage() {
                       )}
                     />
                     <input
-                      className="border rounded px-2 py-1"
+                      className="border rounded px-2 py-1 text-slate-900"
                       type="datetime-local"
                       value={reschedule[booking.id] ?? ''}
                       onChange={(e) => setReschedule((prev) => ({ ...prev, [booking.id]: e.target.value }))}
@@ -749,8 +749,8 @@ export default function StudentPage() {
                 <li key={booking.id} className="border rounded p-3 bg-slate-50">
                   <div className="flex justify-between items-center">
                     <div>
-                      <p className="font-medium">{new Date(booking.startTime).toLocaleDateString()}</p>
-                      <p className="text-xs text-slate-700">
+                      <p className="font-medium text-slate-800">{new Date(booking.startTime).toLocaleDateString()}</p>
+                      <p className="text-xs text-slate-600">
                         {new Date(booking.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         {' with '}
                         {drivers.find((d) => d.id === booking.driverId)?.fullName ?? 'Unknown'}

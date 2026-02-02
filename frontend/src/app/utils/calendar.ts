@@ -35,7 +35,7 @@ function formatDateToICS(date: Date): string {
  * Generate a unique identifier for the calendar event
  */
 function generateUID(): string {
-    return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}@artinbk.com`;
+    return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}@artindrivingschool.com`;
 }
 
 /**
@@ -58,7 +58,7 @@ export function generateICSContent(event: CalendarEvent): string {
     const lines = [
         'BEGIN:VCALENDAR',
         'VERSION:2.0',
-        'PRODID:-//Artinbk Driving School//Booking System//EN',
+        'PRODID:-//Artin Driving School//Booking System//EN',
         'CALSCALE:GREGORIAN',
         'METHOD:PUBLISH',
         'BEGIN:VEVENT',
@@ -203,3 +203,4 @@ export function generateGoogleCalendarUrl(event: CalendarEvent): string {
 
     return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
+

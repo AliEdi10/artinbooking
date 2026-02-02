@@ -217,7 +217,7 @@ function DriverOverview({ token, schoolId }: { token: string; schoolId: number }
               return (
                 <li key={booking.id} className="flex justify-between items-center p-3 bg-slate-50 rounded border">
                   <div>
-                    <p className="font-medium">{new Date(booking.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                    <p className="font-medium text-slate-800">{new Date(booking.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                     <p className="text-sm text-slate-600">{student?.fullName || 'Student'}</p>
                   </div>
                   <span className="px-2 py-1 text-xs rounded bg-blue-100 text-blue-800">{booking.status}</span>
@@ -391,3 +391,4 @@ export default function Home() {
     </Protected>
   );
 }
+

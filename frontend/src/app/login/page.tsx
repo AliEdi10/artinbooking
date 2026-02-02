@@ -161,9 +161,10 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
       <div className="bg-white border border-slate-200 rounded-lg shadow p-6 w-full max-w-lg space-y-4">
-        <div className="space-y-1">
-          <h1 className="text-xl font-semibold">Sign in to artinbk</h1>
-          <p className="text-sm text-slate-700">{status}</p>
+        <div className="space-y-2 text-center">
+          <img src="/logo.png" alt="Artin Driving School" className="h-16 w-16 mx-auto" />
+          <h1 className="text-xl font-semibold text-slate-900">Artin Driving School</h1>
+          <p className="text-sm text-slate-600">{status}</p>
         </div>
 
         {error && (
@@ -254,8 +255,8 @@ export default function LoginPage() {
         {process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID && (
           <div className="flex items-center justify-between border rounded p-3 bg-slate-50">
             <div>
-              <p className="text-sm font-medium">Google Sign-In</p>
-              <p className="text-xs text-slate-700">Sign in with your Google account</p>
+              <p className="text-sm font-medium text-slate-800">Google Sign-In</p>
+              <p className="text-xs text-slate-600">Sign in with your Google account</p>
             </div>
             <div className="flex items-center space-x-2">
               <div ref={buttonRef} />
@@ -265,13 +266,13 @@ export default function LoginPage() {
 
         {process.env.NEXT_PUBLIC_DEV_MODE === 'true' && (
           <details className="text-sm">
-            <summary className="cursor-pointer text-slate-700 hover:text-slate-800">
+            <summary className="cursor-pointer text-slate-600 hover:text-slate-800">
               Manual JWT entry (advanced)
             </summary>
             <div className="mt-2 space-y-2">
               <textarea
                 id="local-token"
-                className="w-full border border-slate-300 rounded p-2 text-sm"
+                className="w-full border border-slate-300 rounded p-2 text-sm text-slate-900"
                 rows={3}
                 value={localToken}
                 onChange={(event) => {

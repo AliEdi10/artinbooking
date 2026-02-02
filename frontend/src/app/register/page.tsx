@@ -204,12 +204,12 @@ function RegisterContent() {
                     <div className="bg-blue-50 rounded-lg p-4 mb-6">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                             <div>
-                                <span className="text-slate-700">Email:</span>
-                                <p className="font-medium">{invitationInfo.email}</p>
+                                <span className="text-slate-600">Email:</span>
+                                <p className="font-medium text-slate-800">{invitationInfo.email}</p>
                             </div>
                             <div>
-                                <span className="text-slate-700">Role:</span>
-                                <p className="font-medium capitalize">{invitationInfo.role.toLowerCase()}</p>
+                                <span className="text-slate-600">Role:</span>
+                                <p className="font-medium text-slate-800 capitalize">{invitationInfo.role.toLowerCase()}</p>
                             </div>
                         </div>
                     </div>
@@ -227,7 +227,7 @@ function RegisterContent() {
                             <label className="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
                             <input
                                 type="email"
-                                className="w-full border rounded-lg px-4 py-2"
+                                className="w-full border rounded-lg px-4 py-2 text-slate-900"
                                 value={form.email}
                                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                                 required

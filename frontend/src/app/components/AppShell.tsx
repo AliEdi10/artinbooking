@@ -74,9 +74,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-slate-50">
       <header className="border-b bg-white">
         <div className="mx-auto max-w-6xl px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <p className="text-lg font-semibold text-slate-900">artinbk portal</p>
-            <p className="text-xs text-slate-700 hidden sm:block">Role-aware dashboards & booking flows</p>
+          <div className="flex items-center gap-3">
+            <img src="/logo.png" alt="Artin Driving School" className="h-10 w-10" />
+            <div>
+              <p className="text-lg font-semibold text-slate-900">Artin Driving School</p>
+              <p className="text-xs text-slate-600 hidden sm:block">Booking System</p>
+            </div>
           </div>
           <div className="text-right flex sm:flex-col items-center sm:items-end gap-2 sm:gap-0">
             <div className="flex-1 sm:flex-none">
