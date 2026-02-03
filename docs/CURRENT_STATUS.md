@@ -41,7 +41,16 @@
 
 ---
 
-## ✅ RECENT UPDATES (Feb 2, 2026)
+## ✅ RECENT UPDATES (Feb 3, 2026)
+
+| Update | Status |
+|--------|--------|
+| Page-specific browser titles | ✅ Done |
+| Apple touch icon for iOS | ✅ Done |
+| Toast notifications (react-hot-toast) | ✅ Done |
+| Confirmation dialogs for destructive actions | ✅ Done |
+
+## ✅ UPDATES (Feb 2, 2026)
 
 | Update | Status |
 |--------|--------|
