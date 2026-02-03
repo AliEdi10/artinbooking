@@ -1,6 +1,7 @@
 'use client';
 /* eslint-disable react-hooks/set-state-in-effect */
 
+import toast from 'react-hot-toast';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Protected } from '../auth/Protected';
 import { AppShell } from '../components/AppShell';
@@ -169,7 +170,7 @@ export default function StudentPage() {
   async function addAddress(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!token || !schoolId || !student) return;
-    setActionMessage('Saving address...');
+    const toastId = toast.loading('Saving address...');
     try {
       await apiFetch(`/schools/${schoolId}/students/${student.id}/addresses`, token, {
         method: 'POST',
@@ -191,15 +192,15 @@ export default function StudentPage() {
         isDefaultDropoff: false,
       });
       await loadStudentContext();
-      setActionMessage('Address saved.');
+      toast.success('Address saved!', { id: toastId });
     } catch (error) {
-      setActionMessage('Unable to save address.');
+      toast.error('Unable to save address.', { id: toastId });
     }
   }
 
   async function createBooking(startTime: string) {
     if (!token || !schoolId || !student) return;
-    setActionMessage('Creating booking...');
+    const toastId = toast.loading('Creating booking...');
     try {
       await apiFetch(`/schools/${schoolId}/bookings`, token, {
         method: 'POST',
@@ -213,15 +214,15 @@ export default function StudentPage() {
         }),
       });
       await loadStudentContext();
-      setActionMessage('Booking created.');
+      toast.success('Booking created!', { id: toastId });
     } catch (error) {
-      setActionMessage('Unable to create booking.');
+      toast.error('Unable to create booking.', { id: toastId });
     }
   }
 
   async function rescheduleBooking(bookingId: number) {
     if (!token || !schoolId || !reschedule[bookingId]) return;
-    setActionMessage('Rescheduling booking...');
+    const toastId = toast.loading('Rescheduling...');
     try {
       await apiFetch(`/schools/${schoolId}/bookings/${bookingId}`, token, {
         method: 'PATCH',
@@ -230,15 +231,15 @@ export default function StudentPage() {
       });
       setReschedule((prev) => ({ ...prev, [bookingId]: '' }));
       await loadStudentContext();
-      setActionMessage('Booking updated.');
+      toast.success('Booking rescheduled!', { id: toastId });
     } catch (error) {
-      setActionMessage('Unable to reschedule booking.');
+      toast.error('Unable to reschedule.', { id: toastId });
     }
   }
 
   async function cancelBooking(bookingId: number) {
     if (!token || !schoolId) return;
-    setActionMessage('Cancelling booking...');
+    const toastId = toast.loading('Cancelling...');
     try {
       await apiFetch(`/schools/${schoolId}/bookings/${bookingId}/cancel`, token, {
         method: 'POST',
@@ -247,16 +248,16 @@ export default function StudentPage() {
       });
       setCancelReason((prev) => ({ ...prev, [bookingId]: '' }));
       await loadStudentContext();
-      setActionMessage('Booking cancelled.');
+      toast.success('Booking cancelled.', { id: toastId });
     } catch (error) {
-      setActionMessage('Unable to cancel booking.');
+      toast.error('Unable to cancel.', { id: toastId });
     }
   }
 
   async function updateLicence(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!token || !schoolId || !student) return;
-    setActionMessage('Updating licence info...');
+    const toastId = toast.loading('Updating licence...');
     try {
       await apiFetch(`/schools/${schoolId}/students/${student.id}`, token, {
         method: 'PATCH',
@@ -268,9 +269,9 @@ export default function StudentPage() {
         }),
       });
       await loadStudentContext();
-      setActionMessage('Licence info updated successfully!');
+      toast.success('Licence info updated!', { id: toastId });
     } catch (error) {
-      setActionMessage('Unable to update licence info.');
+      toast.error('Unable to update licence.', { id: toastId });
     }
   }
 
@@ -279,7 +280,7 @@ export default function StudentPage() {
     if (!file || !token || !schoolId || !student) return;
 
     setUploadingLicence(true);
-    setActionMessage('Uploading licence image...');
+    const toastId = toast.loading('Uploading licence image...');
 
     try {
       // Convert file to base64 for simple storage (in production, use Cloud Storage)
@@ -293,15 +294,15 @@ export default function StudentPage() {
             body: JSON.stringify({ licenceImageUrl: base64 }),
           });
           await loadStudentContext();
-          setActionMessage('Licence image uploaded successfully!');
+          toast.success('Licence image uploaded!', { id: toastId });
         } catch (err) {
-          setActionMessage('Failed to save licence image.');
+          toast.error('Failed to save licence image.', { id: toastId });
         }
         setUploadingLicence(false);
       };
       reader.readAsDataURL(file);
     } catch (error) {
-      setActionMessage('Unable to upload licence image.');
+      toast.error('Unable to upload licence image.', { id: toastId });
       setUploadingLicence(false);
     }
   }
