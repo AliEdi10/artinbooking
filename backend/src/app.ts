@@ -111,7 +111,23 @@ export function createApp() {
   // Request logging (first, to capture all requests)
   app.use(httpLogger);
 
-  app.use(cors());
+  // CORS configuration - whitelist allowed origins
+  const allowedOrigins = [
+    'https://artinbooking.vercel.app',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+  ];
+  app.use(cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+  }));
   app.use(express.json());
 
   // Apply general rate limiting to all routes

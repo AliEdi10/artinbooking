@@ -81,33 +81,23 @@ function RegisterContent() {
         setError(null);
 
         try {
-            const endpoint = token
-                ? `${BACKEND_URL}/invitations/accept`
-                : `${BACKEND_URL}/auth/register`;
+            // Registration requires an invitation token
+            if (!token) {
+                setError('Registration requires an invitation. Please use the link from your invitation email.');
+                return;
+            }
 
-            const body = token
-                ? {
-                    token,
-                    fullName: form.fullName,
-                    password: form.password,
-                    phone: form.phone,
-                    isMinor: form.isMinor,
-                    guardianPhone: form.isMinor ? form.guardianPhone : undefined,
-                    guardianEmail: form.isMinor ? form.guardianEmail : undefined,
-                }
-                : {
-                    email: form.email,
-                    password: form.password,
-                    fullName: form.fullName,
-                    phone: form.phone,
-                    isMinor: form.isMinor,
-                    guardianPhone: form.isMinor ? form.guardianPhone : undefined,
-                    guardianEmail: form.isMinor ? form.guardianEmail : undefined,
-                    role: 'STUDENT',
-                    drivingSchoolId: 100
-                };
+            const body = {
+                token,
+                fullName: form.fullName,
+                password: form.password,
+                phone: form.phone,
+                isMinor: form.isMinor,
+                guardianPhone: form.isMinor ? form.guardianPhone : undefined,
+                guardianEmail: form.isMinor ? form.guardianEmail : undefined,
+            };
 
-            const response = await fetch(endpoint, {
+            const response = await fetch(`${BACKEND_URL}/invitations/accept`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body),

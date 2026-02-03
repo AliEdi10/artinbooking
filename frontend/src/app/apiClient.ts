@@ -110,27 +110,60 @@ function getDefaultErrorMessage(status: number): string {
   }
 }
 
+const DEFAULT_TIMEOUT_MS = 30000; // 30 seconds
+const MAX_RETRIES = 2;
+const RETRY_DELAY_MS = 1000;
+
 /**
- * Enhanced API fetch function with proper error handling
+ * Enhanced API fetch function with timeout, retry logic, and proper error handling
  */
-export async function apiFetch<T>(path: string, token: string, options: RequestInit = {}): Promise<T> {
+export async function apiFetch<T>(
+  path: string,
+  token: string,
+  options: RequestInit = {},
+  retries = MAX_RETRIES
+): Promise<T> {
   let response: Response;
+
+  // Create abort controller for timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
 
   try {
     response = await fetch(`${API_BASE}${path}`, {
       ...options,
+      signal: controller.signal,
       headers: {
         ...(options.headers ?? {}),
         Authorization: `Bearer ${token}`,
       },
     });
   } catch (error) {
+    clearTimeout(timeoutId);
+
+    // Handle abort (timeout)
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new ApiError(
+        'Request timed out. Please try again.',
+        0,
+        'TIMEOUT_ERROR'
+      );
+    }
+
     // Network error (no connection, CORS, etc.)
     throw new ApiError(
       'Unable to connect to the server. Please check your internet connection.',
       0,
       'NETWORK_ERROR'
     );
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
+  // Retry on 5xx server errors
+  if (response.status >= 500 && retries > 0) {
+    await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+    return apiFetch<T>(path, token, options, retries - 1);
   }
 
   if (!response.ok) {
