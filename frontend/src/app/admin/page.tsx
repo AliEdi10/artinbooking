@@ -6,6 +6,7 @@ import { Protected } from '../auth/Protected';
 import { AppShell } from '../components/AppShell';
 import { SummaryCard } from '../components/SummaryCard';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { AnalyticsDashboard } from '../components/AnalyticsDashboard';
 import { useAuth } from '../auth/AuthProvider';
 import { apiFetch } from '../apiClient';
 
@@ -412,6 +413,12 @@ export default function AdminPage() {
             {actionMessage ? <p className="text-xs text-slate-700 mt-1">{actionMessage}</p> : null}
             {error ? <p className="text-xs text-red-600 mt-1">{error}</p> : null}
           </div>
+
+          {/* Analytics Dashboard */}
+          {schoolId && token && (
+            <AnalyticsDashboard schoolId={schoolId} token={token} />
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <SummaryCard
               title="Drivers"

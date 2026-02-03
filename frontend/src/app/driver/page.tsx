@@ -13,6 +13,7 @@ import { MapViewer } from '../components/MapViewer';
 import { MapPicker } from '../components/MapPicker';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { AddToCalendarButton } from '../components/AddToCalendarButton';
+import { EarningsCard } from '../components/EarningsCard';
 import { createDriverLessonEvent } from '../utils/calendar';
 import { useAuth } from '../auth/AuthProvider';
 import { apiFetch } from '../apiClient';
@@ -956,6 +957,15 @@ function DriverPageContent() {
                   </ul>
                 </SummaryCard>
               </div>
+
+              {/* Earnings Card */}
+              {driverState.driver && schoolId && token && (
+                <EarningsCard
+                  schoolId={schoolId}
+                  driverId={driverState.driver.id}
+                  token={token}
+                />
+              )}
             </>
           )}
 

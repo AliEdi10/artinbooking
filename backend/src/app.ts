@@ -101,13 +101,27 @@ async function buildDriverDayBookings(
 }
 
 import authRouter from './routes/auth';
+import analyticsRouter from './routes/analytics';
+import { generalLimiter, authLimiter } from './middleware/rateLimit';
+import { httpLogger, logger } from './middleware/logging';
 
 export function createApp() {
   const app = express();
+
+  // Request logging (first, to capture all requests)
+  app.use(httpLogger);
+
   app.use(cors());
   app.use(express.json());
 
-  app.use('/auth', authRouter); // Mount new auth routes
+  // Apply general rate limiting to all routes
+  app.use(generalLimiter);
+
+  // Apply stricter rate limiting to auth routes
+  app.use('/auth', authLimiter, authRouter);
+
+  // Mount analytics routes
+  app.use(analyticsRouter);
 
   app.get('/health', (_req, res) => {
     res.send('OK');
