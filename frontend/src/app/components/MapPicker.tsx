@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState, useRef } from 'react';
+import { useCallback, useState, useRef, useEffect } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, Autocomplete, Circle } from '@react-google-maps/api';
 
 const containerStyle = {
@@ -44,8 +44,26 @@ export function MapPicker({ latitude, longitude, radiusKm, onLocationSelect }: M
         latitude && longitude ? { lat: latitude, lng: longitude } : defaultCenter
     );
     const [searchValue, setSearchValue] = useState('');
+    const [inputValue, setInputValue] = useState('');
 
     const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // Debounce search value updates to reduce re-renders
+    useEffect(() => {
+        if (debounceRef.current) {
+            clearTimeout(debounceRef.current);
+        }
+        debounceRef.current = setTimeout(() => {
+            setSearchValue(inputValue);
+        }, 300);
+
+        return () => {
+            if (debounceRef.current) {
+                clearTimeout(debounceRef.current);
+            }
+        };
+    }, [inputValue]);
 
     const handleMapClick = useCallback(
         (e: google.maps.MapMouseEvent) => {
@@ -81,6 +99,7 @@ export function MapPicker({ latitude, longitude, radiusKm, onLocationSelect }: M
                 const lng = place.geometry.location.lng();
                 setMarkerPosition({ lat, lng });
                 setMapCenter({ lat, lng });
+                setInputValue(place.formatted_address || '');
                 setSearchValue(place.formatted_address || '');
 
                 // Extract address components
@@ -147,8 +166,8 @@ export function MapPicker({ latitude, longitude, radiusKm, onLocationSelect }: M
                 <input
                     type="text"
                     placeholder="🔍 Search for an address..."
-                    value={searchValue}
-                    onChange={(e) => setSearchValue(e.target.value)}
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
                     className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
             </Autocomplete>
