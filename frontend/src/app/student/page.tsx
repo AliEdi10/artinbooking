@@ -6,6 +6,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Protected } from '../auth/Protected';
 import { AppShell } from '../components/AppShell';
 import { SummaryCard } from '../components/SummaryCard';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { MapPicker } from '../components/MapPicker';
 import { MapViewer } from '../components/MapViewer';
 import { AddToCalendarButton } from '../components/AddToCalendarButton';
@@ -74,6 +75,8 @@ export default function StudentPage() {
     licenceExpiryDate: '',
   });
   const [uploadingLicence, setUploadingLicence] = useState(false);
+  const [confirmCancelBooking, setConfirmCancelBooking] = useState<number | null>(null);
+  const [isCancellingBooking, setIsCancellingBooking] = useState(false);
 
   async function fetchSlots(driverId: number, pickupId: number, dropoffId: number, date: string) {
     if (!token || !schoolId) return;
@@ -728,7 +731,7 @@ export default function StudentPage() {
                     <button
                       className="px-3 py-1 rounded bg-red-600 text-white hover:bg-red-500 min-h-[32px]"
                       type="button"
-                      onClick={() => cancelBooking(booking.id)}
+                      onClick={() => setConfirmCancelBooking(booking.id)}
                     >
                       Cancel
                     </button>
@@ -773,6 +776,26 @@ export default function StudentPage() {
           </SummaryCard>
         </div>
       </AppShell>
+
+      {/* Cancel Booking Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={confirmCancelBooking !== null}
+        title="Cancel Booking"
+        message="Are you sure you want to cancel this lesson? This action cannot be undone."
+        confirmLabel="Yes, Cancel Lesson"
+        cancelLabel="Keep Booking"
+        variant="danger"
+        loading={isCancellingBooking}
+        onConfirm={async () => {
+          if (!confirmCancelBooking) return;
+          setIsCancellingBooking(true);
+          await cancelBooking(confirmCancelBooking);
+          setIsCancellingBooking(false);
+          setConfirmCancelBooking(null);
+        }}
+        onCancel={() => setConfirmCancelBooking(null)}
+      />
     </Protected>
   );
 }
+

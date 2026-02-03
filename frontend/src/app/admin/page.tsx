@@ -5,6 +5,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Protected } from '../auth/Protected';
 import { AppShell } from '../components/AppShell';
 import { SummaryCard } from '../components/SummaryCard';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useAuth } from '../auth/AuthProvider';
 import { apiFetch } from '../apiClient';
 
@@ -55,6 +56,8 @@ export default function AdminPage() {
   const [loadingBookings, setLoadingBookings] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState('');
+  const [confirmCancelInvitation, setConfirmCancelInvitation] = useState<number | null>(null);
+  const [isCancellingInvitation, setIsCancellingInvitation] = useState(false);
 
   const [driverForm, setDriverForm] = useState({ email: '', fullName: '' });
   const [studentForm, setStudentForm] = useState({
@@ -200,7 +203,7 @@ export default function AdminPage() {
   // Phase 3: Cancel invitation
   async function handleCancelInvitation(invitationId: number) {
     if (!token || !schoolId) return;
-    if (!confirm('Are you sure you want to cancel this invitation?')) return;
+    setIsCancellingInvitation(true);
     const toastId = toast.loading('Cancelling invitation...');
     try {
       await apiFetch(`/schools/${schoolId}/invitations/${invitationId}`, token, {
@@ -210,6 +213,9 @@ export default function AdminPage() {
       toast.success('Invitation cancelled.', { id: toastId });
     } catch (err) {
       toast.error('Unable to cancel invitation.', { id: toastId });
+    } finally {
+      setIsCancellingInvitation(false);
+      setConfirmCancelInvitation(null);
     }
   }
 
@@ -507,7 +513,7 @@ export default function AdminPage() {
                           Resend
                         </button>
                         <button
-                          onClick={() => handleCancelInvitation(invite.id)}
+                          onClick={() => setConfirmCancelInvitation(invite.id)}
                           className="text-xs px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700"
                         >
                           Cancel
@@ -925,6 +931,19 @@ export default function AdminPage() {
           </SummaryCard>
         </div>
       </AppShell>
+
+      {/* Cancel Invitation Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={confirmCancelInvitation !== null}
+        title="Cancel Invitation"
+        message="Are you sure you want to cancel this invitation? The invitee will not be able to register."
+        confirmLabel="Yes, Cancel"
+        cancelLabel="Keep Invitation"
+        variant="warning"
+        loading={isCancellingInvitation}
+        onConfirm={() => confirmCancelInvitation && handleCancelInvitation(confirmCancelInvitation)}
+        onCancel={() => setConfirmCancelInvitation(null)}
+      />
     </Protected>
   );
 }
