@@ -22,7 +22,7 @@ import {
   updateStudentProfile,
 } from './repositories/studentProfiles';
 import { createAddress, getAddressById, listAddressesForStudent, updateAddress } from './repositories/studentAddresses';
-import { cancelBooking, createBooking, getBookingById, listBookings, updateBooking, countScheduledBookingsForStudentOnDate, getTotalBookedHoursForStudent } from './repositories/bookings';
+import { cancelBooking, createBooking, getBookingById, listBookings, updateBooking, countScheduledBookingsForStudentOnDate, getTotalBookedHoursForStudent, hasBookingConflict, countScheduledBookingsForDriverOnDate } from './repositories/bookings';
 import { createAvailability, deleteAvailability, listAvailability, getDriverHolidaysForSchool } from './repositories/driverAvailability';
 import { getSchoolSettings, upsertSchoolSettings } from './repositories/schoolSettings';
 import { UserRole } from './models';
@@ -1066,15 +1066,31 @@ export function createApp() {
           }
         }
 
-        const { date, startTime, endTime } = req.body as {
+        const { date, startTime, endTime, type } = req.body as {
           date?: string;
           startTime?: string;
           endTime?: string;
+          type?: string;
         };
 
         if (!date || !startTime || !endTime) {
           res.status(400).json({ error: 'date, startTime, and endTime are required' });
           return;
+        }
+
+        // If creating an off-day/holiday, check for existing bookings
+        if (type === 'override_closed') {
+          const bookingsOnDate = await countScheduledBookingsForDriverOnDate(
+            schoolId,
+            driverId,
+            new Date(date + 'T00:00:00Z'),
+          );
+          if (bookingsOnDate > 0) {
+            res.status(400).json({
+              error: `Cannot mark this date as off-day. You have ${bookingsOnDate} scheduled booking(s) on this date. Please cancel or reschedule them first.`
+            });
+            return;
+          }
         }
 
         const record = await createAvailability(driverId, schoolId, req.body);
@@ -1581,6 +1597,12 @@ export function createApp() {
           return;
         }
 
+        // Only allow updates on scheduled bookings
+        if (existing.status !== 'scheduled') {
+          res.status(400).json({ error: 'Only scheduled bookings can be modified' });
+          return;
+        }
+
         if (req.user?.role === 'DRIVER') {
           const driver = await getDriverProfileByUserId(req.user.id, schoolId);
           if (!driver || driver.id !== existing.driverId) {
@@ -1597,7 +1619,102 @@ export function createApp() {
           }
         }
 
-        const updated = await updateBooking(bookingId, schoolId, req.body);
+        const body = req.body as {
+          startTime?: string;
+          endTime?: string;
+          status?: string;
+          driverId?: number;
+          studentId?: number;
+          pickupAddressId?: number;
+          dropoffAddressId?: number;
+        };
+
+        // Block changing driverId or studentId through PATCH - use cancel and rebook instead
+        if (body.driverId !== undefined && body.driverId !== existing.driverId) {
+          res.status(400).json({ error: 'Cannot change driver. Please cancel and create a new booking.' });
+          return;
+        }
+        if (body.studentId !== undefined && body.studentId !== existing.studentId) {
+          res.status(400).json({ error: 'Cannot change student. Please cancel and create a new booking.' });
+          return;
+        }
+
+        // If changing time, perform comprehensive validation
+        if (body.startTime || body.endTime) {
+          const newStart = body.startTime ? new Date(body.startTime) : existing.startTime;
+          const newEnd = body.endTime ? new Date(body.endTime) : existing.endTime;
+
+          // Validate dates are valid
+          if (Number.isNaN(newStart.getTime()) || Number.isNaN(newEnd.getTime())) {
+            res.status(400).json({ error: 'Invalid date format' });
+            return;
+          }
+
+          // Block past dates
+          if (newStart.getTime() < Date.now()) {
+            res.status(400).json({ error: 'Cannot reschedule to a past date' });
+            return;
+          }
+
+          // Fetch driver and settings for validation
+          const driver = await getDriverProfileById(existing.driverId, schoolId);
+          if (!driver || !driver.active) {
+            res.status(400).json({ error: 'Driver is no longer active' });
+            return;
+          }
+
+          const settings = await getSchoolSettings(schoolId);
+
+          // Enforce lead time
+          if (settings?.minBookingLeadTimeHours) {
+            const cutoff = Date.now() + settings.minBookingLeadTimeHours * 60 * 60 * 1000;
+            if (newStart.getTime() < cutoff) {
+              res.status(400).json({
+                error: `Booking requires at least ${settings.minBookingLeadTimeHours} hours lead time`
+              });
+              return;
+            }
+          }
+
+          // Check driver availability for the new date
+          const driverAvailabilities = await listAvailability(driver.id, schoolId);
+          const newDateStr = newStart.toISOString().slice(0, 10);
+
+          // Check for driver's off-day on the new date
+          const hasHolidayOnDate = driverAvailabilities.some(
+            (entry) => entry.date.toISOString().slice(0, 10) === newDateStr && entry.type === 'override_closed'
+          );
+          if (hasHolidayOnDate) {
+            res.status(400).json({ error: 'Driver is not available on this date (off-day)' });
+            return;
+          }
+
+          // Check for double-booking conflicts
+          const hasConflict = await hasBookingConflict(
+            schoolId,
+            existing.driverId,
+            newStart,
+            newEnd,
+            bookingId, // Exclude current booking from conflict check
+          );
+
+          if (hasConflict) {
+            res.status(409).json({ error: 'Time slot conflicts with another booking for this driver' });
+            return;
+          }
+        }
+
+        // Only allow updating specific fields
+        const allowedUpdates: Partial<typeof body> = {};
+        if (body.startTime) allowedUpdates.startTime = body.startTime;
+        if (body.endTime) allowedUpdates.endTime = body.endTime;
+        if (body.status && ['scheduled', 'completed', 'no_show'].includes(body.status)) {
+          allowedUpdates.status = body.status;
+        }
+        if (body.pickupAddressId) allowedUpdates.pickupAddressId = body.pickupAddressId;
+        if (body.dropoffAddressId) allowedUpdates.dropoffAddressId = body.dropoffAddressId;
+
+        const updated = await updateBooking(bookingId, schoolId, allowedUpdates);
         res.json(updated);
       } catch (error) {
         next(error);

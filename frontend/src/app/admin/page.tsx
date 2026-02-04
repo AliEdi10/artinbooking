@@ -83,7 +83,6 @@ export default function AdminPage() {
   });
   const [selectedBookingId, setSelectedBookingId] = useState<number | null>(null);
   const [rescheduleStart, setRescheduleStart] = useState('');
-  const [rescheduleDriverId, setRescheduleDriverId] = useState('');
   const [cancelReason, setCancelReason] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [rejectionNote, setRejectionNote] = useState('');
@@ -342,19 +341,15 @@ export default function AdminPage() {
 
   async function handleReschedule(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!token || !schoolId || !selectedBookingId) return;
+    if (!token || !schoolId || !selectedBookingId || !rescheduleStart) return;
     const toastId = toast.loading('Updating booking...');
     try {
-      const patch: Record<string, string | number> = {};
-      if (rescheduleStart) patch.startTime = new Date(rescheduleStart).toISOString();
-      if (rescheduleDriverId) patch.driverId = Number(rescheduleDriverId);
       await apiFetch(`/schools/${schoolId}/bookings/${selectedBookingId}`, token, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(patch),
+        body: JSON.stringify({ startTime: new Date(rescheduleStart).toISOString() }),
       });
       setRescheduleStart('');
-      setRescheduleDriverId('');
       await loadBookings();
       toast.success('Booking updated!', { id: toastId });
     } catch (err) {
@@ -888,18 +883,7 @@ export default function AdminPage() {
                     onChange={(e) => setRescheduleStart(e.target.value)}
                     required
                   />
-                  <select
-                    className="border rounded px-2 py-1 w-full text-slate-900"
-                    value={rescheduleDriverId}
-                    onChange={(e) => setRescheduleDriverId(e.target.value)}
-                  >
-                    <option value="">Keep assigned driver</option>
-                    {drivers.map((driver) => (
-                      <option key={driver.id} value={driver.id}>
-                        {driver.fullName}
-                      </option>
-                    ))}
-                  </select>
+                  <p className="text-xs text-slate-500">To change driver, cancel and create a new booking.</p>
                   <button
                     type="submit"
                     className="w-full bg-slate-900 text-white rounded px-3 py-2 hover:bg-slate-800"

@@ -816,16 +816,6 @@ function DriverPageContent() {
                       />
                     </label>
                     <label className="text-xs text-slate-700">
-                      Service radius (km)
-                      <input
-                        className="border rounded px-2 py-2 w-full text-slate-900"
-                        type="number"
-                        value={schoolSettingsForm.defaultServiceRadiusKm}
-                        onChange={(e) => setSchoolSettingsForm({ ...schoolSettingsForm, defaultServiceRadiusKm: e.target.value })}
-                        placeholder="25"
-                      />
-                    </label>
-                    <label className="text-xs text-slate-700">
                       Daily booking cap
                       <input
                         className="border rounded px-2 py-2 w-full text-slate-900"
@@ -834,24 +824,6 @@ function DriverPageContent() {
                         onChange={(e) => setSchoolSettingsForm({ ...schoolSettingsForm, dailyBookingCapPerDriver: e.target.value })}
                         placeholder="8"
                       />
-                    </label>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-3 text-xs text-slate-700">
-                    <label className="flex items-center gap-1">
-                      <input
-                        type="checkbox"
-                        checked={schoolSettingsForm.allowStudentToPickDriver}
-                        onChange={(e) => setSchoolSettingsForm({ ...schoolSettingsForm, allowStudentToPickDriver: e.target.checked })}
-                      />
-                      Allow students to pick driver
-                    </label>
-                    <label className="flex items-center gap-1">
-                      <input
-                        type="checkbox"
-                        checked={schoolSettingsForm.allowDriverSelfAvailabilityEdit}
-                        onChange={(e) => setSchoolSettingsForm({ ...schoolSettingsForm, allowDriverSelfAvailabilityEdit: e.target.checked })}
-                      />
-                      Driver self-edit availability
                     </label>
                   </div>
                   <button
