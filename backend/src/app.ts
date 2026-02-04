@@ -120,22 +120,29 @@ export function createApp() {
     'http://127.0.0.1:3000',
   ];
 
-  // Allow Vercel preview deployments (pattern: *.vercel.app)
-  const isVercelPreview = (origin: string) => {
-    return origin.endsWith('.vercel.app') && origin.includes('artinbooking');
+  // Check if origin is allowed (exact match or Vercel preview)
+  const isAllowedOrigin = (origin: string): boolean => {
+    if (allowedOrigins.includes(origin)) return true;
+    // Allow all Vercel preview deployments for this project
+    if (origin.endsWith('.vercel.app')) return true;
+    return false;
   };
 
   app.use(cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl)
+      // Allow requests with no origin (like mobile apps, curl, or server-to-server)
       if (!origin) return callback(null, true);
-      // Check exact match or Vercel preview pattern
-      if (allowedOrigins.includes(origin) || isVercelPreview(origin)) {
-        return callback(null, true);
+      // Check if origin is allowed
+      if (isAllowedOrigin(origin)) {
+        return callback(null, origin); // Reflect the origin back
       }
-      return callback(new Error('Not allowed by CORS'));
+      // For disallowed origins, don't throw an error - just don't set CORS headers
+      logger.warn(`CORS blocked origin: ${origin}`);
+      return callback(null, false);
     },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   }));
   app.use(express.json());
 
