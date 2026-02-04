@@ -113,6 +113,8 @@ export function createApp() {
 
   // CORS configuration - whitelist allowed origins
   const allowedOrigins = [
+    'https://booking-artindriving.ca',
+    'https://www.booking-artindriving.ca',
     'https://artinbooking.vercel.app',
     'http://localhost:3000',
     'http://127.0.0.1:3000',
