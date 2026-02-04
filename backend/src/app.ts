@@ -119,11 +119,18 @@ export function createApp() {
     'http://localhost:3000',
     'http://127.0.0.1:3000',
   ];
+
+  // Allow Vercel preview deployments (pattern: *.vercel.app)
+  const isVercelPreview = (origin: string) => {
+    return origin.endsWith('.vercel.app') && origin.includes('artinbooking');
+  };
+
   app.use(cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps or curl)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
+      // Check exact match or Vercel preview pattern
+      if (allowedOrigins.includes(origin) || isVercelPreview(origin)) {
         return callback(null, true);
       }
       return callback(new Error('Not allowed by CORS'));
