@@ -134,10 +134,10 @@ export function createApp() {
       if (!origin) return callback(null, true);
       // Check if origin is allowed
       if (isAllowedOrigin(origin)) {
-        return callback(null, origin); // Reflect the origin back
+        return callback(null, true); // Safely allow the origin
       }
-      // For disallowed origins, don't throw an error - just don't set CORS headers
-      logger.warn(`CORS blocked origin: ${origin}`);
+
+      // For disallowed origins, fail gracefully without throwing 500s
       return callback(null, false);
     },
     credentials: true,
