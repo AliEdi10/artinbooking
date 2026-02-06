@@ -17,8 +17,8 @@ export async function createDrivingSchool(params: {
   contactEmail?: string;
 }): Promise<DrivingSchool> {
   const result = await getPool().query<DrivingSchoolRow>(
-    `INSERT INTO driving_schools (name, contact_email, active)
-     VALUES ($1, $2, true)
+    `INSERT INTO driving_schools (name, contact_email, status)
+     VALUES ($1, $2, 'active')
      RETURNING *`,
     [params.name, params.contactEmail ?? null]
   );
