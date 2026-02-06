@@ -11,7 +11,7 @@ type DrivingSchool = {
     id: number;
     name: string;
     contactEmail: string | null;
-    active: boolean;
+    status: 'active' | 'suspended' | 'deleted';
     createdAt: string;
 };
 
@@ -134,8 +134,8 @@ export default function SuperadminPage() {
                                                 <p className="font-medium text-slate-900">{school.name}</p>
                                                 <p className="text-xs text-slate-700">{school.contactEmail || 'No email'}</p>
                                             </div>
-                                            <span className={`text-xs px-2 py-1 rounded ${school.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                                {school.active ? 'Active' : 'Inactive'}
+                                            <span className={`text-xs px-2 py-1 rounded ${school.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                                {school.status === 'active' ? 'Active' : school.status === 'suspended' ? 'Suspended' : 'Deleted'}
                                             </span>
                                         </div>
                                     </li>
