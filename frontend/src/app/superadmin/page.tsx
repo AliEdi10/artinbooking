@@ -112,7 +112,7 @@ export default function SuperadminPage() {
                 <div className="space-y-6">
                     <div>
                         <h1 className="text-2xl font-semibold text-slate-900">Superadmin Dashboard</h1>
-                        <p className="text-sm text-slate-700">
+                        <p className="text-sm text-slate-800">
                             Manage driving schools and assign administrators.
                         </p>
                         {actionMessage && <p className="text-sm text-blue-700 mt-2">{actionMessage}</p>}
@@ -132,7 +132,7 @@ export default function SuperadminPage() {
                                         <div className="flex justify-between items-center">
                                             <div>
                                                 <p className="font-medium text-slate-900">{school.name}</p>
-                                                <p className="text-xs text-slate-700">{school.contactEmail || 'No email'}</p>
+                                                <p className="text-xs text-slate-800">{school.contactEmail || 'No email'}</p>
                                             </div>
                                             <span className={`text-xs px-2 py-1 rounded ${school.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                                                 {school.status === 'active' ? 'Active' : school.status === 'suspended' ? 'Suspended' : 'Deleted'}
@@ -141,12 +141,12 @@ export default function SuperadminPage() {
                                     </li>
                                 ))}
                                 {schools.length === 0 && !loading && (
-                                    <li className="text-xs text-slate-700 text-center py-4">No schools yet.</li>
+                                    <li className="text-xs text-slate-800 text-center py-4">No schools yet.</li>
                                 )}
                             </ul>
 
                             <form className="mt-4 space-y-2" onSubmit={handleCreateSchool}>
-                                <div className="text-xs font-medium text-slate-700">Create New School</div>
+                                <div className="text-xs font-medium text-slate-800">Create New School</div>
                                 <input
                                     className="border rounded px-3 py-2 text-sm w-full text-slate-900"
                                     placeholder="School name *"
@@ -182,19 +182,19 @@ export default function SuperadminPage() {
                                     return (
                                         <li key={admin.id} className="border rounded p-2 bg-blue-50">
                                             <p className="font-medium text-slate-900">{admin.email}</p>
-                                            <p className="text-xs text-slate-700">
+                                            <p className="text-xs text-slate-800">
                                                 {admin.fullName || 'No name'} • {school?.name || 'Unknown school'}
                                             </p>
                                         </li>
                                     );
                                 })}
                                 {admins.length === 0 && (
-                                    <li className="text-xs text-slate-700 text-center py-4">No school admins yet.</li>
+                                    <li className="text-xs text-slate-800 text-center py-4">No school admins yet.</li>
                                 )}
                             </ul>
 
                             <form className="mt-4 space-y-2" onSubmit={handleInviteAdmin}>
-                                <div className="text-xs font-medium text-slate-700">Invite School Admin</div>
+                                <div className="text-xs font-medium text-slate-800">Invite School Admin</div>
                                 <select
                                     className="border rounded px-3 py-2 text-sm w-full text-slate-900"
                                     value={adminForm.schoolId}

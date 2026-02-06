@@ -118,32 +118,32 @@ export function WeeklyCalendar({ availability, bookings, students }: WeeklyCalen
             <div className="flex items-center justify-between">
                 <button
                     onClick={() => setWeekOffset(w => w - 1)}
-                    className="px-3 py-1 text-sm rounded border text-slate-700 hover:bg-slate-100"
+                    className="px-3 py-1 text-sm rounded border text-slate-800 hover:bg-slate-100"
                 >
                     ← Previous
                 </button>
                 <span className="text-sm font-medium text-slate-800">{weekLabel}</span>
                 <button
                     onClick={() => setWeekOffset(w => w + 1)}
-                    className="px-3 py-1 text-sm rounded border text-slate-700 hover:bg-slate-100"
+                    className="px-3 py-1 text-sm rounded border text-slate-800 hover:bg-slate-100"
                 >
                     Next →
                 </button>
             </div>
 
             {/* Legend */}
-            <div className="flex gap-4 text-xs text-slate-700">
+            <div className="flex gap-4 text-xs text-slate-800">
                 <div className="flex items-center gap-1">
                     <div className="w-4 h-4 bg-green-100 border border-green-300 rounded" />
-                    <span className="text-slate-700">Available</span>
+                    <span className="text-slate-800">Available</span>
                 </div>
                 <div className="flex items-center gap-1">
                     <div className="w-4 h-4 bg-blue-500 rounded" />
-                    <span className="text-slate-700">Booked Lesson</span>
+                    <span className="text-slate-800">Booked Lesson</span>
                 </div>
                 <div className="flex items-center gap-1">
                     <div className="w-4 h-4 bg-red-100 border border-red-300 rounded" />
-                    <span className="text-slate-700">Blocked / Off Day</span>
+                    <span className="text-slate-800">Blocked / Off Day</span>
                 </div>
             </div>
 
@@ -152,11 +152,11 @@ export function WeeklyCalendar({ availability, bookings, students }: WeeklyCalen
                 <div className="min-w-[600px]">
                     {/* Header */}
                     <div className="grid grid-cols-8 gap-px bg-slate-200 rounded-t">
-                        <div className="bg-white p-2 text-xs font-medium text-slate-700">Time</div>
+                        <div className="bg-white p-2 text-xs font-medium text-slate-800">Time</div>
                         {weekDates.map((date, i) => (
                             <div key={i} className="bg-white p-2 text-center">
                                 <div className="text-xs font-medium">{DAYS[i]}</div>
-                                <div className="text-xs text-slate-700">{date.getDate()}</div>
+                                <div className="text-xs text-slate-800">{date.getDate()}</div>
                             </div>
                         ))}
                     </div>
@@ -165,7 +165,7 @@ export function WeeklyCalendar({ availability, bookings, students }: WeeklyCalen
                     <div className="relative bg-slate-100">
                         {HOURS.map((hour) => (
                             <div key={hour} className="grid grid-cols-8 gap-px h-12">
-                                <div className="bg-white p-1 text-xs text-slate-700 flex items-start">
+                                <div className="bg-white p-1 text-xs text-slate-800 flex items-start">
                                     {hour}:00
                                 </div>
                                 {weekDates.map((_, dayIndex) => (

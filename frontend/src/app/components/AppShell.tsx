@@ -56,7 +56,7 @@ function NavigationLinks({ role }: { role: string | undefined }) {
           <Link
             key={item.href}
             href={item.href}
-            className={`px-3 py-2 min-h-[40px] text-sm rounded border whitespace-nowrap flex items-center ${active ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200'
+            className={`px-3 py-2 min-h-[40px] text-sm rounded border whitespace-nowrap flex items-center ${active ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-800 border-slate-200'
               }`}
           >
             {item.label}
@@ -84,12 +84,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="text-right flex sm:flex-col items-center sm:items-end gap-2 sm:gap-0">
             <div className="flex-1 sm:flex-none">
               <p className="text-sm font-medium text-slate-900 truncate max-w-[150px] sm:max-w-none">{user?.email ?? 'Signed out'}</p>
-              <p className="text-xs text-slate-700 hidden sm:block">{user?.role ?? 'role unknown'}</p>
+              <p className="text-xs text-slate-800 hidden sm:block">{user?.role ?? 'role unknown'}</p>
             </div>
             <button
               type="button"
               onClick={() => signOut()}
-              className="text-xs px-3 py-1.5 min-h-[32px] rounded bg-slate-100 text-slate-700 hover:bg-slate-200 whitespace-nowrap"
+              className="text-xs px-3 py-1.5 min-h-[32px] rounded bg-slate-100 text-slate-800 hover:bg-slate-200 whitespace-nowrap"
             >
               Sign out
             </button>

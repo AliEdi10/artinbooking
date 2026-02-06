@@ -55,7 +55,7 @@ export class ErrorBoundary extends Component<Props, State> {
                         </p>
                         {process.env.NODE_ENV === 'development' && this.state.error && (
                             <details className="text-left bg-slate-50 rounded-lg p-3 mb-4 text-xs">
-                                <summary className="cursor-pointer font-medium text-slate-700">
+                                <summary className="cursor-pointer font-medium text-slate-800">
                                     Error Details
                                 </summary>
                                 <pre className="mt-2 overflow-auto text-red-600 whitespace-pre-wrap">
@@ -72,7 +72,7 @@ export class ErrorBoundary extends Component<Props, State> {
                             </button>
                             <button
                                 onClick={() => window.location.reload()}
-                                className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-200"
+                                className="px-4 py-2 bg-slate-100 text-slate-800 rounded-lg text-sm font-medium hover:bg-slate-200"
                             >
                                 Refresh Page
                             </button>

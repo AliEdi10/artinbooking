@@ -99,7 +99,7 @@ function ResetPasswordForm() {
                     </Link>
                     <Link
                         href="/login"
-                        className="text-sm text-slate-700 hover:text-slate-800"
+                        className="text-sm text-slate-800 hover:text-slate-800"
                     >
                         ← Back to login
                     </Link>
@@ -137,7 +137,7 @@ function ResetPasswordForm() {
         <div className="bg-white border border-slate-200 rounded-lg shadow p-6 w-full max-w-md space-y-6">
             <div className="space-y-2">
                 <h1 className="text-2xl font-bold text-slate-900">Reset Password</h1>
-                <p className="text-sm text-slate-700">
+                <p className="text-sm text-slate-800">
                     Enter your new password below.
                 </p>
             </div>
@@ -150,7 +150,7 @@ function ResetPasswordForm() {
                 )}
 
                 <div>
-                    <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">
+                    <label htmlFor="password" className="block text-sm font-medium text-slate-800 mb-1">
                         New Password
                     </label>
                     <input
@@ -170,7 +170,7 @@ function ResetPasswordForm() {
                             <span className={passwordChecks.length ? 'text-green-600' : 'text-slate-400'}>
                                 {passwordChecks.length ? '✓' : '○'}
                             </span>
-                            <span className={passwordChecks.length ? 'text-green-700' : 'text-slate-500'}>
+                            <span className={passwordChecks.length ? 'text-green-700' : 'text-slate-700'}>
                                 At least 8 characters
                             </span>
                         </div>
@@ -178,7 +178,7 @@ function ResetPasswordForm() {
                             <span className={passwordChecks.hasLetter ? 'text-green-600' : 'text-slate-400'}>
                                 {passwordChecks.hasLetter ? '✓' : '○'}
                             </span>
-                            <span className={passwordChecks.hasLetter ? 'text-green-700' : 'text-slate-500'}>
+                            <span className={passwordChecks.hasLetter ? 'text-green-700' : 'text-slate-700'}>
                                 Contains a letter
                             </span>
                         </div>
@@ -186,7 +186,7 @@ function ResetPasswordForm() {
                             <span className={passwordChecks.hasNumber ? 'text-green-600' : 'text-slate-400'}>
                                 {passwordChecks.hasNumber ? '✓' : '○'}
                             </span>
-                            <span className={passwordChecks.hasNumber ? 'text-green-700' : 'text-slate-500'}>
+                            <span className={passwordChecks.hasNumber ? 'text-green-700' : 'text-slate-700'}>
                                 Contains a number
                             </span>
                         </div>
@@ -194,7 +194,7 @@ function ResetPasswordForm() {
                 </div>
 
                 <div>
-                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 mb-1">
+                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-800 mb-1">
                         Confirm Password
                     </label>
                     <input
@@ -240,7 +240,7 @@ function ResetPasswordForm() {
                 <div className="text-center pt-2">
                     <Link
                         href="/login"
-                        className="text-sm text-slate-700 hover:text-slate-800"
+                        className="text-sm text-slate-800 hover:text-slate-800"
                     >
                         ← Back to login
                     </Link>

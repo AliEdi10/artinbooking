@@ -55,7 +55,7 @@ export function EarningsCard({ schoolId, driverId, token }: EarningsCardProps) {
     if (loading) {
         return (
             <SummaryCard title="Activity Summary" description="Your lesson activity summary">
-                <div className="text-slate-500 text-sm text-center py-4">Loading activity...</div>
+                <div className="text-slate-700 text-sm text-center py-4">Loading activity...</div>
             </SummaryCard>
         );
     }
@@ -63,7 +63,7 @@ export function EarningsCard({ schoolId, driverId, token }: EarningsCardProps) {
     if (!earnings) {
         return (
             <SummaryCard title="Activity Summary" description="Your lesson activity summary">
-                <div className="text-slate-500 text-sm text-center py-4">Unable to load activity data.</div>
+                <div className="text-slate-700 text-sm text-center py-4">Unable to load activity data.</div>
             </SummaryCard>
         );
     }
@@ -110,7 +110,7 @@ export function EarningsCard({ schoolId, driverId, token }: EarningsCardProps) {
                 )}
 
                 {earnings.weeklyData.length === 0 && (
-                    <p className="text-slate-500 text-sm text-center py-2">No completed lessons in the last 12 weeks.</p>
+                    <p className="text-slate-700 text-sm text-center py-2">No completed lessons in the last 12 weeks.</p>
                 )}
             </div>
         </SummaryCard>

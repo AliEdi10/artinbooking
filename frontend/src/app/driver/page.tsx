@@ -593,10 +593,10 @@ function DriverPageContent() {
         <div className="space-y-4">
           <div>
             <h1 className="text-2xl font-semibold text-slate-900">Instructor Dashboard</h1>
-            <p className="text-sm text-slate-700">
+            <p className="text-sm text-slate-800">
               Manage your schedule, view student profiles, and track your lessons.
             </p>
-            <p className="text-xs text-slate-700">
+            <p className="text-xs text-slate-800">
               {driverState.driver ? `Active profile: ${driverState.driver.fullName}` : 'No driver profile loaded yet.'}
             </p>
             {actionMessage ? <p className="text-[11px] text-emerald-600 font-medium">{actionMessage}</p> : null}
@@ -620,7 +620,7 @@ function DriverPageContent() {
                       <li key={b.id} className="flex items-center justify-between bg-white border border-amber-200 rounded p-2">
                         <div>
                           <p className="text-sm font-medium text-slate-800">{studentName}</p>
-                          <p className="text-xs text-slate-700">{new Date(b.startTime).toLocaleString()}</p>
+                          <p className="text-xs text-slate-800">{new Date(b.startTime).toLocaleString()}</p>
                         </div>
                         <div className="flex gap-2">
                           <button
@@ -673,19 +673,19 @@ function DriverPageContent() {
                             <span className="text-lg font-semibold text-slate-900">
                               {new Date(lesson.rawStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
-                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${lesson.status === 'scheduled' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'
+                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${lesson.status === 'scheduled' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-800'
                               }`}>
                               {lesson.status}
                             </span>
                           </div>
                           <p className="font-medium text-slate-800">{lesson.student}</p>
                           {lesson.pickupAddress && (
-                            <p className="text-xs text-slate-700 mt-1">
+                            <p className="text-xs text-slate-800 mt-1">
                               📍 Pickup: {lesson.pickupAddress}
                             </p>
                           )}
                           {lesson.dropoffAddress && lesson.dropoffAddress !== lesson.pickupAddress && (
-                            <p className="text-xs text-slate-700">
+                            <p className="text-xs text-slate-800">
                               🏁 Dropoff: {lesson.dropoffAddress}
                             </p>
                           )}
@@ -707,7 +707,7 @@ function DriverPageContent() {
                   const today = new Date().toDateString();
                   return lessonDate === today;
                 }).length === 0 && (
-                    <p className="text-sm text-slate-700 text-center py-2">No lessons scheduled for today.</p>
+                    <p className="text-sm text-slate-800 text-center py-2">No lessons scheduled for today.</p>
                   )}
               </div>
             </div>
@@ -730,7 +730,7 @@ function DriverPageContent() {
                       ⚠️ Click on the map to set your location, adjust the radius, then click "Save Service Center" below.
                     </p>
                     <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">
+                      <label className="block text-xs font-medium text-slate-800 mb-1">
                         Service Radius: <span className="font-bold text-blue-600">{serviceRadiusKm} km</span>
                       </label>
                       <input
@@ -742,7 +742,7 @@ function DriverPageContent() {
                         onChange={(e) => setServiceRadiusKm(Number(e.target.value))}
                         className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
                       />
-                      <div className="flex justify-between text-xs text-slate-700 mt-1">
+                      <div className="flex justify-between text-xs text-slate-800 mt-1">
                         <span>5km</span>
                         <span>50km</span>
                         <span>100km</span>
@@ -774,7 +774,7 @@ function DriverPageContent() {
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <label className="block text-xs font-medium text-slate-700 mb-1">Start Time</label>
+                        <label className="block text-xs font-medium text-slate-800 mb-1">Start Time</label>
                         <input
                           type="time"
                           className="w-full border rounded px-3 py-2 text-sm text-slate-900"
@@ -783,7 +783,7 @@ function DriverPageContent() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-slate-700 mb-1">End Time</label>
+                        <label className="block text-xs font-medium text-slate-800 mb-1">End Time</label>
                         <input
                           type="time"
                           className="w-full border rounded px-3 py-2 text-sm text-slate-900"
@@ -799,7 +799,7 @@ function DriverPageContent() {
                     >
                       {isSavingProfile ? 'Saving...' : '💾 Save Working Hours'}
                     </button>
-                    <p className="text-xs text-slate-700">
+                    <p className="text-xs text-slate-800">
                       💡 Tip: You can also set specific availability for individual dates using the form below.
                     </p>
                   </div>
@@ -814,7 +814,7 @@ function DriverPageContent() {
               >
                 <form className="space-y-3 text-sm" onSubmit={(e) => { e.preventDefault(); saveSchoolSettings(); }}>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <label className="text-xs text-slate-700">
+                    <label className="text-xs text-slate-800">
                       Lead time (hrs)
                       <input
                         className="border rounded px-2 py-2 w-full text-slate-900"
@@ -824,7 +824,7 @@ function DriverPageContent() {
                         placeholder="24"
                       />
                     </label>
-                    <label className="text-xs text-slate-700">
+                    <label className="text-xs text-slate-800">
                       Cancellation cutoff (hrs)
                       <input
                         className="border rounded px-2 py-2 w-full text-slate-900"
@@ -834,7 +834,7 @@ function DriverPageContent() {
                         placeholder="24"
                       />
                     </label>
-                    <label className="text-xs text-slate-700">
+                    <label className="text-xs text-slate-800">
                       Lesson duration (min)
                       <input
                         className="border rounded px-2 py-2 w-full text-slate-900"
@@ -844,7 +844,7 @@ function DriverPageContent() {
                         placeholder="90"
                       />
                     </label>
-                    <label className="text-xs text-slate-700">
+                    <label className="text-xs text-slate-800">
                       Buffer between lessons (min)
                       <input
                         className="border rounded px-2 py-2 w-full text-slate-900"
@@ -854,7 +854,7 @@ function DriverPageContent() {
                         placeholder="15"
                       />
                     </label>
-                    <label className="text-xs text-slate-700">
+                    <label className="text-xs text-slate-800">
                       Daily booking cap
                       <input
                         className="border rounded px-2 py-2 w-full text-slate-900"
@@ -881,15 +881,15 @@ function DriverPageContent() {
                   description="Snapshot of 15-minute grid availability derived from your working hours."
                   footer={status || 'Loaded from /drivers/:id/availability'}
                 >
-                  <ul className="space-y-1 text-sm text-slate-700">
+                  <ul className="space-y-1 text-sm text-slate-800">
                     {availabilitySummary.map((slot) => (
                       <li key={`${slot.day}-${slot.window}`} className="flex justify-between">
                         <span>{slot.day}</span>
-                        <span className="text-xs text-slate-700">{slot.window}</span>
+                        <span className="text-xs text-slate-800">{slot.window}</span>
                       </li>
                     ))}
                     {availabilitySummary.length === 0 && !status ? (
-                      <li className="text-xs text-slate-700">No availability published yet.</li>
+                      <li className="text-xs text-slate-800">No availability published yet.</li>
                     ) : null}
                   </ul>
                 </SummaryCard>
@@ -898,14 +898,14 @@ function DriverPageContent() {
                   description="Displays bookings already screened for buffers, travel caps, and service radius."
                   footer={status || 'Loaded from /schools/:id/bookings'}
                 >
-                  <ul className="space-y-1 text-sm text-slate-700">
+                  <ul className="space-y-1 text-sm text-slate-800">
                     {upcomingLessons.map((lesson) => (
                       <li key={`${lesson.id}-${lesson.time}`} className="space-y-1 border rounded p-2 bg-slate-50">
                         <div className="flex justify-between">
                           <div>
                             <p className="font-medium text-slate-800">{lesson.time}</p>
-                            <p className="text-xs text-slate-700">{lesson.status}</p>
-                            <p className="text-[11px] text-slate-700">Student: {lesson.student}</p>
+                            <p className="text-xs text-slate-800">{lesson.status}</p>
+                            <p className="text-[11px] text-slate-800">Student: {lesson.student}</p>
                             {lesson.pickupAddress && (
                               <p className="text-[11px] text-blue-600">📍 Pickup: {lesson.pickupAddress}</p>
                             )}
@@ -964,7 +964,7 @@ function DriverPageContent() {
                       </li>
                     ))}
                     {upcomingLessons.length === 0 && !status ? (
-                      <li className="text-xs text-slate-700">No bookings scheduled yet.</li>
+                      <li className="text-xs text-slate-800">No bookings scheduled yet.</li>
                     ) : null}
                   </ul>
                 </SummaryCard>
@@ -1051,17 +1051,17 @@ function DriverPageContent() {
                           </h3>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
                             <div>
-                              <span className="text-slate-700 block">Full Name</span>
+                              <span className="text-slate-800 block">Full Name</span>
                               <p className="font-semibold text-slate-900">{selectedStudent.fullName}</p>
                             </div>
                             <div>
-                              <span className="text-slate-700 block">Age</span>
+                              <span className="text-slate-800 block">Age</span>
                               <p className="font-semibold text-slate-900">
                                 {studentAge !== null ? `${studentAge} years old` : 'Not provided'}
                               </p>
                             </div>
                             <div>
-                              <span className="text-slate-700 block">Date of Birth</span>
+                              <span className="text-slate-800 block">Date of Birth</span>
                               <p className="font-semibold text-slate-900">
                                 {selectedStudent.dateOfBirth
                                   ? new Date(selectedStudent.dateOfBirth).toLocaleDateString()
@@ -1069,7 +1069,7 @@ function DriverPageContent() {
                               </p>
                             </div>
                             <div>
-                              <span className="text-slate-700 block">Phone</span>
+                              <span className="text-slate-800 block">Phone</span>
                               <p className="font-semibold text-slate-900">
                                 {selectedStudent.phone ? (
                                   <a href={`tel:${selectedStudent.phone}`} className="text-blue-600 hover:underline">
@@ -1079,7 +1079,7 @@ function DriverPageContent() {
                               </p>
                             </div>
                             <div>
-                              <span className="text-slate-700 block">Email</span>
+                              <span className="text-slate-800 block">Email</span>
                               <p className="font-semibold text-slate-900">
                                 {selectedStudent.email ? (
                                   <a href={`mailto:${selectedStudent.email}`} className="text-blue-600 hover:underline">
@@ -1180,9 +1180,9 @@ function DriverPageContent() {
                                       {addr.label && (
                                         <p className="font-semibold text-slate-800 mb-1">{addr.label}</p>
                                       )}
-                                      <p className="text-slate-700">{addr.line1}</p>
-                                      {addr.line2 && <p className="text-slate-700">{addr.line2}</p>}
-                                      <p className="text-slate-700">
+                                      <p className="text-slate-800">{addr.line1}</p>
+                                      {addr.line2 && <p className="text-slate-800">{addr.line2}</p>}
+                                      <p className="text-slate-800">
                                         {[addr.city, addr.provinceOrState, addr.postalCode].filter(Boolean).join(', ')}
                                       </p>
                                     </div>
@@ -1254,14 +1254,14 @@ function DriverPageContent() {
                                   <div className="flex justify-between items-center">
                                     <div>
                                       <p className="font-medium text-slate-900">{new Date(booking.startTime).toLocaleDateString()}</p>
-                                      <p className="text-slate-700">
+                                      <p className="text-slate-800">
                                         {new Date(booking.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                       </p>
                                     </div>
                                     <span className={`px-2 py-1 rounded text-xs font-medium ${booking.status === 'completed' ? 'bg-green-100 text-green-800'
                                       : booking.status === 'scheduled' ? 'bg-blue-100 text-blue-800'
                                         : booking.status.includes('cancelled') ? 'bg-red-100 text-red-800'
-                                          : 'bg-slate-100 text-slate-700'
+                                          : 'bg-slate-100 text-slate-800'
                                       }`}>
                                       {booking.status.replace(/_/g, ' ')}
                                     </span>
@@ -1270,7 +1270,7 @@ function DriverPageContent() {
                               ))}
                             </ul>
                           ) : (
-                            <p className="text-xs text-slate-700 text-center py-4">No lesson history for this student.</p>
+                            <p className="text-xs text-slate-800 text-center py-4">No lesson history for this student.</p>
                           )}
                         </div>
                       </div>
@@ -1280,7 +1280,7 @@ function DriverPageContent() {
                   {!selectedStudentId && (
                     <div className="text-center py-8">
                       <p className="text-4xl mb-2">👥</p>
-                      <p className="text-sm text-slate-700">
+                      <p className="text-sm text-slate-800">
                         Select a student from the dropdown above to view their complete profile.
                       </p>
                     </div>
@@ -1301,7 +1301,7 @@ function DriverPageContent() {
                 <form className="space-y-3 text-sm" onSubmit={publishAvailability}>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">Start Date</label>
+                      <label className="block text-xs font-medium text-slate-800 mb-1">Start Date</label>
                       <input
                         className="w-full border rounded px-2 py-2 text-slate-900"
                         type="date"
@@ -1311,7 +1311,7 @@ function DriverPageContent() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">End Date (optional)</label>
+                      <label className="block text-xs font-medium text-slate-800 mb-1">End Date (optional)</label>
                       <input
                         className="w-full border rounded px-2 py-2 text-slate-900"
                         type="date"
@@ -1323,7 +1323,7 @@ function DriverPageContent() {
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">Start Time</label>
+                      <label className="block text-xs font-medium text-slate-800 mb-1">Start Time</label>
                       <input
                         className="w-full border rounded px-2 py-2 text-slate-900"
                         type="time"
@@ -1333,7 +1333,7 @@ function DriverPageContent() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">End Time</label>
+                      <label className="block text-xs font-medium text-slate-800 mb-1">End Time</label>
                       <input
                         className="w-full border rounded px-2 py-2 text-slate-900"
                         type="time"
@@ -1350,7 +1350,7 @@ function DriverPageContent() {
 
                 {/* List of published availability slots */}
                 <div className="mt-4 pt-4 border-t border-slate-200">
-                  <h4 className="text-sm font-medium text-slate-700 mb-2">
+                  <h4 className="text-sm font-medium text-slate-800 mb-2">
                     📋 Published Availability ({driverState.availability.filter(a => a.type === 'working_hours').length} slot(s))
                   </h4>
                   <ul className="space-y-2 text-sm max-h-48 overflow-y-auto">
@@ -1361,7 +1361,7 @@ function DriverPageContent() {
                         <li key={slot.id} className="flex justify-between items-center border rounded p-2 bg-green-50">
                           <div>
                             <span className="font-medium text-slate-800">{new Date(slot.date).toLocaleDateString()}</span>
-                            <span className="text-xs text-slate-700 ml-2">
+                            <span className="text-xs text-slate-800 ml-2">
                               {slot.startTime} - {slot.endTime}
                             </span>
                             <span className="text-xs text-green-700 font-medium ml-2">✓ Available</span>
@@ -1375,7 +1375,7 @@ function DriverPageContent() {
                         </li>
                       ))}
                     {driverState.availability.filter(a => a.type === 'working_hours').length === 0 ? (
-                      <li className="text-xs text-slate-700 text-center py-2">
+                      <li className="text-xs text-slate-800 text-center py-2">
                         No availability published yet. Use the form above to add availability.
                       </li>
                     ) : null}
@@ -1390,7 +1390,7 @@ function DriverPageContent() {
                 <form className="space-y-3 mb-3" onSubmit={addHoliday}>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">Start Date</label>
+                      <label className="block text-xs font-medium text-slate-800 mb-1">Start Date</label>
                       <input
                         className="w-full border rounded px-3 py-2 text-sm text-slate-900"
                         type="date"
@@ -1401,7 +1401,7 @@ function DriverPageContent() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">End Date (optional)</label>
+                      <label className="block text-xs font-medium text-slate-800 mb-1">End Date (optional)</label>
                       <input
                         className="w-full border rounded px-3 py-2 text-sm text-slate-900"
                         type="date"
@@ -1437,7 +1437,7 @@ function DriverPageContent() {
                       </li>
                     ))}
                   {driverState.availability.filter(a => a.type === 'override_closed').length === 0 ? (
-                    <li className="text-xs text-slate-700 text-center py-2">No time off scheduled.</li>
+                    <li className="text-xs text-slate-800 text-center py-2">No time off scheduled.</li>
                   ) : null}
                 </ul>
               </SummaryCard>
@@ -1446,13 +1446,13 @@ function DriverPageContent() {
                 description="Your completed and cancelled lessons."
                 footer={`${driverState.pastBookings.length} past lesson(s)`}
               >
-                <ul className="space-y-2 text-sm text-slate-700 max-h-64 overflow-y-auto">
+                <ul className="space-y-2 text-sm text-slate-800 max-h-64 overflow-y-auto">
                   {driverState.pastBookings.map((booking) => (
                     <li key={booking.id} className="border rounded p-3 bg-slate-50">
                       <div className="flex justify-between items-center">
                         <div>
                           <p className="font-medium">{new Date(booking.startTime).toLocaleDateString()}</p>
-                          <p className="text-xs text-slate-700">
+                          <p className="text-xs text-slate-800">
                             {new Date(booking.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             {' - '}
                             {driverState.students.find((s) => s.id === booking.studentId)?.fullName ?? 'Unknown Student'}
@@ -1460,7 +1460,7 @@ function DriverPageContent() {
                         </div>
                         <span className={`px-2 py-1 rounded text-xs font-medium ${booking.status === 'completed'
                           ? 'bg-green-100 text-green-800'
-                          : 'bg-slate-100 text-slate-700'
+                          : 'bg-slate-100 text-slate-800'
                           }`}>
                           {booking.status.replace(/_/g, ' ')}
                         </span>
@@ -1468,7 +1468,7 @@ function DriverPageContent() {
                     </li>
                   ))}
                   {driverState.pastBookings.length === 0 ? (
-                    <li className="text-xs text-slate-700 text-center py-4">No lesson history yet.</li>
+                    <li className="text-xs text-slate-800 text-center py-4">No lesson history yet.</li>
                   ) : null}
                 </ul>
               </SummaryCard>

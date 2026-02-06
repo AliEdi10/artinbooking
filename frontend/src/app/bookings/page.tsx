@@ -79,9 +79,9 @@ export default function BookingsPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-semibold text-slate-900">Booking & availability</h1>
-              <p className="text-sm text-slate-700">Lead times, service radius, and policy enforcement happen on the API.</p>
+              <p className="text-sm text-slate-800">Lead times, service radius, and policy enforcement happen on the API.</p>
             </div>
-            <p className="text-xs text-slate-700">{status || 'Loaded from live APIs'}</p>
+            <p className="text-xs text-slate-800">{status || 'Loaded from live APIs'}</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <SummaryCard
@@ -89,18 +89,18 @@ export default function BookingsPage() {
               description="Pulled from /available-slots with travel-aware checks for the selected driver and addresses."
               footer="Connect to student address + licence inputs to filter results."
             >
-              <ul className="space-y-1 text-sm text-slate-700">
+              <ul className="space-y-1 text-sm text-slate-800">
                 {slots.map((slot) => {
                   const driverName = drivers.find((driver) => driver.id === slot.driverId)?.fullName ?? 'Driver';
                   return (
                     <li key={`${slot.startTime}-${slot.driverId}`} className="border rounded p-2 bg-slate-50">
                       <p className="font-medium">{new Date(slot.startTime).toLocaleString()}</p>
-                      <p className="text-xs text-slate-700">Driver: {driverName}</p>
+                      <p className="text-xs text-slate-800">Driver: {driverName}</p>
                     </li>
                   );
                 })}
                 {slots.length === 0 && !status ? (
-                  <li className="text-xs text-slate-700">No available slots returned for the provided addresses.</li>
+                  <li className="text-xs text-slate-800">No available slots returned for the provided addresses.</li>
                 ) : null}
               </ul>
             </SummaryCard>
@@ -109,20 +109,20 @@ export default function BookingsPage() {
               description="Create, cancel, and review bookings. This view shows current commitments."
               footer="Data comes directly from /schools/:id/bookings"
             >
-              <ul className="space-y-1 text-sm text-slate-700">
+              <ul className="space-y-1 text-sm text-slate-800">
                 {bookings.map((booking) => {
                   const driverName = drivers.find((driver) => driver.id === booking.driverId)?.fullName ?? 'Driver';
                   const studentName = students.find((student) => student.id === booking.studentId)?.fullName ?? 'Student';
                   return (
                     <li key={booking.id} className="border rounded p-2 bg-slate-50">
                       <p className="font-medium">{new Date(booking.startTime).toLocaleString()}</p>
-                      <p className="text-xs text-slate-700">{studentName} with {driverName}</p>
-                      <p className="text-xs text-slate-700">Status: {booking.status}</p>
+                      <p className="text-xs text-slate-800">{studentName} with {driverName}</p>
+                      <p className="text-xs text-slate-800">Status: {booking.status}</p>
                     </li>
                   );
                 })}
                 {bookings.length === 0 && !status ? (
-                  <li className="text-xs text-slate-700">No bookings found for this school.</li>
+                  <li className="text-xs text-slate-800">No bookings found for this school.</li>
                 ) : null}
               </ul>
             </SummaryCard>
@@ -131,7 +131,7 @@ export default function BookingsPage() {
             title="Next steps"
             description="Let users choose drivers/addresses and perform create/cancel actions from the UI."
           >
-            <ol className="list-decimal list-inside text-sm text-slate-700 space-y-1">
+            <ol className="list-decimal list-inside text-sm text-slate-800 space-y-1">
               <li>Expose address and driver selectors before querying /available-slots.</li>
               <li>POST new bookings using the selected slot, then refresh the booking feed.</li>
               <li>Add cancel/reschedule buttons that call booking APIs with policy enforcement.</li>

@@ -82,7 +82,7 @@ export default function ForgotPasswordPage() {
                         )}
 
                         <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">
+                            <label htmlFor="email" className="block text-sm font-medium text-slate-800 mb-1">
                                 Email address
                             </label>
                             <input

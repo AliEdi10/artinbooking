@@ -124,7 +124,7 @@ function RegisterContent() {
             <div className="min-h-screen bg-gradient-to-br from-blue-50 to-slate-100 flex items-center justify-center">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-slate-700">Validating...</p>
+                    <p className="text-slate-800">Validating...</p>
                 </div>
             </div>
         );
@@ -138,10 +138,10 @@ function RegisterContent() {
                         <span className="text-3xl">✓</span>
                     </div>
                     <h1 className="text-2xl font-bold text-slate-800 mb-2">Registration Complete!</h1>
-                    <p className="text-slate-700 mb-4">
+                    <p className="text-slate-800 mb-4">
                         Your account has been created successfully. Redirecting to login...
                     </p>
-                    <div className="animate-pulse text-sm text-slate-700">
+                    <div className="animate-pulse text-sm text-slate-800">
                         You can now sign in with your email and password.
                     </div>
                 </div>
@@ -179,12 +179,12 @@ function RegisterContent() {
                         {isPublic ? 'Create Student Account' : 'Complete Your Registration'}
                     </h1>
                     {invitationInfo && (
-                        <p className="text-slate-700 text-sm">
+                        <p className="text-slate-800 text-sm">
                             You've been invited to join <strong>{invitationInfo.schoolName}</strong>
                         </p>
                     )}
                     {isPublic && (
-                        <p className="text-slate-700 text-sm">
+                        <p className="text-slate-800 text-sm">
                             Join Brightside Driving School
                         </p>
                     )}
@@ -194,11 +194,11 @@ function RegisterContent() {
                     <div className="bg-blue-50 rounded-lg p-4 mb-6">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                             <div>
-                                <span className="text-slate-700">Email:</span>
+                                <span className="text-slate-800">Email:</span>
                                 <p className="font-medium text-slate-800">{invitationInfo.email}</p>
                             </div>
                             <div>
-                                <span className="text-slate-700">Role:</span>
+                                <span className="text-slate-800">Role:</span>
                                 <p className="font-medium text-slate-800 capitalize">{invitationInfo.role.toLowerCase()}</p>
                             </div>
                         </div>
@@ -214,7 +214,7 @@ function RegisterContent() {
                 <form onSubmit={handleSubmit} className="space-y-4">
                     {isPublic && (
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
+                            <label className="block text-sm font-medium text-slate-800 mb-1">Email Address</label>
                             <input
                                 type="email"
                                 className="w-full border rounded-lg px-4 py-2 text-slate-900"
@@ -226,7 +226,7 @@ function RegisterContent() {
                     )}
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
+                        <label className="block text-sm font-medium text-slate-800 mb-1">Full Name</label>
                         <input
                             type="text"
                             className="w-full border rounded-lg px-4 py-2"
@@ -240,7 +240,7 @@ function RegisterContent() {
                     {(!invitationInfo || invitationInfo.role === 'STUDENT') && (
                         <>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Phone Number *</label>
+                                <label className="block text-sm font-medium text-slate-800 mb-1">Phone Number *</label>
                                 <input
                                     type="tel"
                                     className="w-full border rounded-lg px-4 py-2"
@@ -253,7 +253,7 @@ function RegisterContent() {
 
                             {/* Age Selection */}
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-2">Are you 18 or older?</label>
+                                <label className="block text-sm font-medium text-slate-800 mb-2">Are you 18 or older?</label>
                                 <div className="flex flex-wrap gap-4">
                                     <label className="flex items-center gap-2 cursor-pointer">
                                         <input
@@ -285,7 +285,7 @@ function RegisterContent() {
                                         👨‍👩‍👧 Parent/Guardian Information Required
                                     </p>
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">Guardian Phone *</label>
+                                        <label className="block text-sm font-medium text-slate-800 mb-1">Guardian Phone *</label>
                                         <input
                                             type="tel"
                                             className="w-full border rounded-lg px-4 py-2"
@@ -296,7 +296,7 @@ function RegisterContent() {
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">Guardian Email *</label>
+                                        <label className="block text-sm font-medium text-slate-800 mb-1">Guardian Email *</label>
                                         <input
                                             type="email"
                                             className="w-full border rounded-lg px-4 py-2"
@@ -312,7 +312,7 @@ function RegisterContent() {
                     )}
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                        <label className="block text-sm font-medium text-slate-800 mb-1">Password</label>
                         <input
                             type="password"
                             className={`w-full border rounded-lg px-4 py-2 ${form.password.length > 0 && form.password.length < 8 ? 'border-red-300 focus:border-red-500' : form.password.length >= 8 ? 'border-green-300 focus:border-green-500' : ''}`}
@@ -346,7 +346,7 @@ function RegisterContent() {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Confirm Password</label>
+                        <label className="block text-sm font-medium text-slate-800 mb-1">Confirm Password</label>
                         <input
                             type="password"
                             className={`w-full border rounded-lg px-4 py-2 ${form.confirmPassword.length > 0 ? (form.password === form.confirmPassword ? 'border-green-300' : 'border-red-300') : ''}`}
@@ -370,7 +370,7 @@ function RegisterContent() {
                     </button>
                 </form>
 
-                <p className="text-center text-xs text-slate-700 mt-4">
+                <p className="text-center text-xs text-slate-800 mt-4">
                     Already have an account?{' '}
                     <a href="/login" className="text-blue-600 hover:underline">
                         Sign in
@@ -387,7 +387,7 @@ export default function RegisterPage() {
             <div className="min-h-screen bg-gradient-to-br from-blue-50 to-slate-100 flex items-center justify-center">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-slate-700">Loading...</p>
+                    <p className="text-slate-800">Loading...</p>
                 </div>
             </div>
         }>

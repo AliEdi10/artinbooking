@@ -410,10 +410,10 @@ export default function AdminPage() {
         <div className="space-y-4">
           <div>
             <h1 className="text-2xl font-semibold text-slate-900">School Admin workspace</h1>
-            <p className="text-sm text-slate-700">
+            <p className="text-sm text-slate-800">
               Manage your school roster, policies, and bookings. Backend calls are scoped using your JWT school ID.
             </p>
-            {actionMessage ? <p className="text-xs text-slate-700 mt-1">{actionMessage}</p> : null}
+            {actionMessage ? <p className="text-xs text-slate-800 mt-1">{actionMessage}</p> : null}
             {error ? <p className="text-xs text-red-600 mt-1">{error}</p> : null}
           </div>
 
@@ -428,19 +428,19 @@ export default function AdminPage() {
               description="Onboard instructors and monitor their status."
               footer={loadingRoster ? 'Loading drivers…' : error ?? 'Data comes from /schools/:id/drivers'}
             >
-              <ul className="space-y-1 text-sm text-slate-700">
+              <ul className="space-y-1 text-sm text-slate-800">
                 {drivers.map((driver) => (
                   <li key={driver.id} className="flex justify-between">
                     <span>{driver.fullName}</span>
-                    <span className="text-xs text-slate-700">{driver.active ? 'active' : 'inactive'}</span>
+                    <span className="text-xs text-slate-800">{driver.active ? 'active' : 'inactive'}</span>
                   </li>
                 ))}
                 {drivers.length === 0 && !loadingRoster ? (
-                  <li className="text-xs text-slate-700">No drivers yet.</li>
+                  <li className="text-xs text-slate-800">No drivers yet.</li>
                 ) : null}
               </ul>
               <form className="mt-3 space-y-2" onSubmit={handleCreateDriver}>
-                <div className="text-xs font-medium text-slate-700 mb-1">Invite New Driver</div>
+                <div className="text-xs font-medium text-slate-800 mb-1">Invite New Driver</div>
                 <div>
                   <input
                     className={`border rounded px-3 py-2 text-sm w-full ${formErrors.driverEmail ? 'border-red-500 bg-red-50' : ''}`}
@@ -483,7 +483,7 @@ export default function AdminPage() {
                   <li key={holiday.id} className="flex justify-between items-center border rounded p-2 bg-red-50">
                     <div>
                       <p className="font-medium">{holiday.driverName}</p>
-                      <p className="text-xs text-slate-700">
+                      <p className="text-xs text-slate-800">
                         {new Date(holiday.date).toLocaleDateString()}
                       </p>
                     </div>
@@ -491,7 +491,7 @@ export default function AdminPage() {
                   </li>
                 ))}
                 {driverHolidays.length === 0 ? (
-                  <li className="text-xs text-slate-700 text-center py-4">No upcoming holidays.</li>
+                  <li className="text-xs text-slate-800 text-center py-4">No upcoming holidays.</li>
                 ) : null}
               </ul>
             </SummaryCard>
@@ -505,7 +505,7 @@ export default function AdminPage() {
               <div className="flex justify-end mb-2">
                 <button
                   onClick={() => loadPendingInvitations()}
-                  className="text-xs px-2 py-1 bg-slate-100 text-slate-700 rounded hover:bg-slate-200"
+                  className="text-xs px-2 py-1 bg-slate-100 text-slate-800 rounded hover:bg-slate-200"
                 >
                   Refresh
                 </button>
@@ -516,10 +516,10 @@ export default function AdminPage() {
                     <div className="flex justify-between items-start">
                       <div>
                         <p className="font-medium text-slate-900">{invite.email}</p>
-                        <p className="text-xs text-slate-700">
+                        <p className="text-xs text-slate-800">
                           {invite.fullName || 'No name'} • {invite.role}
                         </p>
-                        <p className="text-xs text-slate-700">
+                        <p className="text-xs text-slate-800">
                           Expires: {new Date(invite.expiresAt).toLocaleDateString()}
                         </p>
                       </div>
@@ -541,7 +541,7 @@ export default function AdminPage() {
                   </li>
                 ))}
                 {pendingInvitations.length === 0 ? (
-                  <li className="text-xs text-slate-700 text-center py-4">No pending invitations.</li>
+                  <li className="text-xs text-slate-800 text-center py-4">No pending invitations.</li>
                 ) : null}
               </ul>
             </SummaryCard>
@@ -565,7 +565,7 @@ export default function AdminPage() {
                     <div className="flex justify-between items-center">
                       <div>
                         <p className="font-medium text-slate-800">{student.fullName}</p>
-                        <p className="text-xs text-slate-700">
+                        <p className="text-xs text-slate-800">
                           Licence: {student.licenceNumber ?? 'Not provided'}
                         </p>
                       </div>
@@ -579,13 +579,13 @@ export default function AdminPage() {
                           {student.licenceStatus === 'approved' ? '✓' : student.licenceStatus === 'rejected' ? '✗' : '⏳'}
                           {student.licenceStatus}
                         </span>
-                        <p className="text-xs text-slate-700 mt-1">Click to review</p>
+                        <p className="text-xs text-slate-800 mt-1">Click to review</p>
                       </div>
                     </div>
                   </li>
                 ))}
                 {students.length === 0 && !loadingRoster ? (
-                  <li className="text-xs text-slate-700 text-center py-4">No students yet.</li>
+                  <li className="text-xs text-slate-800 text-center py-4">No students yet.</li>
                 ) : null}
               </ul>
 
@@ -598,27 +598,27 @@ export default function AdminPage() {
                         <h3 className="text-lg font-semibold">Licence Review</h3>
                         <button
                           onClick={() => setSelectedStudent(null)}
-                          className="text-slate-700 hover:text-slate-700 text-xl leading-none"
+                          className="text-slate-800 hover:text-slate-800 text-xl leading-none"
                         >×</button>
                       </div>
 
                       <div className="space-y-4">
                         <div className="border-b pb-4">
-                          <p className="text-sm text-slate-700">Student</p>
+                          <p className="text-sm text-slate-800">Student</p>
                           <p className="font-medium text-lg">{selectedStudent.fullName}</p>
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                           <div>
-                            <p className="text-slate-700">Licence Number</p>
+                            <p className="text-slate-800">Licence Number</p>
                             <p className="font-medium">{selectedStudent.licenceNumber ?? 'Not provided'}</p>
                           </div>
                           <div>
-                            <p className="text-slate-700">Province/State</p>
+                            <p className="text-slate-800">Province/State</p>
                             <p className="font-medium">{selectedStudent.licenceProvinceOrState ?? 'Not provided'}</p>
                           </div>
                           <div>
-                            <p className="text-slate-700">Expiry Date</p>
+                            <p className="text-slate-800">Expiry Date</p>
                             <p className="font-medium">
                               {selectedStudent.licenceExpiryDate
                                 ? new Date(selectedStudent.licenceExpiryDate).toLocaleDateString()
@@ -626,7 +626,7 @@ export default function AdminPage() {
                             </p>
                           </div>
                           <div>
-                            <p className="text-slate-700">Current Status</p>
+                            <p className="text-slate-800">Current Status</p>
                             <p className={`font-medium ${selectedStudent.licenceStatus === 'approved' ? 'text-green-600'
                               : selectedStudent.licenceStatus === 'rejected' ? 'text-red-600'
                                 : 'text-yellow-600'
@@ -638,7 +638,7 @@ export default function AdminPage() {
 
                         {/* Licence Image */}
                         <div>
-                          <p className="text-sm text-slate-700 mb-2">Licence Image</p>
+                          <p className="text-sm text-slate-800 mb-2">Licence Image</p>
                           {selectedStudent.licenceImageUrl ? (
                             <img
                               src={selectedStudent.licenceImageUrl}
@@ -646,7 +646,7 @@ export default function AdminPage() {
                               className="w-full max-h-48 object-contain border rounded-lg bg-slate-50"
                             />
                           ) : (
-                            <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center text-slate-700">
+                            <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center text-slate-800">
                               No licence image uploaded
                             </div>
                           )}
@@ -654,7 +654,7 @@ export default function AdminPage() {
 
                         {/* Rejection Note Input */}
                         <div className="pt-4 border-t">
-                          <label className="block text-xs font-medium text-slate-700 mb-1">
+                          <label className="block text-xs font-medium text-slate-800 mb-1">
                             Rejection Note (optional)
                           </label>
                           <textarea
@@ -688,7 +688,7 @@ export default function AdminPage() {
                         </div>
                         <button
                           onClick={() => setSelectedStudent(null)}
-                          className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg px-4 py-2 text-sm"
+                          className="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg px-4 py-2 text-sm"
                         >
                           Close
                         </button>
@@ -698,7 +698,7 @@ export default function AdminPage() {
                 </div>
               )}
               <form className="mt-3 space-y-3" onSubmit={handleCreateStudent}>
-                <div className="text-xs font-medium text-slate-700 mb-1">Invite New Student</div>
+                <div className="text-xs font-medium text-slate-800 mb-1">Invite New Student</div>
                 <div>
                   <input
                     className={`border rounded px-3 py-2 text-sm w-full ${formErrors.studentEmail ? 'border-red-500 bg-red-50' : ''}`}
@@ -723,7 +723,7 @@ export default function AdminPage() {
                 />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div>
-                    <label className="text-xs text-slate-700">Allowed Hours</label>
+                    <label className="text-xs text-slate-800">Allowed Hours</label>
                     <input
                       className="border rounded px-3 py-2 text-sm w-full mt-1"
                       placeholder="e.g. 20"
@@ -734,7 +734,7 @@ export default function AdminPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-slate-700">Max Lessons/Day</label>
+                    <label className="text-xs text-slate-800">Max Lessons/Day</label>
                     <input
                       className="border rounded px-3 py-2 text-sm w-full mt-1"
                       placeholder="e.g. 2"
@@ -761,7 +761,7 @@ export default function AdminPage() {
             >
               <form className="space-y-2 text-sm" onSubmit={handleUpdateSettings}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <label className="text-xs text-slate-700">
+                  <label className="text-xs text-slate-800">
                     Lead time (hrs)
                     <input
                       className="border rounded px-2 py-1 w-full"
@@ -770,7 +770,7 @@ export default function AdminPage() {
                       onChange={(e) => setSettingsForm({ ...settingsForm, minBookingLeadTimeHours: e.target.value })}
                     />
                   </label>
-                  <label className="text-xs text-slate-700">
+                  <label className="text-xs text-slate-800">
                     Cancellation cutoff (hrs)
                     <input
                       className="border rounded px-2 py-1 w-full"
@@ -779,7 +779,7 @@ export default function AdminPage() {
                       onChange={(e) => setSettingsForm({ ...settingsForm, cancellationCutoffHours: e.target.value })}
                     />
                   </label>
-                  <label className="text-xs text-slate-700">
+                  <label className="text-xs text-slate-800">
                     Lesson duration (min)
                     <input
                       className="border rounded px-2 py-1 w-full"
@@ -790,7 +790,7 @@ export default function AdminPage() {
                       }
                     />
                   </label>
-                  <label className="text-xs text-slate-700">
+                  <label className="text-xs text-slate-800">
                     Buffer between lessons (min)
                     <input
                       className="border rounded px-2 py-1 w-full"
@@ -801,7 +801,7 @@ export default function AdminPage() {
                       }
                     />
                   </label>
-                  <label className="text-xs text-slate-700">
+                  <label className="text-xs text-slate-800">
                     Daily booking cap
                     <input
                       className="border rounded px-2 py-1 w-full"
@@ -817,7 +817,7 @@ export default function AdminPage() {
                 >
                   Save settings
                 </button>
-                <p className="text-[11px] text-slate-700">
+                <p className="text-[11px] text-slate-800">
                   Current values: lead time {settings?.minBookingLeadTimeHours ?? '—'} hrs, cancellation cutoff{' '}
                   {settings?.cancellationCutoffHours ?? '—'} hrs.
                 </p>
@@ -839,13 +839,13 @@ export default function AdminPage() {
                     <p className="font-medium text-slate-800">
                       {studentName} with {driverName}
                     </p>
-                    <p className="text-xs text-slate-700">{booking.status}</p>
-                    <p className="text-xs text-slate-700">Starts at {new Date(booking.startTime).toLocaleString()}</p>
+                    <p className="text-xs text-slate-800">{booking.status}</p>
+                    <p className="text-xs text-slate-800">Starts at {new Date(booking.startTime).toLocaleString()}</p>
                   </div>
                 );
               })}
               {bookings.length === 0 && !loadingBookings ? (
-                <p className="text-xs text-slate-700">No bookings found for this school.</p>
+                <p className="text-xs text-slate-800">No bookings found for this school.</p>
               ) : null}
             </div>
 

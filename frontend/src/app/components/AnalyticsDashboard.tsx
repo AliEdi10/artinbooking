@@ -79,7 +79,7 @@ export function AnalyticsDashboard({ schoolId, token }: AnalyticsDashboardProps)
 
     if (loading) {
         return (
-            <div className="text-center py-8 text-slate-700">
+            <div className="text-center py-8 text-slate-800">
                 Loading analytics...
             </div>
         );
@@ -97,7 +97,7 @@ export function AnalyticsDashboard({ schoolId, token }: AnalyticsDashboardProps)
                         onClick={() => setActiveTab(tab)}
                         className={`px-4 py-2 rounded-t text-sm font-medium transition-colors ${activeTab === tab
                             ? 'bg-blue-600 text-white'
-                            : 'text-slate-700 hover:bg-slate-100'
+                            : 'text-slate-800 hover:bg-slate-100'
                             }`}
                     >
                         {tab === 'overview' ? '📊 Overview' : tab === 'drivers' ? '🚗 Drivers' : '📜 Audit Log'}
@@ -127,13 +127,13 @@ export function AnalyticsDashboard({ schoolId, token }: AnalyticsDashboardProps)
                     <SummaryCard title="Weekly Bookings (Last 8 Weeks)" description="Lesson activity over time">
                         <div className="space-y-3">
                             {weeklyData.length === 0 ? (
-                                <p className="text-slate-500 text-sm text-center py-4">No booking data available yet.</p>
+                                <p className="text-slate-700 text-sm text-center py-4">No booking data available yet.</p>
                             ) : (
                                 weeklyData.map((week) => {
                                     const total = week.completed + week.scheduled + week.cancelled;
                                     return (
                                         <div key={week.weekStart} className="flex items-center gap-3">
-                                            <span className="text-xs text-slate-700 w-24">
+                                            <span className="text-xs text-slate-800 w-24">
                                                 {new Date(week.weekStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                             </span>
                                             <div className="flex-1 flex h-6 rounded overflow-hidden bg-slate-100">
@@ -159,7 +159,7 @@ export function AnalyticsDashboard({ schoolId, token }: AnalyticsDashboardProps)
                                                     />
                                                 )}
                                             </div>
-                                            <span className="text-xs text-slate-500 w-8 text-right">{total}</span>
+                                            <span className="text-xs text-slate-700 w-8 text-right">{total}</span>
                                         </div>
                                     );
                                 })
@@ -178,12 +178,12 @@ export function AnalyticsDashboard({ schoolId, token }: AnalyticsDashboardProps)
             {activeTab === 'drivers' && (
                 <SummaryCard title="Driver Utilization (Last 30 Days)" description="Performance by instructor">
                     {driverStats.length === 0 ? (
-                        <p className="text-slate-500 text-sm text-center py-4">No driver data available.</p>
+                        <p className="text-slate-700 text-sm text-center py-4">No driver data available.</p>
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm">
                                 <thead>
-                                    <tr className="text-left text-slate-700 border-b">
+                                    <tr className="text-left text-slate-800 border-b">
                                         <th className="py-2">Instructor</th>
                                         <th className="py-2 text-center">Bookings</th>
                                         <th className="py-2 text-center">Completed</th>
@@ -198,7 +198,7 @@ export function AnalyticsDashboard({ schoolId, token }: AnalyticsDashboardProps)
                                             <td className="py-2 text-center">{driver.totalBookings}</td>
                                             <td className="py-2 text-center text-green-600">{driver.completedLessons}</td>
                                             <td className="py-2 text-center text-red-500">{driver.cancelledLessons}</td>
-                                            <td className="py-2 text-right text-slate-700">{driver.hoursWorked}h</td>
+                                            <td className="py-2 text-right text-slate-800">{driver.hoursWorked}h</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -212,7 +212,7 @@ export function AnalyticsDashboard({ schoolId, token }: AnalyticsDashboardProps)
             {activeTab === 'audit' && (
                 <SummaryCard title="Recent Activity" description="Audit log of system changes">
                     {auditLogs.length === 0 ? (
-                        <p className="text-slate-500 text-sm text-center py-4">No activity recorded yet.</p>
+                        <p className="text-slate-700 text-sm text-center py-4">No activity recorded yet.</p>
                     ) : (
                         <ul className="space-y-2 max-h-96 overflow-y-auto">
                             {auditLogs.map((log) => (
@@ -220,10 +220,10 @@ export function AnalyticsDashboard({ schoolId, token }: AnalyticsDashboardProps)
                                     <span className="text-slate-400 text-xs whitespace-nowrap">
                                         {new Date(log.createdAt).toLocaleString()}
                                     </span>
-                                    <span className="text-slate-700">
+                                    <span className="text-slate-800">
                                         <strong className="text-slate-800">{log.action}</strong>
                                         {log.entityType && (
-                                            <span className="text-slate-500"> on {log.entityType} #{log.entityId}</span>
+                                            <span className="text-slate-700"> on {log.entityType} #{log.entityId}</span>
                                         )}
                                     </span>
                                 </li>
@@ -242,7 +242,7 @@ function StatCard({ label, value, icon, color = 'blue' }: { label: string; value
         <div className="bg-white rounded-lg p-4 shadow-sm border border-slate-200">
             <div className="flex items-center gap-2 mb-1">
                 <span className="text-lg">{icon}</span>
-                <span className="text-xs text-slate-500">{label}</span>
+                <span className="text-xs text-slate-700">{label}</span>
             </div>
             <p className={`text-2xl font-bold ${colorClass}`}>{value}</p>
         </div>
