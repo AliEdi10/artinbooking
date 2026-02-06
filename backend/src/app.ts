@@ -3,7 +3,7 @@ import cors from 'cors';
 import express from 'express';
 import { authenticateRequest, authenticateRequestAllowUnregistered } from './middleware/authentication';
 import { enforceTenantScope, requireRoles } from './middleware/authorization';
-import { getDrivingSchoolById, getDrivingSchools, createDrivingSchool } from './repositories/drivingSchools';
+import { getDrivingSchoolById, getDrivingSchools, createDrivingSchool, activateDrivingSchool } from './repositories/drivingSchools';
 import { findInvitationByToken, markInvitationAccepted, upsertInvitation, getPendingInvitations, getInvitationById, resendInvitation, deleteInvitation } from './repositories/invitations';
 import { countAdminsForSchool, createUserWithIdentity, createUserWithPassword, getUserById } from './repositories/users';
 import {
@@ -593,6 +593,16 @@ export function createApp() {
             });
           } catch (profileError) {
             console.error('Failed to create driver profile:', profileError);
+          }
+        }
+
+        // Activate school if role is SCHOOL_ADMIN
+        if (invitation.role === 'SCHOOL_ADMIN') {
+          try {
+            await activateDrivingSchool(invitation.drivingSchoolId);
+          } catch (activationError) {
+            console.error('Failed to activate school:', activationError);
+            // Don't fail the registration if school activation fails
           }
         }
 

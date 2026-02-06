@@ -8,7 +8,7 @@ import { SummaryCard } from './components/SummaryCard';
 import { useAuth } from './auth/AuthProvider';
 import { apiFetch } from './apiClient';
 
-type DrivingSchool = { id: number; name: string; active: boolean };
+type DrivingSchool = { id: number; name: string; status: 'active' | 'suspended' | 'deleted' };
 type Booking = { id: number; startTime: string; status: string; studentId?: number; driverId?: number };
 type StudentProfile = { id: number; fullName: string; licenceStatus: string; allowedHours?: number | null };
 type DriverProfile = { id: number; fullName: string; active: boolean };
@@ -42,7 +42,7 @@ function SuperadminOverview({ token }: { token: string }) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <SummaryCard title="🏫 Driving Schools" description="Total registered schools" footer={loading ? 'Loading...' : ''}>
           <div className="text-4xl font-bold text-blue-600">{schools.length}</div>
-          <p className="text-sm text-slate-600">{schools.filter(s => s.active).length} active</p>
+          <p className="text-sm text-slate-600">{schools.filter(s => s.status === 'active').length} active</p>
         </SummaryCard>
 
         <SummaryCard title="⚡ Quick Actions" description="Common tasks" footer="">

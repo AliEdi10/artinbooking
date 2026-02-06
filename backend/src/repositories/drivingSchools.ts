@@ -18,9 +18,18 @@ export async function createDrivingSchool(params: {
 }): Promise<DrivingSchool> {
   const result = await getPool().query<DrivingSchoolRow>(
     `INSERT INTO driving_schools (name, contact_email, status)
-     VALUES ($1, $2, 'active')
+     VALUES ($1, $2, 'suspended')
      RETURNING *`,
     [params.name, params.contactEmail ?? null]
   );
+  return mapDrivingSchool(result.rows[0]);
+}
+
+export async function activateDrivingSchool(schoolId: number): Promise<DrivingSchool> {
+  const result = await getPool().query<DrivingSchoolRow>(
+    `UPDATE driving_schools SET status = 'active' WHERE id = $1 RETURNING *`,
+    [schoolId],
+  );
+  if (result.rowCount === 0) throw new Error(`School ${schoolId} not found`);
   return mapDrivingSchool(result.rows[0]);
 }
