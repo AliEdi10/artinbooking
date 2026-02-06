@@ -108,6 +108,9 @@ import { httpLogger, logger } from './middleware/logging';
 export function createApp() {
   const app = express();
 
+  // Trust first proxy (Railway) so express-rate-limit uses X-Forwarded-For correctly
+  app.set('trust proxy', 1);
+
   // Request logging (first, to capture all requests)
   app.use(httpLogger);
 
