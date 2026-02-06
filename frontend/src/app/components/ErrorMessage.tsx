@@ -90,7 +90,7 @@ export function ErrorMessage({
                     <h3 className="font-semibold text-slate-900 text-sm">
                         {title || config.defaultTitle}
                     </h3>
-                    <p className="text-sm text-slate-600 mt-0.5">
+                    <p className="text-sm text-slate-700 mt-0.5">
                         {message || config.defaultMessage}
                     </p>
                     {(onRetry || onLogin) && (

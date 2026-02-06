@@ -79,7 +79,7 @@ export function AnalyticsDashboard({ schoolId, token }: AnalyticsDashboardProps)
 
     if (loading) {
         return (
-            <div className="text-center py-8 text-slate-600">
+            <div className="text-center py-8 text-slate-700">
                 Loading analytics...
             </div>
         );
@@ -97,7 +97,7 @@ export function AnalyticsDashboard({ schoolId, token }: AnalyticsDashboardProps)
                         onClick={() => setActiveTab(tab)}
                         className={`px-4 py-2 rounded-t text-sm font-medium transition-colors ${activeTab === tab
                             ? 'bg-blue-600 text-white'
-                            : 'text-slate-600 hover:bg-slate-100'
+                            : 'text-slate-700 hover:bg-slate-100'
                             }`}
                     >
                         {tab === 'overview' ? '📊 Overview' : tab === 'drivers' ? '🚗 Drivers' : '📜 Audit Log'}
@@ -133,7 +133,7 @@ export function AnalyticsDashboard({ schoolId, token }: AnalyticsDashboardProps)
                                     const total = week.completed + week.scheduled + week.cancelled;
                                     return (
                                         <div key={week.weekStart} className="flex items-center gap-3">
-                                            <span className="text-xs text-slate-600 w-24">
+                                            <span className="text-xs text-slate-700 w-24">
                                                 {new Date(week.weekStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                             </span>
                                             <div className="flex-1 flex h-6 rounded overflow-hidden bg-slate-100">
@@ -183,7 +183,7 @@ export function AnalyticsDashboard({ schoolId, token }: AnalyticsDashboardProps)
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm">
                                 <thead>
-                                    <tr className="text-left text-slate-600 border-b">
+                                    <tr className="text-left text-slate-700 border-b">
                                         <th className="py-2">Instructor</th>
                                         <th className="py-2 text-center">Bookings</th>
                                         <th className="py-2 text-center">Completed</th>
@@ -198,7 +198,7 @@ export function AnalyticsDashboard({ schoolId, token }: AnalyticsDashboardProps)
                                             <td className="py-2 text-center">{driver.totalBookings}</td>
                                             <td className="py-2 text-center text-green-600">{driver.completedLessons}</td>
                                             <td className="py-2 text-center text-red-500">{driver.cancelledLessons}</td>
-                                            <td className="py-2 text-right text-slate-600">{driver.hoursWorked}h</td>
+                                            <td className="py-2 text-right text-slate-700">{driver.hoursWorked}h</td>
                                         </tr>
                                     ))}
                                 </tbody>

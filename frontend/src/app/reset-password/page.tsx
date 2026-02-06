@@ -99,7 +99,7 @@ function ResetPasswordForm() {
                     </Link>
                     <Link
                         href="/login"
-                        className="text-sm text-slate-600 hover:text-slate-800"
+                        className="text-sm text-slate-700 hover:text-slate-800"
                     >
                         ← Back to login
                     </Link>
@@ -137,7 +137,7 @@ function ResetPasswordForm() {
         <div className="bg-white border border-slate-200 rounded-lg shadow p-6 w-full max-w-md space-y-6">
             <div className="space-y-2">
                 <h1 className="text-2xl font-bold text-slate-900">Reset Password</h1>
-                <p className="text-sm text-slate-600">
+                <p className="text-sm text-slate-700">
                     Enter your new password below.
                 </p>
             </div>
@@ -240,7 +240,7 @@ function ResetPasswordForm() {
                 <div className="text-center pt-2">
                     <Link
                         href="/login"
-                        className="text-sm text-slate-600 hover:text-slate-800"
+                        className="text-sm text-slate-700 hover:text-slate-800"
                     >
                         ← Back to login
                     </Link>

@@ -21,7 +21,7 @@ export function LoadingSpinner({ message, size = 'md', className = '' }: Loading
             <div
                 className={`${sizeClasses[size]} border-slate-300 border-t-blue-600 rounded-full animate-spin`}
             />
-            {message && <span className="text-sm text-slate-600">{message}</span>}
+            {message && <span className="text-sm text-slate-700">{message}</span>}
         </div>
     );
 }
@@ -46,7 +46,7 @@ export function FullPageLoading({ message = 'Loading...' }: { message?: string }
         <div className="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="text-center">
                 <LoadingSpinner size="xl" className="mx-auto mb-4" />
-                <p className="text-sm text-slate-600 font-medium">{message}</p>
+                <p className="text-sm text-slate-700 font-medium">{message}</p>
             </div>
         </div>
     );
@@ -67,7 +67,7 @@ export function LoadingInline({
     return (
         <div className={`flex items-center gap-2 ${className}`}>
             <LoadingSpinner size={size} />
-            <span className="text-sm text-slate-600">{message}</span>
+            <span className="text-sm text-slate-700">{message}</span>
         </div>
     );
 }
@@ -86,7 +86,7 @@ export function LoadingCard({
         <div className={`bg-white border border-slate-200 rounded-xl p-8 shadow-sm ${className}`}>
             <div className="text-center">
                 <LoadingSpinner size="lg" className="mx-auto mb-3" />
-                <p className="text-sm text-slate-600">{message}</p>
+                <p className="text-sm text-slate-700">{message}</p>
             </div>
         </div>
     );
@@ -106,7 +106,7 @@ export function PageLoading({
         <div className={`flex items-center justify-center min-h-[300px] ${className}`}>
             <div className="text-center">
                 <LoadingSpinner size="xl" className="mx-auto mb-4" />
-                <p className="text-slate-600 font-medium">{message}</p>
+                <p className="text-slate-700 font-medium">{message}</p>
             </div>
         </div>
     );

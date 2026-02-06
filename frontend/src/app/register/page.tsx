@@ -194,11 +194,11 @@ function RegisterContent() {
                     <div className="bg-blue-50 rounded-lg p-4 mb-6">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                             <div>
-                                <span className="text-slate-600">Email:</span>
+                                <span className="text-slate-700">Email:</span>
                                 <p className="font-medium text-slate-800">{invitationInfo.email}</p>
                             </div>
                             <div>
-                                <span className="text-slate-600">Role:</span>
+                                <span className="text-slate-700">Role:</span>
                                 <p className="font-medium text-slate-800 capitalize">{invitationInfo.role.toLowerCase()}</p>
                             </div>
                         </div>

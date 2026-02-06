@@ -31,7 +31,7 @@ export function EmptyState({
             </div>
             <h3 className="font-medium text-slate-900 mb-1">{title}</h3>
             {description && (
-                <p className="text-sm text-slate-600 max-w-sm mx-auto">{description}</p>
+                <p className="text-sm text-slate-700 max-w-sm mx-auto">{description}</p>
             )}
             {action && (
                 <button

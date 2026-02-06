@@ -52,7 +52,7 @@ export function ConfirmDialog({
                         <span className="text-2xl">{styles.icon}</span>
                         <div>
                             <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
-                            <p className="text-sm text-slate-600 mt-1">{message}</p>
+                            <p className="text-sm text-slate-700 mt-1">{message}</p>
                         </div>
                     </div>
 

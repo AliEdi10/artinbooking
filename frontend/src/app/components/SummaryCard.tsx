@@ -18,7 +18,7 @@ export function SummaryCard({
         <p className="text-xs text-slate-700">{description}</p>
       </div>
       {children}
-      {footer ? <div className="pt-2 border-t text-xs text-slate-600">{footer}</div> : null}
+      {footer ? <div className="pt-2 border-t text-xs text-slate-700">{footer}</div> : null}
     </div>
   );
 }

@@ -150,7 +150,7 @@ export function MapPicker({ latitude, longitude, radiusKm, onLocationSelect }: M
     if (!isLoaded) {
         return (
             <div className="bg-slate-100 rounded-lg p-4 h-[300px] flex items-center justify-center">
-                <div className="text-slate-600 text-sm">Loading map...</div>
+                <div className="text-slate-700 text-sm">Loading map...</div>
             </div>
         );
     }
@@ -171,7 +171,7 @@ export function MapPicker({ latitude, longitude, radiusKm, onLocationSelect }: M
                     className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
             </Autocomplete>
-            <p className="text-xs text-slate-600">
+            <p className="text-xs text-slate-700">
                 Search for an address above, or click on the map to set the location.
             </p>
             <GoogleMap
@@ -207,7 +207,7 @@ export function MapPicker({ latitude, longitude, radiusKm, onLocationSelect }: M
                 )}
             </GoogleMap>
             {markerPosition && (
-                <div className="flex gap-2 text-xs text-slate-600">
+                <div className="flex gap-2 text-xs text-slate-700">
                     <span className="bg-slate-100 px-2 py-1 rounded">
                         Lat: {markerPosition.lat.toFixed(6)}
                     </span>

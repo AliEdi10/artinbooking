@@ -36,7 +36,7 @@ export function MapViewer({ latitude, longitude, label, showNavigation = true }:
     if (loadError) {
         return (
             <div className="bg-slate-50 border rounded-lg p-3 text-sm">
-                <p className="text-slate-600 mb-2">{label || 'Location'}</p>
+                <p className="text-slate-700 mb-2">{label || 'Location'}</p>
                 <div className="flex gap-2">
                     <button
                         onClick={openLocation}
@@ -62,7 +62,7 @@ export function MapViewer({ latitude, longitude, label, showNavigation = true }:
     if (!isLoaded) {
         return (
             <div className="bg-slate-100 rounded-lg p-4 h-[200px] flex items-center justify-center">
-                <div className="text-slate-600 text-sm">Loading map...</div>
+                <div className="text-slate-700 text-sm">Loading map...</div>
             </div>
         );
     }
