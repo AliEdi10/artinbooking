@@ -5,13 +5,11 @@ import React, { useMemo, useState } from 'react';
 type Availability = { id: number; date: string; startTime: string; endTime: string; type?: string };
 type Booking = { id: number; driverId: number; studentId: number; startTime: string; status: string };
 type StudentProfile = { id: number; fullName: string };
-type BlockedDate = { date: string; reason?: string };
 
 interface WeeklyCalendarProps {
     availability: Availability[];
     bookings: Booking[];
     students: StudentProfile[];
-    blockedDates?: BlockedDate[];
 }
 
 const HOURS = Array.from({ length: 12 }, (_, i) => i + 7); // 7 AM to 6 PM
@@ -40,7 +38,7 @@ function parseTime(timeStr: string): number {
     return hours + minutes / 60;
 }
 
-export function WeeklyCalendar({ availability, bookings, students, blockedDates = [] }: WeeklyCalendarProps) {
+export function WeeklyCalendar({ availability, bookings, students }: WeeklyCalendarProps) {
     const [weekOffset, setWeekOffset] = useState(0);
 
     const baseDate = useMemo(() => {
@@ -51,37 +49,12 @@ export function WeeklyCalendar({ availability, bookings, students, blockedDates 
 
     const weekDates = useMemo(() => getWeekDates(baseDate), [baseDate]);
 
-    // Get blocked day indices for this week
-    const blockedDayIndices = useMemo(() => {
-        const indices: Set<number> = new Set();
-
-        // Check blockedDates prop
-        blockedDates.forEach((blocked) => {
-            const blockedDateStr = blocked.date.split('T')[0];
-            const dayIndex = weekDates.findIndex(d => formatDate(d) === blockedDateStr);
-            if (dayIndex !== -1) indices.add(dayIndex);
-        });
-
-        // Also check availability for override_closed type
-        availability.forEach((slot) => {
-            if (slot.type === 'override_closed') {
-                const slotDate = slot.date.split('T')[0];
-                const dayIndex = weekDates.findIndex(d => formatDate(d) === slotDate);
-                if (dayIndex !== -1) indices.add(dayIndex);
-            }
-        });
-
-        return indices;
-    }, [blockedDates, availability, weekDates]);
-
-    // Map availability to grid positions (excluding blocked/off days)
-    const availabilityBlocks = useMemo(() => {
-        const blocks: { dayIndex: number; startHour: number; endHour: number; label: string }[] = [];
+    // Map availability to grid positions - split by type
+    const { workingBlocks, closedBlocks } = useMemo(() => {
+        const working: { dayIndex: number; startHour: number; endHour: number; label: string }[] = [];
+        const closed: { dayIndex: number; startHour: number; endHour: number; label: string }[] = [];
 
         availability.forEach((slot) => {
-            // Skip off-days - they're shown separately
-            if (slot.type === 'override_closed') return;
-
             const slotDate = slot.date.split('T')[0];
             const dayIndex = weekDates.findIndex(d => formatDate(d) === slotDate);
             if (dayIndex === -1) return;
@@ -89,15 +62,21 @@ export function WeeklyCalendar({ availability, bookings, students, blockedDates 
             const startHour = parseTime(slot.startTime);
             const endHour = parseTime(slot.endTime);
 
-            blocks.push({
+            const block = {
                 dayIndex,
                 startHour,
                 endHour,
                 label: `${slot.startTime.slice(0, 5)} - ${slot.endTime.slice(0, 5)}`,
-            });
+            };
+
+            if (slot.type === 'override_closed') {
+                closed.push(block);
+            } else {
+                working.push(block);
+            }
         });
 
-        return blocks;
+        return { workingBlocks: working, closedBlocks: closed };
     }, [availability, weekDates]);
 
     // Map bookings to grid positions
@@ -164,7 +143,7 @@ export function WeeklyCalendar({ availability, bookings, students, blockedDates 
                 </div>
                 <div className="flex items-center gap-1">
                     <div className="w-4 h-4 bg-red-100 border border-red-300 rounded" />
-                    <span className="text-slate-700">Off-Day / Blocked</span>
+                    <span className="text-slate-700">Blocked / Off Day</span>
                 </div>
             </div>
 
@@ -195,31 +174,8 @@ export function WeeklyCalendar({ availability, bookings, students, blockedDates 
                             </div>
                         ))}
 
-                        {/* Blocked/Off-Day Overlays */}
-                        {Array.from(blockedDayIndices).map((dayIndex) => {
-                            const left = `calc(${(dayIndex + 1) * 12.5}% + 1px)`;
-                            const totalHeight = HOURS.length * 48; // Full day height
-
-                            return (
-                                <div
-                                    key={`blocked-${dayIndex}`}
-                                    className="absolute bg-red-100 border border-red-200 rounded text-xs flex items-center justify-center"
-                                    style={{
-                                        top: '0px',
-                                        height: `${totalHeight}px`,
-                                        left,
-                                        width: 'calc(12.5% - 2px)',
-                                        zIndex: 0,
-                                    }}
-                                    title="Off-Day / Blocked"
-                                >
-                                    <span className="text-red-600 font-medium rotate-90">Off-Day</span>
-                                </div>
-                            );
-                        })}
-
-                        {/* Availability Blocks */}
-                        {availabilityBlocks.map((block, i) => {
+                        {/* Availability Blocks (green) */}
+                        {workingBlocks.map((block, i) => {
                             const top = (block.startHour - 7) * 48; // 48px per hour
                             const height = (block.endHour - block.startHour) * 48;
                             const left = `calc(${(block.dayIndex + 1) * 12.5}% + 1px)`;
@@ -238,6 +194,30 @@ export function WeeklyCalendar({ availability, bookings, students, blockedDates 
                                     title={`Available: ${block.label}`}
                                 >
                                     <span className="text-green-700 font-medium">Available</span>
+                                </div>
+                            );
+                        })}
+
+                        {/* Blocked / Off-Day Blocks (red) */}
+                        {closedBlocks.map((block, i) => {
+                            const top = (block.startHour - 7) * 48;
+                            const height = Math.max((block.endHour - block.startHour) * 48, 24);
+                            const left = `calc(${(block.dayIndex + 1) * 12.5}% + 1px)`;
+
+                            return (
+                                <div
+                                    key={`closed-${i}`}
+                                    className="absolute bg-red-100 border border-red-300 rounded text-xs p-1 overflow-hidden"
+                                    style={{
+                                        top: `${top}px`,
+                                        height: `${height}px`,
+                                        left,
+                                        width: 'calc(12.5% - 2px)',
+                                        zIndex: 1,
+                                    }}
+                                    title={`Blocked: ${block.label}`}
+                                >
+                                    <span className="text-red-700 font-medium">Off Day</span>
                                 </div>
                             );
                         })}

@@ -54,7 +54,6 @@ export async function getPendingInvitations(drivingSchoolId: number): Promise<Sc
     `SELECT * FROM school_invitations
      WHERE driving_school_id = $1
        AND accepted_at IS NULL
-       AND expires_at > NOW()
      ORDER BY created_at DESC`,
     [drivingSchoolId],
   );

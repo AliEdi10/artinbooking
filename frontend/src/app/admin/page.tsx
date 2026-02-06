@@ -83,6 +83,7 @@ export default function AdminPage() {
   });
   const [selectedBookingId, setSelectedBookingId] = useState<number | null>(null);
   const [rescheduleStart, setRescheduleStart] = useState('');
+  const [rescheduleDriverId, setRescheduleDriverId] = useState('');
   const [cancelReason, setCancelReason] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [rejectionNote, setRejectionNote] = useState('');
@@ -222,6 +223,12 @@ export default function AdminPage() {
   useEffect(() => {
     loadDriverHolidays();
     loadPendingInvitations();
+
+    // Auto-refresh pending invitations every 30 seconds
+    const interval = setInterval(() => {
+      loadPendingInvitations();
+    }, 30000);
+    return () => clearInterval(interval);
   }, [schoolId, token]);
 
   async function handleCreateDriver(event: React.FormEvent<HTMLFormElement>) {
@@ -316,7 +323,6 @@ export default function AdminPage() {
           defaultBufferMinutesBetweenLessons: settingsForm.defaultBufferMinutesBetweenLessons
             ? Number(settingsForm.defaultBufferMinutesBetweenLessons)
             : null,
-          defaultServiceRadiusKm: settingsForm.defaultServiceRadiusKm || null,
           defaultMaxSegmentTravelTimeMin: settingsForm.defaultMaxSegmentTravelTimeMin
             ? Number(settingsForm.defaultMaxSegmentTravelTimeMin)
             : null,
@@ -328,8 +334,6 @@ export default function AdminPage() {
           dailyBookingCapPerDriver: settingsForm.dailyBookingCapPerDriver
             ? Number(settingsForm.dailyBookingCapPerDriver)
             : null,
-          allowStudentToPickDriver: settingsForm.allowStudentToPickDriver,
-          allowDriverSelfAvailabilityEdit: settingsForm.allowDriverSelfAvailabilityEdit,
         }),
       });
       await loadSettings();
@@ -341,15 +345,19 @@ export default function AdminPage() {
 
   async function handleReschedule(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!token || !schoolId || !selectedBookingId || !rescheduleStart) return;
+    if (!token || !schoolId || !selectedBookingId) return;
     const toastId = toast.loading('Updating booking...');
     try {
+      const patch: Record<string, string | number> = {};
+      if (rescheduleStart) patch.startTime = new Date(rescheduleStart).toISOString();
+      if (rescheduleDriverId) patch.driverId = Number(rescheduleDriverId);
       await apiFetch(`/schools/${schoolId}/bookings/${selectedBookingId}`, token, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ startTime: new Date(rescheduleStart).toISOString() }),
+        body: JSON.stringify(patch),
       });
       setRescheduleStart('');
+      setRescheduleDriverId('');
       await loadBookings();
       toast.success('Booking updated!', { id: toastId });
     } catch (err) {
@@ -491,9 +499,17 @@ export default function AdminPage() {
             {/* Phase 3: Pending Invitations Card */}
             <SummaryCard
               title="✉️ Pending Invitations"
-              description="Invitations awaiting acceptance."
+              description="Invitations awaiting acceptance. Auto-refreshes every 30s."
               footer={`${pendingInvitations.length} pending invite(s)`}
             >
+              <div className="flex justify-end mb-2">
+                <button
+                  onClick={() => loadPendingInvitations()}
+                  className="text-xs px-2 py-1 bg-slate-100 text-slate-700 rounded hover:bg-slate-200"
+                >
+                  Refresh
+                </button>
+              </div>
               <ul className="space-y-2 text-sm max-h-48 overflow-y-auto">
                 {pendingInvitations.map((invite) => (
                   <li key={invite.id} className="border rounded p-2 bg-yellow-50">
@@ -786,14 +802,6 @@ export default function AdminPage() {
                     />
                   </label>
                   <label className="text-xs text-slate-700">
-                    Service radius (km)
-                    <input
-                      className="border rounded px-2 py-1 w-full"
-                      value={settingsForm.defaultServiceRadiusKm}
-                      onChange={(e) => setSettingsForm({ ...settingsForm, defaultServiceRadiusKm: e.target.value })}
-                    />
-                  </label>
-                  <label className="text-xs text-slate-700">
                     Daily booking cap
                     <input
                       className="border rounded px-2 py-1 w-full"
@@ -801,26 +809,6 @@ export default function AdminPage() {
                       value={settingsForm.dailyBookingCapPerDriver}
                       onChange={(e) => setSettingsForm({ ...settingsForm, dailyBookingCapPerDriver: e.target.value })}
                     />
-                  </label>
-                </div>
-                <div className="flex flex-wrap items-center gap-3 text-xs text-slate-700">
-                  <label className="flex items-center gap-1">
-                    <input
-                      type="checkbox"
-                      checked={settingsForm.allowStudentToPickDriver}
-                      onChange={(e) => setSettingsForm({ ...settingsForm, allowStudentToPickDriver: e.target.checked })}
-                    />
-                    Allow students to pick driver
-                  </label>
-                  <label className="flex items-center gap-1">
-                    <input
-                      type="checkbox"
-                      checked={settingsForm.allowDriverSelfAvailabilityEdit}
-                      onChange={(e) =>
-                        setSettingsForm({ ...settingsForm, allowDriverSelfAvailabilityEdit: e.target.checked })
-                      }
-                    />
-                    Driver self-edit availability
                   </label>
                 </div>
                 <button
@@ -831,7 +819,7 @@ export default function AdminPage() {
                 </button>
                 <p className="text-[11px] text-slate-700">
                   Current values: lead time {settings?.minBookingLeadTimeHours ?? '—'} hrs, cancellation cutoff{' '}
-                  {settings?.cancellationCutoffHours ?? '—'} hrs, service radius {settings?.defaultServiceRadiusKm ?? '—'} km.
+                  {settings?.cancellationCutoffHours ?? '—'} hrs.
                 </p>
               </form>
             </SummaryCard>
@@ -882,8 +870,20 @@ export default function AdminPage() {
                     value={rescheduleStart}
                     onChange={(e) => setRescheduleStart(e.target.value)}
                     required
+                    min={new Date().toISOString().slice(0, 16)}
                   />
-                  <p className="text-xs text-slate-500">To change driver, cancel and create a new booking.</p>
+                  <select
+                    className="border rounded px-2 py-1 w-full text-slate-900"
+                    value={rescheduleDriverId}
+                    onChange={(e) => setRescheduleDriverId(e.target.value)}
+                  >
+                    <option value="">Keep assigned driver</option>
+                    {drivers.map((driver) => (
+                      <option key={driver.id} value={driver.id}>
+                        {driver.fullName}
+                      </option>
+                    ))}
+                  </select>
                   <button
                     type="submit"
                     className="w-full bg-slate-900 text-white rounded px-3 py-2 hover:bg-slate-800"

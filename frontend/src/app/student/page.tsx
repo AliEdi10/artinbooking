@@ -612,6 +612,7 @@ export default function StudentPage() {
                     type="date"
                     value={slotQuery.date}
                     onChange={(e) => setSlotQuery({ ...slotQuery, date: e.target.value })}
+                    min={new Date().toISOString().split('T')[0]}
                   />
                   <select
                     className="border rounded px-2 py-1 text-slate-900"
@@ -713,6 +714,7 @@ export default function StudentPage() {
                       value={reschedule[booking.id] ?? ''}
                       onChange={(e) => setReschedule((prev) => ({ ...prev, [booking.id]: e.target.value }))}
                       placeholder="New start time"
+                      min={new Date().toISOString().slice(0, 16)}
                     />
                     <button
                       className="px-3 py-1 rounded bg-white border border-slate-300 hover:bg-slate-100 min-h-[32px]"

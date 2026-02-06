@@ -22,7 +22,7 @@ import {
   updateStudentProfile,
 } from './repositories/studentProfiles';
 import { createAddress, getAddressById, listAddressesForStudent, updateAddress } from './repositories/studentAddresses';
-import { cancelBooking, createBooking, getBookingById, listBookings, updateBooking, countScheduledBookingsForStudentOnDate, getTotalBookedHoursForStudent, hasBookingConflict, countScheduledBookingsForDriverOnDate } from './repositories/bookings';
+import { cancelBooking, createBooking, getBookingById, listBookings, updateBooking, countScheduledBookingsForStudentOnDate, getTotalBookedHoursForStudent, checkBookingOverlap } from './repositories/bookings';
 import { createAvailability, deleteAvailability, listAvailability, getDriverHolidaysForSchool } from './repositories/driverAvailability';
 import { getSchoolSettings, upsertSchoolSettings } from './repositories/schoolSettings';
 import { UserRole } from './models';
@@ -113,37 +113,20 @@ export function createApp() {
 
   // CORS configuration - whitelist allowed origins
   const allowedOrigins = [
-    'https://booking.artindriving.ca',
-    'https://www.booking.artindriving.ca',
-    'https://booking-artindriving.ca', // keeping just in case
     'https://artinbooking.vercel.app',
     'http://localhost:3000',
     'http://127.0.0.1:3000',
   ];
-
-  // Check if origin is allowed (exact match or Vercel preview)
-  const isAllowedOrigin = (origin: string): boolean => {
-    if (allowedOrigins.includes(origin)) return true;
-    // Allow all Vercel preview deployments for this project
-    if (origin.endsWith('.vercel.app')) return true;
-    return false;
-  };
-
   app.use(cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, or server-to-server)
+      // Allow requests with no origin (like mobile apps or curl)
       if (!origin) return callback(null, true);
-      // Check if origin is allowed
-      if (isAllowedOrigin(origin)) {
-        return callback(null, true); // Safely allow the origin
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
       }
-
-      // For disallowed origins, fail gracefully without throwing 500s
-      return callback(null, false);
+      return callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
   }));
   app.use(express.json());
 
@@ -1095,17 +1078,23 @@ export function createApp() {
           return;
         }
 
-        // If creating an off-day/holiday, check for existing bookings
+        // Prevent conflicts between off-days and availability
+        const existingAvailability = await listAvailability(driverId, schoolId);
         if (type === 'override_closed') {
-          const bookingsOnDate = await countScheduledBookingsForDriverOnDate(
-            schoolId,
-            driverId,
-            new Date(date + 'T00:00:00Z'),
+          const hasWorkingHours = existingAvailability.some(
+            a => a.date.toISOString().slice(0, 10) === date && a.type === 'working_hours'
           );
-          if (bookingsOnDate > 0) {
-            res.status(400).json({
-              error: `Cannot mark this date as off-day. You have ${bookingsOnDate} scheduled booking(s) on this date. Please cancel or reschedule them first.`
-            });
+          if (hasWorkingHours) {
+            res.status(409).json({ error: 'Cannot block a day with published availability. Delete the availability first.' });
+            return;
+          }
+        }
+        if (type === 'working_hours') {
+          const hasClosed = existingAvailability.some(
+            a => a.date.toISOString().slice(0, 10) === date && a.type === 'override_closed'
+          );
+          if (hasClosed) {
+            res.status(409).json({ error: 'Cannot add availability on a blocked day. Remove the time-off first.' });
             return;
           }
         }
@@ -1284,9 +1273,14 @@ export function createApp() {
           availabilities: driverAvailabilities.filter((entry) => entry.date.toISOString().slice(0, 10) === dateParam),
         };
 
+        // Apply effective lead time = max(leadTime, cancellationCutoff)
+        const effectiveLeadTime = Math.max(
+          settings?.minBookingLeadTimeHours ?? 0,
+          settings?.cancellationCutoffHours ?? 0,
+        );
         const slots = (await computeAvailableSlots(availabilityRequest, travelCalculator)).filter((slot) => {
-          if (!settings?.minBookingLeadTimeHours) return true;
-          const cutoff = Date.now() + settings.minBookingLeadTimeHours * 60 * 60 * 1000;
+          if (effectiveLeadTime <= 0) return true;
+          const cutoff = Date.now() + effectiveLeadTime * 60 * 60 * 1000;
           return slot.getTime() >= cutoff;
         });
 
@@ -1464,6 +1458,12 @@ export function createApp() {
           return;
         }
 
+        // Block booking in the past
+        if (startTime.getTime() < Date.now()) {
+          res.status(400).json({ error: 'Cannot book a lesson in the past' });
+          return;
+        }
+
         const lessonDuration = driver.lessonDurationMinutes ?? settings?.defaultLessonDurationMinutes ?? 60;
 
         if (!driver.serviceCenterLocation) {
@@ -1487,10 +1487,15 @@ export function createApp() {
           return;
         }
 
-        if (settings?.minBookingLeadTimeHours) {
-          const cutoff = Date.now() + settings.minBookingLeadTimeHours * 60 * 60 * 1000;
+        // Enforce effective lead time = max(leadTime, cancellationCutoff)
+        const effectiveLeadTimeHours = Math.max(
+          settings?.minBookingLeadTimeHours ?? 0,
+          settings?.cancellationCutoffHours ?? 0,
+        );
+        if (effectiveLeadTimeHours > 0) {
+          const cutoff = Date.now() + effectiveLeadTimeHours * 60 * 60 * 1000;
           if (startTime.getTime() < cutoff) {
-            res.status(400).json({ error: 'Requested slot violates minimum lead time' });
+            res.status(400).json({ error: `Requested slot violates minimum lead time / cancellation policy (${effectiveLeadTimeHours}h)` });
             return;
           }
         }
@@ -1517,8 +1522,12 @@ export function createApp() {
 
         let availableSlots = await computeAvailableSlots(availabilityRequest, travelCalculator);
 
-        if (settings?.minBookingLeadTimeHours) {
-          const cutoff = Date.now() + settings.minBookingLeadTimeHours * 60 * 60 * 1000;
+        const effectiveLeadTimeBooking = Math.max(
+          settings?.minBookingLeadTimeHours ?? 0,
+          settings?.cancellationCutoffHours ?? 0,
+        );
+        if (effectiveLeadTimeBooking > 0) {
+          const cutoff = Date.now() + effectiveLeadTimeBooking * 60 * 60 * 1000;
           availableSlots = availableSlots.filter((slot) => slot.getTime() >= cutoff);
         }
         const normalizedStart = new Date(startTime);
@@ -1614,12 +1623,6 @@ export function createApp() {
           return;
         }
 
-        // Only allow updates on scheduled bookings
-        if (existing.status !== 'scheduled') {
-          res.status(400).json({ error: 'Only scheduled bookings can be modified' });
-          return;
-        }
-
         if (req.user?.role === 'DRIVER') {
           const driver = await getDriverProfileByUserId(req.user.id, schoolId);
           if (!driver || driver.id !== existing.driverId) {
@@ -1636,102 +1639,27 @@ export function createApp() {
           }
         }
 
-        const body = req.body as {
-          startTime?: string;
-          endTime?: string;
-          status?: string;
-          driverId?: number;
-          studentId?: number;
-          pickupAddressId?: number;
-          dropoffAddressId?: number;
-        };
-
-        // Block changing driverId or studentId through PATCH - use cancel and rebook instead
-        if (body.driverId !== undefined && body.driverId !== existing.driverId) {
-          res.status(400).json({ error: 'Cannot change driver. Please cancel and create a new booking.' });
-          return;
-        }
-        if (body.studentId !== undefined && body.studentId !== existing.studentId) {
-          res.status(400).json({ error: 'Cannot change student. Please cancel and create a new booking.' });
-          return;
-        }
-
-        // If changing time, perform comprehensive validation
-        if (body.startTime || body.endTime) {
-          const newStart = body.startTime ? new Date(body.startTime) : existing.startTime;
-          const newEnd = body.endTime ? new Date(body.endTime) : existing.endTime;
-
-          // Validate dates are valid
-          if (Number.isNaN(newStart.getTime()) || Number.isNaN(newEnd.getTime())) {
-            res.status(400).json({ error: 'Invalid date format' });
-            return;
-          }
-
-          // Block past dates
+        // Validate rescheduling: past-date blocking and overlap check
+        const patchBody = req.body as { startTime?: string; endTime?: string; [key: string]: unknown };
+        if (patchBody.startTime) {
+          const newStart = new Date(patchBody.startTime);
           if (newStart.getTime() < Date.now()) {
-            res.status(400).json({ error: 'Cannot reschedule to a past date' });
+            res.status(400).json({ error: 'Cannot reschedule to a past time' });
             return;
           }
 
-          // Fetch driver and settings for validation
-          const driver = await getDriverProfileById(existing.driverId, schoolId);
-          if (!driver || !driver.active) {
-            res.status(400).json({ error: 'Driver is no longer active' });
-            return;
-          }
+          const existingDuration = existing.endTime.getTime() - existing.startTime.getTime();
+          const newEnd = patchBody.endTime ? new Date(patchBody.endTime) : new Date(newStart.getTime() + existingDuration);
 
-          const settings = await getSchoolSettings(schoolId);
-
-          // Enforce lead time
-          if (settings?.minBookingLeadTimeHours) {
-            const cutoff = Date.now() + settings.minBookingLeadTimeHours * 60 * 60 * 1000;
-            if (newStart.getTime() < cutoff) {
-              res.status(400).json({
-                error: `Booking requires at least ${settings.minBookingLeadTimeHours} hours lead time`
-              });
-              return;
-            }
-          }
-
-          // Check driver availability for the new date
-          const driverAvailabilities = await listAvailability(driver.id, schoolId);
-          const newDateStr = newStart.toISOString().slice(0, 10);
-
-          // Check for driver's off-day on the new date
-          const hasHolidayOnDate = driverAvailabilities.some(
-            (entry) => entry.date.toISOString().slice(0, 10) === newDateStr && entry.type === 'override_closed'
-          );
-          if (hasHolidayOnDate) {
-            res.status(400).json({ error: 'Driver is not available on this date (off-day)' });
-            return;
-          }
-
-          // Check for double-booking conflicts
-          const hasConflict = await hasBookingConflict(
-            schoolId,
-            existing.driverId,
-            newStart,
-            newEnd,
-            bookingId, // Exclude current booking from conflict check
-          );
-
-          if (hasConflict) {
-            res.status(409).json({ error: 'Time slot conflicts with another booking for this driver' });
+          const driverId = (patchBody.driverId ? Number(patchBody.driverId) : existing.driverId);
+          const hasOverlap = await checkBookingOverlap(schoolId, driverId, newStart, newEnd, bookingId);
+          if (hasOverlap) {
+            res.status(409).json({ error: 'Rescheduled time conflicts with an existing booking' });
             return;
           }
         }
 
-        // Only allow updating specific fields
-        const allowedUpdates: Partial<typeof body> = {};
-        if (body.startTime) allowedUpdates.startTime = body.startTime;
-        if (body.endTime) allowedUpdates.endTime = body.endTime;
-        if (body.status && ['scheduled', 'completed', 'no_show'].includes(body.status)) {
-          allowedUpdates.status = body.status;
-        }
-        if (body.pickupAddressId) allowedUpdates.pickupAddressId = body.pickupAddressId;
-        if (body.dropoffAddressId) allowedUpdates.dropoffAddressId = body.dropoffAddressId;
-
-        const updated = await updateBooking(bookingId, schoolId, allowedUpdates);
+        const updated = await updateBooking(bookingId, schoolId, req.body);
         res.json(updated);
       } catch (error) {
         next(error);

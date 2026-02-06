@@ -335,12 +335,9 @@ function DriverPageContent() {
           defaultBufferMinutesBetweenLessons: schoolSettingsForm.defaultBufferMinutesBetweenLessons
             ? Number(schoolSettingsForm.defaultBufferMinutesBetweenLessons)
             : null,
-          defaultServiceRadiusKm: schoolSettingsForm.defaultServiceRadiusKm || null,
           dailyBookingCapPerDriver: schoolSettingsForm.dailyBookingCapPerDriver
             ? Number(schoolSettingsForm.dailyBookingCapPerDriver)
             : null,
-          allowStudentToPickDriver: schoolSettingsForm.allowStudentToPickDriver,
-          allowDriverSelfAvailabilityEdit: schoolSettingsForm.allowDriverSelfAvailabilityEdit,
         }),
       });
       await loadSchoolSettings();
@@ -605,6 +602,48 @@ function DriverPageContent() {
             {actionMessage ? <p className="text-[11px] text-emerald-600 font-medium">{actionMessage}</p> : null}
           </div>
 
+          {/* Overdue Bookings Alert */}
+          {(() => {
+            const overdue = driverState.bookings.filter(
+              b => b.status === 'scheduled' && new Date(b.startTime).getTime() < Date.now()
+            );
+            if (overdue.length === 0) return null;
+            return (
+              <div className="bg-amber-50 border border-amber-300 rounded-xl p-4 shadow-sm">
+                <h2 className="text-sm font-semibold text-amber-800 mb-2">
+                  Attention: {overdue.length} lesson(s) past their scheduled time but still marked as "scheduled"
+                </h2>
+                <ul className="space-y-2">
+                  {overdue.map(b => {
+                    const studentName = driverState.students.find(s => s.id === b.studentId)?.fullName ?? 'Student';
+                    return (
+                      <li key={b.id} className="flex items-center justify-between bg-white border border-amber-200 rounded p-2">
+                        <div>
+                          <p className="text-sm font-medium text-slate-800">{studentName}</p>
+                          <p className="text-xs text-slate-600">{new Date(b.startTime).toLocaleString()}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            className="px-3 py-1 rounded bg-green-600 text-white text-xs hover:bg-green-500"
+                            onClick={() => markCompleted(b.id)}
+                          >
+                            Mark Completed
+                          </button>
+                          <button
+                            className="px-3 py-1 rounded bg-red-600 text-white text-xs hover:bg-red-500"
+                            onClick={() => setConfirmCancel({ bookingId: b.id, studentName })}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            );
+          })()}
+
           {/* Today's Schedule - Prominent at the top */}
           {upcomingLessons.length > 0 && (
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 shadow-sm">
@@ -771,7 +810,7 @@ function DriverPageContent() {
               <SummaryCard
                 title="Instructor settings"
                 description="Lead times, cancellation windows, and caps for your lessons."
-                footer={`Current: lead time ${schoolSettings?.minBookingLeadTimeHours ?? '—'} hrs, cancellation cutoff ${schoolSettings?.cancellationCutoffHours ?? '—'} hrs, radius ${schoolSettings?.defaultServiceRadiusKm ?? '—'} km`}
+                footer={`Current: lead time ${schoolSettings?.minBookingLeadTimeHours ?? '—'} hrs, cancellation cutoff ${schoolSettings?.cancellationCutoffHours ?? '—'} hrs`}
               >
                 <form className="space-y-3 text-sm" onSubmit={(e) => { e.preventDefault(); saveSchoolSettings(); }}>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -891,6 +930,7 @@ function DriverPageContent() {
                             value={reschedule[lesson.id] ?? ''}
                             onChange={(e) => setReschedule((prev) => ({ ...prev, [lesson.id]: e.target.value }))}
                             placeholder="New start time"
+                            min={new Date().toISOString().slice(0, 16)}
                           />
                           <button
                             className="px-3 py-1 rounded bg-white border border-slate-300 hover:bg-slate-100 min-h-[32px]"

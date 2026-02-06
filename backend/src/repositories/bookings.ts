@@ -103,11 +103,7 @@ export async function getTotalBookedHoursForStudent(
   return Number(result.rows[0].total_hours ?? 0);
 }
 
-/**
- * Check if a time slot conflicts with existing bookings for a driver
- * @returns true if there IS a conflict
- */
-export async function hasBookingConflict(
+export async function checkBookingOverlap(
   drivingSchoolId: number,
   driverId: number,
   startTime: Date,
@@ -116,20 +112,18 @@ export async function hasBookingConflict(
 ): Promise<boolean> {
   const params: unknown[] = [drivingSchoolId, driverId, startTime.toISOString(), endTime.toISOString()];
   let excludeClause = '';
-
-  if (excludeBookingId !== undefined) {
+  if (excludeBookingId) {
     params.push(excludeBookingId);
-    excludeClause = `AND id != $${params.length}`;
+    excludeClause = ` AND id != $${params.length}`;
   }
 
   const result = await getPool().query<{ count: string }>(
-    `SELECT COUNT(*) AS count
-     FROM bookings
+    `SELECT COUNT(*) AS count FROM bookings
      WHERE driving_school_id = $1
        AND driver_id = $2
        AND status = 'scheduled'
-       AND (start_time, end_time) OVERLAPS ($3::timestamp, $4::timestamp)
-       ${excludeClause}`,
+       AND start_time < $4
+       AND end_time > $3${excludeClause}`,
     params,
   );
 
