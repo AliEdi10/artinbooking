@@ -13,6 +13,14 @@ Set standard Postgres environment variables before running the server or migrati
 - `PGDATABASE` (default `artinbk`)
 - `PGPOOL_MAX` (optional connection pool size)
 
+### Reverse Proxy Configuration
+
+When deploying behind a reverse proxy (e.g., Railway, AWS ALB, Cloudflare), the app is configured to trust the proxy:
+
+- `app.set('trust proxy', 1)` is enabled by default
+- This allows express-rate-limit to read X-Forwarded-For headers correctly
+- Essential for accurate rate limiting and client IP detection in production
+
 JWT / Google Identity Platform configuration:
 
 - `AUTH_ISSUER` (default `https://accounts.google.com`)

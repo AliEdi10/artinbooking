@@ -202,6 +202,8 @@ The final application must support at least the following areas end-to-end.
 
 \- Invitation flows where school admin invites drivers and students, who then complete registration and profile setup.
 
+\- **School Activation**: New schools are created with `status='suspended'` and automatically activate when a SCHOOL\_ADMIN user accepts their invitation. This ensures schools only become operational after email confirmation and admin registration completion.
+
 \- Basic account management (password resets, account activation/deactivation).
 
 

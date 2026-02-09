@@ -30,9 +30,21 @@ Key fields (conceptual):
 
 \- address (office address)
 
-\- status (active, suspended, deleted)
+\- status (active, suspended, deleted) - **PostgreSQL enum type**
 
 \- created\_at, updated\_at
+
+
+
+**Important Notes:**
+
+\- Schools are created with `status='suspended'` initially
+
+\- Schools activate automatically when a SCHOOL\_ADMIN role user accepts their invitation and completes registration
+
+\- Frontend must use `status` field (not a boolean `active` field) to check school state
+
+\- Valid status transitions: suspended → active, active → suspended, \* → deleted
 
 
 
