@@ -209,6 +209,37 @@ function DriverOverview({ token, schoolId }: { token: string; schoolId: number }
         </SummaryCard>
       </div>
 
+      {/* Overdue Bookings Alert */}
+      {(() => {
+        const overdue = bookings.filter(
+          b => b.status === 'scheduled' && new Date(b.startTime).getTime() < Date.now()
+        );
+        if (overdue.length === 0) return null;
+        return (
+          <div className="bg-amber-50 border border-amber-300 rounded-xl p-4 shadow-sm">
+            <h2 className="text-sm font-semibold text-amber-800 mb-2">
+              Attention: {overdue.length} lesson(s) past their scheduled time but still marked as &quot;scheduled&quot;
+            </h2>
+            <ul className="space-y-2">
+              {overdue.map(b => {
+                const student = students.find(s => s.id === b.studentId);
+                return (
+                  <li key={b.id} className="flex items-center justify-between bg-white border border-amber-200 rounded p-2">
+                    <div>
+                      <p className="text-sm font-medium text-slate-800">{student?.fullName || 'Student'}</p>
+                      <p className="text-xs text-slate-800">{new Date(b.startTime).toLocaleString()}</p>
+                    </div>
+                    <Link href="/driver" className="px-3 py-1 rounded bg-amber-600 text-white text-xs hover:bg-amber-500">
+                      Review
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        );
+      })()}
+
       {todayBookings.length > 0 && (
         <SummaryCard title="🚗 Today's Schedule" description="" footer="">
           <ul className="space-y-2">
