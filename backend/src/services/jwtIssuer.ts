@@ -5,6 +5,7 @@ interface IssueJwtParams {
   email: string;
   role?: string;
   drivingSchoolId?: number | null;
+  name?: string;
   expiresInSeconds?: number;
 }
 
@@ -44,6 +45,7 @@ export function issueLocalJwt(params: IssueJwtParams): string {
 
   if (params.role) claims.role = params.role;
   if (params.drivingSchoolId !== undefined) claims.driving_school_id = params.drivingSchoolId;
+  if (params.name) claims.name = params.name;
 
   const headerSegment = Buffer.from(JSON.stringify(header)).toString('base64url');
   const payloadSegment = Buffer.from(JSON.stringify(claims)).toString('base64url');

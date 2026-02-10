@@ -87,8 +87,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 {(() => {
                   const hour = new Date().getHours();
                   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-                  const name = user?.email?.split('@')[0] ?? 'there';
-                  return `${greeting}, ${name.charAt(0).toUpperCase() + name.slice(1)}`;
+                  const name = user?.name || user?.email?.split('@')[0] || 'there';
+                  return `${greeting}, ${name}`;
                 })()}
               </p>
               <p className="text-xs text-slate-800 hidden sm:block">{user?.role ?? 'role unknown'}</p>

@@ -36,6 +36,7 @@ export function parseToken(token: string): AuthUser | null {
       email: json.email as string | undefined,
       role: normalizedRole,
       schoolId: typeof schoolIdValue === 'number' ? schoolIdValue : undefined,
+      name: typeof json.name === 'string' ? json.name : undefined,
     };
   } catch (error) {
     console.warn('Failed to parse token payload', error);

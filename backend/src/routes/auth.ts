@@ -1,6 +1,7 @@
 import express from 'express';
 import { createUserWithPassword, loadUserByIdentity } from '../repositories/users';
-import { createStudentProfile } from '../repositories/studentProfiles';
+import { createStudentProfile, getStudentProfileByUserId } from '../repositories/studentProfiles';
+import { getDriverProfileByUserId } from '../repositories/driverProfiles';
 import { hashPassword, comparePassword } from '../services/password';
 import { issueLocalJwt } from '../services/jwtIssuer';
 import { sendPasswordResetEmail } from '../services/email';
@@ -53,7 +54,8 @@ router.post('/register', async (req, res, next) => {
             sub: `local-${user.id}`,
             email: user.email,
             role: user.role,
-            drivingSchoolId: user.drivingSchoolId
+            drivingSchoolId: user.drivingSchoolId,
+            name: fullName,
         });
 
         res.status(201).json({ token, user });
@@ -85,11 +87,24 @@ router.post('/login', async (req, res, next) => {
             return;
         }
 
+        // Look up display name from profile
+        let displayName: string | undefined;
+        if (user.drivingSchoolId) {
+            if (user.role === 'DRIVER') {
+                const profile = await getDriverProfileByUserId(user.id, user.drivingSchoolId);
+                displayName = profile?.fullName;
+            } else if (user.role === 'STUDENT') {
+                const profile = await getStudentProfileByUserId(user.id, user.drivingSchoolId);
+                displayName = profile?.fullName;
+            }
+        }
+
         const token = issueLocalJwt({
             sub: `local-${user.id}`,
             email: user.email,
             role: user.role,
-            drivingSchoolId: user.drivingSchoolId
+            drivingSchoolId: user.drivingSchoolId,
+            name: displayName,
         });
 
         res.json({ token, user });
