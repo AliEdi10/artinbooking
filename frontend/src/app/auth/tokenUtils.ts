@@ -3,6 +3,14 @@ import type { AuthUser } from './AuthProvider';
 export function decodeBase64Url(value: string): string {
   const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
   const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
+  if (typeof atob === 'function') {
+    return decodeURIComponent(
+      atob(padded)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join(''),
+    );
+  }
   return Buffer.from(padded, 'base64').toString('utf8');
 }
 

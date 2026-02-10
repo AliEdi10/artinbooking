@@ -47,8 +47,8 @@ export default function BookingsPage() {
             `/schools/${schoolId}/students/${student.id}/addresses`,
             token!,
           ).catch(() => []);
-          const pickup = addresses.find((entry) => entry.isDefaultPickup) ?? addresses[0];
-          const dropoff = addresses.find((entry) => entry.isDefaultDropoff) ?? addresses[1] ?? pickup;
+          const pickup = addresses.find((entry) => entry.isDefaultPickup) ?? (addresses.length > 0 ? addresses[0] : undefined);
+          const dropoff = addresses.find((entry) => entry.isDefaultDropoff) ?? (addresses.length > 1 ? addresses[1] : pickup);
 
           if (pickup && dropoff) {
             const dateParam = new Date().toISOString().slice(0, 10);

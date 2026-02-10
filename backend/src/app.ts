@@ -3,7 +3,7 @@ import cors from 'cors';
 import express from 'express';
 import { authenticateRequest, authenticateRequestAllowUnregistered } from './middleware/authentication';
 import { enforceTenantScope, requireRoles } from './middleware/authorization';
-import { getDrivingSchoolById, getDrivingSchools, createDrivingSchool, activateDrivingSchool } from './repositories/drivingSchools';
+import { getDrivingSchoolById, getDrivingSchools, createDrivingSchool, activateDrivingSchool, updateDrivingSchool, updateDrivingSchoolStatus } from './repositories/drivingSchools';
 import { findInvitationByToken, markInvitationAccepted, upsertInvitation, getPendingInvitations, getInvitationById, resendInvitation, deleteInvitation } from './repositories/invitations';
 import { countAdminsForSchool, createUserWithIdentity, createUserWithPassword, getUserById } from './repositories/users';
 import {
@@ -21,8 +21,8 @@ import {
   listStudentProfiles,
   updateStudentProfile,
 } from './repositories/studentProfiles';
-import { createAddress, getAddressById, listAddressesForStudent, updateAddress } from './repositories/studentAddresses';
-import { cancelBooking, createBooking, getBookingById, listBookings, updateBooking, countScheduledBookingsForStudentOnDate, getTotalBookedHoursForStudent, checkBookingOverlap } from './repositories/bookings';
+import { createAddress, getAddressById, getAddressesByIds, listAddressesForStudent, updateAddress } from './repositories/studentAddresses';
+import { cancelBooking, createBooking, createBookingAtomic, getBookingById, listBookings, updateBooking, countScheduledBookingsForStudentOnDate, getTotalBookedHoursForStudent, checkBookingOverlap } from './repositories/bookings';
 import { createAvailability, deleteAvailability, listAvailability, getDriverHolidaysForSchool } from './repositories/driverAvailability';
 import { getSchoolSettings, upsertSchoolSettings } from './repositories/schoolSettings';
 import { UserRole } from './models';
@@ -34,7 +34,7 @@ import { verifyJwtFromRequest } from './services/jwtVerifier';
 import { hashPassword } from './services/password';
 import { sendInvitationEmail, sendBookingConfirmationEmail, sendBookingCancellationEmail, sendDriverBookingNotification } from './services/email';
 
-function resolveSchoolContext(req: AuthenticatedRequest, res: express.Response): number | null {
+async function resolveSchoolContext(req: AuthenticatedRequest, res: express.Response): Promise<number | null> {
   const requestedSchoolId = Number(req.params.schoolId);
   if (Number.isNaN(requestedSchoolId)) {
     res.status(400).json({ error: 'Invalid school id' });
@@ -49,6 +49,19 @@ function resolveSchoolContext(req: AuthenticatedRequest, res: express.Response):
   if (tenantSchoolId && tenantSchoolId !== requestedSchoolId) {
     res.status(403).json({ error: 'Cross-tenant access not allowed' });
     return null;
+  }
+
+  // Block non-SUPERADMIN access to non-active schools
+  if (req.user?.role !== 'SUPERADMIN') {
+    const school = await getDrivingSchoolById(requestedSchoolId);
+    if (!school) {
+      res.status(404).json({ error: 'School not found' });
+      return null;
+    }
+    if (school.status !== 'active') {
+      res.status(403).json({ error: 'School is not active' });
+      return null;
+    }
   }
 
   return requestedSchoolId;
@@ -74,19 +87,23 @@ async function buildDriverDayBookings(
 ): Promise<BookingWithLocations[]> {
   const bookings = await listBookings(drivingSchoolId, { driverId });
 
+  const dateStr = date.toISOString().slice(0, 10);
+  const dayBookings = bookings.filter(
+    (b) => b.status === 'scheduled' && b.startTime.toISOString().slice(0, 10) === dateStr,
+  );
+
+  // Batch-load all addresses in one query instead of N+1
+  const addressIds: number[] = [];
+  for (const booking of dayBookings) {
+    if (booking.pickupAddressId) addressIds.push(booking.pickupAddressId);
+    if (booking.dropoffAddressId) addressIds.push(booking.dropoffAddressId);
+  }
+  const addressMap = await getAddressesByIds(addressIds, drivingSchoolId);
+
   const enriched: BookingWithLocations[] = [];
-  // eslint-disable-next-line no-restricted-syntax
-  for (const booking of bookings) {
-    if (booking.status !== 'scheduled') continue;
-    if (booking.startTime.toISOString().slice(0, 10) !== date.toISOString().slice(0, 10)) continue;
-    // eslint-disable-next-line no-await-in-loop
-    const pickupAddress = booking.pickupAddressId
-      ? await getAddressById(booking.pickupAddressId, drivingSchoolId)
-      : null;
-    // eslint-disable-next-line no-await-in-loop
-    const dropoffAddress = booking.dropoffAddressId
-      ? await getAddressById(booking.dropoffAddressId, drivingSchoolId)
-      : null;
+  for (const booking of dayBookings) {
+    const pickupAddress = booking.pickupAddressId ? addressMap.get(booking.pickupAddressId) ?? null : null;
+    const dropoffAddress = booking.dropoffAddressId ? addressMap.get(booking.dropoffAddressId) ?? null : null;
 
     const pickupLocation = addressToLocation(pickupAddress);
     const dropoffLocation = addressToLocation(dropoffAddress);
@@ -102,7 +119,7 @@ async function buildDriverDayBookings(
 
 import authRouter from './routes/auth';
 import analyticsRouter from './routes/analytics';
-import { generalLimiter, authLimiter } from './middleware/rateLimit';
+import { generalLimiter, authLimiter, slotQueryLimiter } from './middleware/rateLimit';
 import { httpLogger, logger } from './middleware/logging';
 
 export function createApp() {
@@ -242,6 +259,70 @@ export function createApp() {
     },
   );
 
+  // Update driving school details (superadmin only)
+  app.patch(
+    '/schools/:schoolId',
+    authenticateRequest,
+    requireRoles(['SUPERADMIN']),
+    async (req: AuthenticatedRequest, res, next) => {
+      try {
+        const schoolId = Number(req.params.schoolId);
+        if (Number.isNaN(schoolId)) {
+          res.status(400).json({ error: 'Invalid school id' });
+          return;
+        }
+
+        const { name, contactEmail } = req.body as { name?: string; contactEmail?: string };
+        if (name !== undefined && !name.trim()) {
+          res.status(400).json({ error: 'School name cannot be empty' });
+          return;
+        }
+
+        const school = await updateDrivingSchool(schoolId, { name, contactEmail });
+        if (!school) {
+          res.status(404).json({ error: 'School not found' });
+          return;
+        }
+
+        res.json(school);
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
+
+  // Update driving school status (suspend/activate/delete — superadmin only)
+  app.patch(
+    '/schools/:schoolId/status',
+    authenticateRequest,
+    requireRoles(['SUPERADMIN']),
+    async (req: AuthenticatedRequest, res, next) => {
+      try {
+        const schoolId = Number(req.params.schoolId);
+        if (Number.isNaN(schoolId)) {
+          res.status(400).json({ error: 'Invalid school id' });
+          return;
+        }
+
+        const { status } = req.body as { status?: string };
+        if (!status || !['active', 'suspended', 'deleted'].includes(status)) {
+          res.status(400).json({ error: 'status must be one of: active, suspended, deleted' });
+          return;
+        }
+
+        const school = await updateDrivingSchoolStatus(schoolId, status as 'active' | 'suspended' | 'deleted');
+        if (!school) {
+          res.status(404).json({ error: 'School not found' });
+          return;
+        }
+
+        res.json(school);
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
+
   app.post(
     '/schools/:schoolId/invitations',
     authenticateRequest,
@@ -334,7 +415,7 @@ export function createApp() {
     requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN']),
     async (req: AuthenticatedRequest, res, next) => {
       try {
-        const schoolId = resolveSchoolContext(req, res);
+        const schoolId = await resolveSchoolContext(req, res);
         if (!schoolId) return;
 
         const holidays = await getDriverHolidaysForSchool(schoolId);
@@ -352,7 +433,7 @@ export function createApp() {
     requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN']),
     async (req: AuthenticatedRequest, res, next) => {
       try {
-        const schoolId = resolveSchoolContext(req, res);
+        const schoolId = await resolveSchoolContext(req, res);
         if (!schoolId) return;
 
         const invitations = await getPendingInvitations(schoolId);
@@ -370,7 +451,7 @@ export function createApp() {
     requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN']),
     async (req: AuthenticatedRequest, res, next) => {
       try {
-        const schoolId = resolveSchoolContext(req, res);
+        const schoolId = await resolveSchoolContext(req, res);
         if (!schoolId) return;
 
         const invitationId = Number(req.params.invitationId);
@@ -430,7 +511,7 @@ export function createApp() {
     requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN']),
     async (req: AuthenticatedRequest, res, next) => {
       try {
-        const schoolId = resolveSchoolContext(req, res);
+        const schoolId = await resolveSchoolContext(req, res);
         if (!schoolId) return;
 
         const invitationId = Number(req.params.invitationId);
@@ -567,33 +648,24 @@ export function createApp() {
 
         // Create student profile if role is STUDENT
         if (invitation.role === 'STUDENT' && user) {
-          try {
-            await createStudentProfile({
-              userId: user.id,
-              drivingSchoolId: invitation.drivingSchoolId,
-              fullName: fullName || invitation.fullName || invitation.email.split('@')[0],
-              phone: phone,
-              isMinor: isMinor ?? false,
-              guardianPhone: isMinor ? guardianPhone : undefined,
-              guardianEmail: isMinor ? guardianEmail : undefined,
-            });
-          } catch (profileError) {
-            console.error('Failed to create student profile:', profileError);
-            // Don't fail the whole registration - profile can be created later
-          }
+          await createStudentProfile({
+            userId: user.id,
+            drivingSchoolId: invitation.drivingSchoolId,
+            fullName: fullName || invitation.fullName || invitation.email.split('@')[0],
+            phone: phone,
+            isMinor: isMinor ?? false,
+            guardianPhone: isMinor ? guardianPhone : undefined,
+            guardianEmail: isMinor ? guardianEmail : undefined,
+          });
         }
 
         // Create driver profile if role is DRIVER
         if (invitation.role === 'DRIVER' && user) {
-          try {
-            await createDriverProfile({
-              userId: user.id,
-              drivingSchoolId: invitation.drivingSchoolId,
-              fullName: fullName || invitation.fullName || invitation.email.split('@')[0],
-            });
-          } catch (profileError) {
-            console.error('Failed to create driver profile:', profileError);
-          }
+          await createDriverProfile({
+            userId: user.id,
+            drivingSchoolId: invitation.drivingSchoolId,
+            fullName: fullName || invitation.fullName || invitation.email.split('@')[0],
+          });
         }
 
         // Activate school if role is SCHOOL_ADMIN
@@ -671,7 +743,7 @@ export function createApp() {
     requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN', 'DRIVER', 'STUDENT']),
     async (req: AuthenticatedRequest, res, next) => {
       try {
-        const schoolId = resolveSchoolContext(req, res);
+        const schoolId = await resolveSchoolContext(req, res);
         if (!schoolId) return;
 
         if (!req.user) return;
@@ -699,7 +771,7 @@ export function createApp() {
     requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN']),
     async (req: AuthenticatedRequest, res, next) => {
       try {
-        const schoolId = resolveSchoolContext(req, res);
+        const schoolId = await resolveSchoolContext(req, res);
         if (!schoolId) return;
 
         const { userId, fullName, phone, workDayStart, workDayEnd, notes } = req.body as {
@@ -739,7 +811,7 @@ export function createApp() {
     requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN', 'DRIVER']),
     async (req: AuthenticatedRequest, res, next) => {
       try {
-        const schoolId = resolveSchoolContext(req, res);
+        const schoolId = await resolveSchoolContext(req, res);
         if (!schoolId) return;
 
         const driverId = Number(req.params.driverId);
@@ -773,7 +845,7 @@ export function createApp() {
     requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN', 'DRIVER', 'STUDENT']),
     async (req: AuthenticatedRequest, res, next) => {
       try {
-        const schoolId = resolveSchoolContext(req, res);
+        const schoolId = await resolveSchoolContext(req, res);
         if (!schoolId) return;
 
         if (!req.user) return;
@@ -801,7 +873,7 @@ export function createApp() {
     requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN']),
     async (req: AuthenticatedRequest, res, next) => {
       try {
-        const schoolId = resolveSchoolContext(req, res);
+        const schoolId = await resolveSchoolContext(req, res);
         if (!schoolId) return;
 
         const body = req.body as Partial<CreateStudentProfileInput>;
@@ -830,7 +902,7 @@ export function createApp() {
     requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN', 'STUDENT']),
     async (req: AuthenticatedRequest, res, next) => {
       try {
-        const schoolId = resolveSchoolContext(req, res);
+        const schoolId = await resolveSchoolContext(req, res);
         if (!schoolId) return;
 
         const studentId = Number(req.params.studentId);
@@ -880,7 +952,7 @@ export function createApp() {
     requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN', 'STUDENT']),
     async (req: AuthenticatedRequest, res, next) => {
       try {
-        const schoolId = resolveSchoolContext(req, res);
+        const schoolId = await resolveSchoolContext(req, res);
         if (!schoolId) return;
 
         const studentId = Number(req.params.studentId);
@@ -921,7 +993,7 @@ export function createApp() {
     requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN', 'DRIVER', 'STUDENT']),
     async (req: AuthenticatedRequest, res, next) => {
       try {
-        const schoolId = resolveSchoolContext(req, res);
+        const schoolId = await resolveSchoolContext(req, res);
         if (!schoolId) return;
 
         const studentId = Number(req.params.studentId);
@@ -952,7 +1024,7 @@ export function createApp() {
     requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN', 'STUDENT']),
     async (req: AuthenticatedRequest, res, next) => {
       try {
-        const schoolId = resolveSchoolContext(req, res);
+        const schoolId = await resolveSchoolContext(req, res);
         if (!schoolId) return;
 
         const studentId = Number(req.params.studentId);
@@ -995,7 +1067,7 @@ export function createApp() {
     requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN', 'STUDENT']),
     async (req: AuthenticatedRequest, res, next) => {
       try {
-        const schoolId = resolveSchoolContext(req, res);
+        const schoolId = await resolveSchoolContext(req, res);
         if (!schoolId) return;
 
         const addressId = Number(req.params.addressId);
@@ -1032,7 +1104,7 @@ export function createApp() {
     requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN', 'DRIVER', 'STUDENT']),
     async (req: AuthenticatedRequest, res, next) => {
       try {
-        const schoolId = resolveSchoolContext(req, res);
+        const schoolId = await resolveSchoolContext(req, res);
         if (!schoolId) return;
 
         const driverId = Number(req.params.driverId);
@@ -1063,7 +1135,7 @@ export function createApp() {
     requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN', 'DRIVER']),
     async (req: AuthenticatedRequest, res, next) => {
       try {
-        const schoolId = resolveSchoolContext(req, res);
+        const schoolId = await resolveSchoolContext(req, res);
         if (!schoolId) return;
 
         const driverId = Number(req.params.driverId);
@@ -1127,7 +1199,7 @@ export function createApp() {
     requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN', 'DRIVER']),
     async (req: AuthenticatedRequest, res, next) => {
       try {
-        const schoolId = resolveSchoolContext(req, res);
+        const schoolId = await resolveSchoolContext(req, res);
         if (!schoolId) return;
 
         const driverId = Number(req.params.driverId);
@@ -1159,11 +1231,12 @@ export function createApp() {
 
   app.get(
     '/schools/:schoolId/drivers/:driverId/available-slots',
+    slotQueryLimiter,
     authenticateRequest,
     requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN', 'DRIVER', 'STUDENT']),
     async (req: AuthenticatedRequest, res, next) => {
       try {
-        const schoolId = resolveSchoolContext(req, res);
+        const schoolId = await resolveSchoolContext(req, res);
         if (!schoolId) return;
 
         const driverId = Number(req.params.driverId);
@@ -1311,7 +1384,7 @@ export function createApp() {
     requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN', 'DRIVER', 'STUDENT']),
     async (req: AuthenticatedRequest, res, next) => {
       try {
-        const schoolId = resolveSchoolContext(req, res);
+        const schoolId = await resolveSchoolContext(req, res);
         if (!schoolId) return;
 
         const statusFilter = req.query.status as string | undefined;
@@ -1351,7 +1424,7 @@ export function createApp() {
     requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN', 'STUDENT']),
     async (req: AuthenticatedRequest, res, next) => {
       try {
-        const schoolId = resolveSchoolContext(req, res);
+        const schoolId = await resolveSchoolContext(req, res);
         if (!schoolId) return;
 
         const body = req.body as {
@@ -1553,14 +1626,25 @@ export function createApp() {
           return;
         }
 
-        const booking = await createBooking({
-          ...req.body,
-          drivingSchoolId: schoolId,
-          studentId,
-          driverId: driver.id,
-          startTime: normalizedStart.toISOString(),
-          endTime: endTime.toISOString(),
-        });
+        let booking;
+        try {
+          booking = await createBookingAtomic({
+            drivingSchoolId: schoolId,
+            studentId,
+            driverId: driver.id,
+            pickupAddressId: body.pickupAddressId,
+            dropoffAddressId: body.dropoffAddressId,
+            startTime: normalizedStart.toISOString(),
+            endTime: endTime.toISOString(),
+            notes: req.body.notes ?? null,
+          });
+        } catch (err: unknown) {
+          if (err instanceof Error && err.message === 'BOOKING_OVERLAP') {
+            res.status(409).json({ error: 'This time slot was just booked by someone else. Please choose another slot.' });
+            return;
+          }
+          throw err;
+        }
 
         // Send confirmation emails (non-blocking)
         (async () => {
@@ -1622,7 +1706,7 @@ export function createApp() {
     requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN', 'DRIVER', 'STUDENT']),
     async (req: AuthenticatedRequest, res, next) => {
       try {
-        const schoolId = resolveSchoolContext(req, res);
+        const schoolId = await resolveSchoolContext(req, res);
         if (!schoolId) return;
 
         const bookingId = Number(req.params.bookingId);
@@ -1687,7 +1771,7 @@ export function createApp() {
     requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN', 'DRIVER', 'STUDENT']),
     async (req: AuthenticatedRequest, res, next) => {
       try {
-        const schoolId = resolveSchoolContext(req, res);
+        const schoolId = await resolveSchoolContext(req, res);
         if (!schoolId) return;
 
         const bookingId = Number(req.params.bookingId);
@@ -1800,7 +1884,7 @@ export function createApp() {
     requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN', 'DRIVER', 'STUDENT']),
     async (req: AuthenticatedRequest, res, next) => {
       try {
-        const schoolId = resolveSchoolContext(req, res);
+        const schoolId = await resolveSchoolContext(req, res);
         if (!schoolId) return;
 
         const settings = await getSchoolSettings(schoolId);
@@ -1817,10 +1901,33 @@ export function createApp() {
     requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN']),
     async (req: AuthenticatedRequest, res, next) => {
       try {
-        const schoolId = resolveSchoolContext(req, res);
+        const schoolId = await resolveSchoolContext(req, res);
         if (!schoolId) return;
 
-        const settings = await upsertSchoolSettings(schoolId, req.body);
+        const body = req.body;
+        const numericFields: Array<{ key: string; min: number }> = [
+          { key: 'minBookingLeadTimeHours', min: 0 },
+          { key: 'cancellationCutoffHours', min: 0 },
+          { key: 'defaultLessonDurationMinutes', min: 15 },
+          { key: 'defaultBufferMinutesBetweenLessons', min: 0 },
+          { key: 'defaultServiceRadiusKm', min: 0 },
+          { key: 'defaultMaxSegmentTravelTimeMin', min: 0 },
+          { key: 'defaultMaxSegmentTravelDistanceKm', min: 0 },
+          { key: 'defaultDailyMaxTravelTimeMin', min: 0 },
+          { key: 'defaultDailyMaxTravelDistanceKm', min: 0 },
+          { key: 'dailyBookingCapPerDriver', min: 1 },
+        ];
+        for (const { key, min } of numericFields) {
+          if (body[key] !== undefined && body[key] !== null) {
+            const val = Number(body[key]);
+            if (!Number.isFinite(val) || val < min) {
+              res.status(400).json({ error: `${key} must be a number >= ${min}` });
+              return;
+            }
+          }
+        }
+
+        const settings = await upsertSchoolSettings(schoolId, body);
         res.json(settings);
       } catch (error) {
         next(error);

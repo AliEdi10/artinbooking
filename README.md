@@ -96,16 +96,29 @@ Backend auto-deploys via Railway on push to `master`.
 - ✅ **Railway Proxy Support**: Added `trust proxy` configuration for proper rate limiting behind Railway's reverse proxy
 - ✅ **School Activation Workflow**: Schools now create with `status='suspended'` and activate only when SCHOOL_ADMIN accepts invitation
 - ✅ **Type Safety**: Aligned DrivingSchool status field with PostgreSQL enum type
+- ✅ **School Management API**: PATCH endpoints for editing schools and changing status (suspend/activate/delete)
+- ✅ **Atomic Bookings**: Booking creation wrapped in transactions with row-level locking to prevent double bookings
+- ✅ **N+1 Query Fix**: Batch address loading in slot calculation (1 query instead of 2 per booking)
+- ✅ **School Status Enforcement**: Non-SUPERADMIN users blocked from operating on suspended/deleted schools
+- ✅ **Settings Validation**: Numeric settings validated with sensible minimums
+- ✅ **Rate Limiting**: Applied slot query limiter (30 req/min) to available-slots endpoint
+- ✅ **Profile Safety**: Registration fails properly if student/driver profile creation fails
 
 ### Frontend Improvements
 - ✅ **UI Text Cleanup**: Removed technical/server-side implementation details from user-facing pages
 - ✅ **Text Readability**: Upgraded all grey text colors (text-slate-600 → text-slate-700 → text-slate-800) for better contrast and WCAG compliance
 - ✅ **Type Fixes**: Updated DrivingSchool type to use `status: 'active' | 'suspended' | 'deleted'` enum instead of boolean
+- ✅ **Superadmin School Management**: Edit, suspend, activate, and delete schools with confirmation dialogs
+- ✅ **Browser Base64 Fix**: Token decoding now uses `atob()` in browser instead of Node.js `Buffer`
+- ✅ **Safe Array Access**: Address fallbacks check array length before indexing
 
 ### Bug Fixes
 - Fixed rate limiting errors with X-Forwarded-For headers on Railway
 - Fixed schools showing as "Inactive" due to type mismatch (boolean vs enum)
 - Fixed schools activating immediately instead of after email confirmation
+- Fixed user role overwrite when accepting invitation from a second school
+- Fixed broken accounts from silently failed profile creation
+- Fixed migration default for school status (active → suspended)
 
 See [CHANGELOG.md](./CHANGELOG.md) for detailed version history.
 
@@ -121,6 +134,6 @@ See [CHANGELOG.md](./CHANGELOG.md) for detailed version history.
 
 ## NOT Implemented (Optional/Future)
 - SMS notifications (Twilio)
-- Password reset flow (forgot password page exists but backend not wired)
+- ~~Password reset flow~~ ✅ **Implemented** (backend routes `/auth/forgot-password` and `/auth/reset-password`, migration 0012)
 - E2E test coverage
 - Lesson reminder emails (day before)

@@ -136,8 +136,8 @@ export default function StudentPage() {
       const driverResults = await apiFetch<DriverProfile[]>(`/schools/${schoolId}/drivers`, token).catch(() => []);
       setDrivers(driverResults);
       const driver = driverResults.find((entry) => entry.active) ?? driverResults[0];
-      const pickup = addressResults.find((address) => address.isDefaultPickup) ?? addressResults[0];
-      const dropoff = addressResults.find((address) => address.isDefaultDropoff) ?? addressResults[1] ?? pickup;
+      const pickup = addressResults.find((address) => address.isDefaultPickup) ?? (addressResults.length > 0 ? addressResults[0] : undefined);
+      const dropoff = addressResults.find((address) => address.isDefaultDropoff) ?? (addressResults.length > 1 ? addressResults[1] : pickup);
       const today = new Date();
       const dateParam = today.toISOString().slice(0, 10);
 

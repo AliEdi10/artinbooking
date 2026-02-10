@@ -57,6 +57,20 @@ export async function createUserWithIdentity(
 ): Promise<User> {
   const normalizedEmail = params.email.toLowerCase();
 
+  // Check if user already exists with a different school
+  const existing = await getPool().query<UserRow>(
+    `SELECT * FROM users WHERE identity_provider = $1 AND identity_subject = $2 LIMIT 1`,
+    [params.identityProvider, params.identitySubject],
+  );
+
+  if (existing.rowCount && existing.rowCount > 0) {
+    const existingUser = mapUser(existing.rows[0]);
+    if (existingUser.drivingSchoolId && params.drivingSchoolId &&
+        existingUser.drivingSchoolId !== params.drivingSchoolId) {
+      throw new Error('User already belongs to another driving school');
+    }
+  }
+
   const result = await getPool().query<UserRow>(
     `INSERT INTO users (driving_school_id, email, identity_provider, identity_subject, role, status)
      VALUES ($1, $2, $3, $4, $5, $6)

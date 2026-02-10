@@ -1,4 +1,4 @@
-import { getPool } from '../db';
+import { getPool, withTransaction } from '../db';
 import { Booking, BookingRow, mapBooking } from '../models';
 
 export async function listBookings(
@@ -187,6 +187,59 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking>
   );
 
   return mapBooking(result.rows[0]);
+}
+
+export async function createBookingAtomic(input: CreateBookingInput): Promise<Booking> {
+  return withTransaction(async (client) => {
+    // Check for overlap within the transaction (with row-level lock)
+    const overlapResult = await client.query<{ count: string }>(
+      `SELECT COUNT(*) AS count FROM bookings
+       WHERE driving_school_id = $1
+         AND driver_id = $2
+         AND status = 'scheduled'
+         AND start_time < $4
+         AND end_time > $3
+       FOR UPDATE`,
+      [input.drivingSchoolId, input.driverId, input.startTime, input.endTime],
+    );
+
+    if (Number(overlapResult.rows[0].count) > 0) {
+      throw new Error('BOOKING_OVERLAP');
+    }
+
+    const result = await client.query<BookingRow>(
+      `INSERT INTO bookings (
+        driving_school_id,
+        student_id,
+        driver_id,
+        pickup_address_id,
+        dropoff_address_id,
+        start_time,
+        end_time,
+        status,
+        cancellation_reason_code,
+        price_amount,
+        notes
+      ) VALUES (
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11
+      ) RETURNING *`,
+      [
+        input.drivingSchoolId,
+        input.studentId,
+        input.driverId,
+        input.pickupAddressId ?? null,
+        input.dropoffAddressId ?? null,
+        input.startTime,
+        input.endTime,
+        input.status ?? 'scheduled',
+        input.cancellationReasonCode ?? null,
+        input.priceAmount ?? null,
+        input.notes ?? null,
+      ],
+    );
+
+    return mapBooking(result.rows[0]);
+  });
 }
 
 export async function updateBooking(

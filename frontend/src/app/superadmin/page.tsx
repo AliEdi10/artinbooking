@@ -35,6 +35,13 @@ export default function SuperadminPage() {
     const [schoolForm, setSchoolForm] = useState({ name: '', contactEmail: '' });
     const [adminForm, setAdminForm] = useState({ schoolId: '', email: '', fullName: '' });
 
+    // Edit modal state
+    const [editingSchool, setEditingSchool] = useState<DrivingSchool | null>(null);
+    const [editForm, setEditForm] = useState({ name: '', contactEmail: '' });
+
+    // Confirm action state
+    const [confirmAction, setConfirmAction] = useState<{ schoolId: number; action: 'suspend' | 'activate' | 'delete'; schoolName: string } | null>(null);
+
     async function loadSchools() {
         if (!token) return;
         setLoading(true);
@@ -106,6 +113,50 @@ export default function SuperadminPage() {
         }
     }
 
+    async function handleEditSchool() {
+        if (!token || !editingSchool) return;
+        setActionMessage('Updating school...');
+        try {
+            await apiFetch(`/schools/${editingSchool.id}`, token, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: editForm.name,
+                    contactEmail: editForm.contactEmail || null,
+                }),
+            });
+            setEditingSchool(null);
+            await loadSchools();
+            setActionMessage('School updated successfully!');
+        } catch (err) {
+            setActionMessage('Unable to update school.');
+        }
+    }
+
+    async function handleStatusChange(schoolId: number, status: 'active' | 'suspended' | 'deleted') {
+        if (!token) return;
+        const label = status === 'deleted' ? 'Deleting' : status === 'suspended' ? 'Suspending' : 'Activating';
+        setActionMessage(`${label} school...`);
+        setConfirmAction(null);
+        try {
+            await apiFetch(`/schools/${schoolId}/status`, token, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status }),
+            });
+            await loadSchools();
+            const doneLabel = status === 'deleted' ? 'deleted' : status === 'suspended' ? 'suspended' : 'activated';
+            setActionMessage(`School ${doneLabel} successfully!`);
+        } catch (err) {
+            setActionMessage('Unable to update school status.');
+        }
+    }
+
+    function openEdit(school: DrivingSchool) {
+        setEditingSchool(school);
+        setEditForm({ name: school.name, contactEmail: school.contactEmail || '' });
+    }
+
     return (
         <Protected allowedRoles={['superadmin']}>
             <AppShell>
@@ -119,25 +170,136 @@ export default function SuperadminPage() {
                         {error && <p className="text-sm text-red-700 mt-2">{error}</p>}
                     </div>
 
+                    {/* Edit School Modal */}
+                    {editingSchool && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl">
+                                <h2 className="text-lg font-semibold text-slate-900 mb-4">Edit School</h2>
+                                <div className="space-y-3">
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-800 mb-1">School Name</label>
+                                        <input
+                                            className="border rounded px-3 py-2 text-sm w-full text-slate-900"
+                                            value={editForm.name}
+                                            onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-800 mb-1">Contact Email</label>
+                                        <input
+                                            className="border rounded px-3 py-2 text-sm w-full text-slate-900"
+                                            type="email"
+                                            value={editForm.contactEmail}
+                                            onChange={(e) => setEditForm({ ...editForm, contactEmail: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="flex gap-2 pt-2">
+                                        <button
+                                            onClick={handleEditSchool}
+                                            className="flex-1 bg-slate-900 text-white rounded px-3 py-2 text-sm hover:bg-slate-800"
+                                        >
+                                            Save Changes
+                                        </button>
+                                        <button
+                                            onClick={() => setEditingSchool(null)}
+                                            className="flex-1 border border-slate-300 text-slate-700 rounded px-3 py-2 text-sm hover:bg-slate-50"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Confirm Action Modal */}
+                    {confirmAction && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className="bg-white rounded-lg p-6 w-full max-w-sm shadow-xl">
+                                <h2 className="text-lg font-semibold text-slate-900 mb-2">
+                                    {confirmAction.action === 'delete' ? 'Delete School' : confirmAction.action === 'suspend' ? 'Suspend School' : 'Activate School'}
+                                </h2>
+                                <p className="text-sm text-slate-800 mb-4">
+                                    {confirmAction.action === 'delete'
+                                        ? `Are you sure you want to delete "${confirmAction.schoolName}"? This will prevent all operations on this school.`
+                                        : confirmAction.action === 'suspend'
+                                        ? `Are you sure you want to suspend "${confirmAction.schoolName}"? Users will not be able to make bookings.`
+                                        : `Are you sure you want to activate "${confirmAction.schoolName}"?`}
+                                </p>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => handleStatusChange(confirmAction.schoolId, confirmAction.action === 'activate' ? 'active' : confirmAction.action === 'suspend' ? 'suspended' : 'deleted')}
+                                        className={`flex-1 text-white rounded px-3 py-2 text-sm ${
+                                            confirmAction.action === 'delete' ? 'bg-red-600 hover:bg-red-700' :
+                                            confirmAction.action === 'suspend' ? 'bg-yellow-600 hover:bg-yellow-700' :
+                                            'bg-green-600 hover:bg-green-700'
+                                        }`}
+                                    >
+                                        {confirmAction.action === 'delete' ? 'Delete' : confirmAction.action === 'suspend' ? 'Suspend' : 'Activate'}
+                                    </button>
+                                    <button
+                                        onClick={() => setConfirmAction(null)}
+                                        className="flex-1 border border-slate-300 text-slate-700 rounded px-3 py-2 text-sm hover:bg-slate-50"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Schools List */}
                         <SummaryCard
-                            title="🏫 Driving Schools"
+                            title="Driving Schools"
                             description="All registered driving schools."
                             footer={loading ? 'Loading...' : `${schools.length} school(s)`}
                         >
-                            <ul className="space-y-2 text-sm max-h-64 overflow-y-auto">
+                            <ul className="space-y-2 text-sm max-h-96 overflow-y-auto">
                                 {schools.map((school) => (
                                     <li key={school.id} className="border rounded p-3 bg-slate-50">
                                         <div className="flex justify-between items-center">
-                                            <div>
-                                                <p className="font-medium text-slate-900">{school.name}</p>
+                                            <div className="min-w-0 flex-1">
+                                                <p className="font-medium text-slate-900 truncate">{school.name}</p>
                                                 <p className="text-xs text-slate-800">{school.contactEmail || 'No email'}</p>
                                             </div>
-                                            <span className={`text-xs px-2 py-1 rounded ${school.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                            <span className={`text-xs px-2 py-1 rounded ml-2 whitespace-nowrap ${school.status === 'active' ? 'bg-green-100 text-green-800' : school.status === 'suspended' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
                                                 {school.status === 'active' ? 'Active' : school.status === 'suspended' ? 'Suspended' : 'Deleted'}
                                             </span>
                                         </div>
+                                        {school.status !== 'deleted' && (
+                                            <div className="flex gap-1 mt-2 pt-2 border-t border-slate-200">
+                                                <button
+                                                    onClick={() => openEdit(school)}
+                                                    className="text-xs px-2 py-1 rounded border border-slate-300 text-slate-700 hover:bg-slate-100"
+                                                >
+                                                    Edit
+                                                </button>
+                                                {school.status === 'active' && (
+                                                    <button
+                                                        onClick={() => setConfirmAction({ schoolId: school.id, action: 'suspend', schoolName: school.name })}
+                                                        className="text-xs px-2 py-1 rounded border border-yellow-300 text-yellow-700 hover:bg-yellow-50"
+                                                    >
+                                                        Suspend
+                                                    </button>
+                                                )}
+                                                {school.status === 'suspended' && (
+                                                    <button
+                                                        onClick={() => setConfirmAction({ schoolId: school.id, action: 'activate', schoolName: school.name })}
+                                                        className="text-xs px-2 py-1 rounded border border-green-300 text-green-700 hover:bg-green-50"
+                                                    >
+                                                        Activate
+                                                    </button>
+                                                )}
+                                                <button
+                                                    onClick={() => setConfirmAction({ schoolId: school.id, action: 'delete', schoolName: school.name })}
+                                                    className="text-xs px-2 py-1 rounded border border-red-300 text-red-700 hover:bg-red-50"
+                                                >
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        )}
                                     </li>
                                 ))}
                                 {schools.length === 0 && !loading && (
@@ -172,7 +334,7 @@ export default function SuperadminPage() {
 
                         {/* School Admins */}
                         <SummaryCard
-                            title="👤 School Administrators"
+                            title="School Administrators"
                             description="Invite admins to manage schools."
                             footer={`${admins.length} admin(s)`}
                         >
@@ -183,7 +345,7 @@ export default function SuperadminPage() {
                                         <li key={admin.id} className="border rounded p-2 bg-blue-50">
                                             <p className="font-medium text-slate-900">{admin.email}</p>
                                             <p className="text-xs text-slate-800">
-                                                {admin.fullName || 'No name'} • {school?.name || 'Unknown school'}
+                                                {admin.fullName || 'No name'} &bull; {school?.name || 'Unknown school'}
                                             </p>
                                         </li>
                                     );
@@ -224,7 +386,7 @@ export default function SuperadminPage() {
                                     type="submit"
                                     className="w-full bg-blue-600 text-white rounded px-3 py-2 text-sm hover:bg-blue-700"
                                 >
-                                    📧 Send Invitation
+                                    Send Invitation
                                 </button>
                             </form>
                         </SummaryCard>

@@ -4,7 +4,7 @@
 
 **This app is PRODUCTION READY (January 2026).** Before asking clarifying questions or suggesting work:
 
-1. Read `docs/CURRENT_STATUS.md` - Shows what's actually complete
+1. Read `README.md` - Shows what's actually complete
 2. Read `README.md` - Updated architecture overview
 3. **Ignore** the outdated planning docs in `/docs` that mention GCP, missing features, etc.
 

@@ -6,6 +6,7 @@ Next.js (App Router) UI for the artinbk multi-tenant driving school platform. It
 - Node.js 20+
 - `NEXT_PUBLIC_BACKEND_URL` (defaults to `http://localhost:3001`)
 - `NEXT_PUBLIC_GOOGLE_CLIENT_ID` for Google Identity Platform (optional when using local JWTs)
+- `NEXT_PUBLIC_DEV_MODE` – set to `true` to enable local development helpers on the login page (e.g., local token input)
 
 ## Running locally
 
