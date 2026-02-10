@@ -5,7 +5,7 @@ import { authenticateRequest, authenticateRequestAllowUnregistered } from './mid
 import { enforceTenantScope, requireRoles } from './middleware/authorization';
 import { getDrivingSchoolById, getDrivingSchools, createDrivingSchool, activateDrivingSchool, updateDrivingSchool, updateDrivingSchoolStatus } from './repositories/drivingSchools';
 import { findInvitationByToken, markInvitationAccepted, upsertInvitation, getPendingInvitations, getInvitationById, resendInvitation, deleteInvitation } from './repositories/invitations';
-import { countAdminsForSchool, createUserWithIdentity, createUserWithPassword, getUserById } from './repositories/users';
+import { countAdminsForSchool, createUserWithIdentity, createUserWithPassword, getUserById, listUsersByRole } from './repositories/users';
 import {
   createDriverProfile,
   getDriverProfileById,
@@ -317,6 +317,33 @@ export function createApp() {
         }
 
         res.json(school);
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
+
+  // List users filtered by role (superadmin only)
+  app.get(
+    '/users',
+    authenticateRequest,
+    requireRoles(['SUPERADMIN']),
+    async (req: AuthenticatedRequest, res, next) => {
+      try {
+        const role = req.query.role as string | undefined;
+        if (!role) {
+          res.status(400).json({ error: 'role query parameter is required' });
+          return;
+        }
+
+        const users = await listUsersByRole(role);
+        res.json(users.map((u) => ({
+          id: u.id,
+          email: u.email,
+          role: u.role,
+          drivingSchoolId: u.drivingSchoolId,
+          fullName: null,
+        })));
       } catch (error) {
         next(error);
       }

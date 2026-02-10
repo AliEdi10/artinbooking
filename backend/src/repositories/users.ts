@@ -102,6 +102,14 @@ export async function countAdminsForSchool(drivingSchoolId: number): Promise<num
   return Number(result.rows[0].count);
 }
 
+export async function listUsersByRole(role: string): Promise<User[]> {
+  const result = await getPool().query<UserRow>(
+    `SELECT * FROM users WHERE role = $1 ORDER BY id`,
+    [role],
+  );
+  return result.rows.map(mapUser);
+}
+
 export async function createUserWithPassword(
   params: {
     drivingSchoolId: number | null;
