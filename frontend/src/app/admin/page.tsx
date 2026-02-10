@@ -6,7 +6,7 @@ import { Protected } from '../auth/Protected';
 import { AppShell } from '../components/AppShell';
 import { SummaryCard } from '../components/SummaryCard';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { AnalyticsDashboard } from '../components/AnalyticsDashboard';
+import { AnalyticsDashboard, AdminTab } from '../components/AnalyticsDashboard';
 import { useAuth } from '../auth/AuthProvider';
 import { apiFetch } from '../apiClient';
 
@@ -88,6 +88,7 @@ export default function AdminPage() {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [rejectionNote, setRejectionNote] = useState('');
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
+  const [activeTab, setActiveTab] = useState<AdminTab>('overview');
 
   async function loadSettings() {
     if (!token || !schoolId) return;
@@ -419,9 +420,11 @@ export default function AdminPage() {
 
           {/* Analytics Dashboard */}
           {schoolId && token && (
-            <AnalyticsDashboard schoolId={schoolId} token={token} />
+            <AnalyticsDashboard schoolId={schoolId} token={token} activeTab={activeTab} onTabChange={setActiveTab} />
           )}
 
+          {/* Drivers Tab Content */}
+          {activeTab === 'drivers' && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <SummaryCard
               title="Drivers"
@@ -545,6 +548,13 @@ export default function AdminPage() {
                 ) : null}
               </ul>
             </SummaryCard>
+          </div>
+          )}
+
+          {/* Overview Tab Content */}
+          {activeTab === 'overview' && (
+          <>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <SummaryCard
               title="Students & Licence Review"
               description="Click a student to review their licence and approve/reject."
@@ -920,6 +930,8 @@ export default function AdminPage() {
               </div>
             ) : null}
           </SummaryCard>
+          </>
+          )}
         </div>
       </AppShell>
 

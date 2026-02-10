@@ -39,18 +39,21 @@ type AuditLog = {
     createdAt: string;
 };
 
+export type AdminTab = 'overview' | 'drivers' | 'audit';
+
 interface AnalyticsDashboardProps {
     schoolId: number;
     token: string;
+    activeTab: AdminTab;
+    onTabChange: (tab: AdminTab) => void;
 }
 
-export function AnalyticsDashboard({ schoolId, token }: AnalyticsDashboardProps) {
+export function AnalyticsDashboard({ schoolId, token, activeTab, onTabChange }: AnalyticsDashboardProps) {
     const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
     const [weeklyData, setWeeklyData] = useState<WeeklyBooking[]>([]);
     const [driverStats, setDriverStats] = useState<DriverUtilization[]>([]);
     const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'overview' | 'drivers' | 'audit'>('overview');
 
     useEffect(() => {
         loadAnalytics();
@@ -94,7 +97,7 @@ export function AnalyticsDashboard({ schoolId, token }: AnalyticsDashboardProps)
                 {(['overview', 'drivers', 'audit'] as const).map((tab) => (
                     <button
                         key={tab}
-                        onClick={() => setActiveTab(tab)}
+                        onClick={() => onTabChange(tab)}
                         className={`px-4 py-2 rounded-t text-sm font-medium transition-colors ${activeTab === tab
                             ? 'bg-blue-600 text-white'
                             : 'text-slate-800 hover:bg-slate-100'
