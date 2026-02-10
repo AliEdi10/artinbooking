@@ -83,7 +83,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
           <div className="text-right flex sm:flex-col items-center sm:items-end gap-2 sm:gap-0">
             <div className="flex-1 sm:flex-none">
-              <p className="text-sm font-medium text-slate-900 truncate max-w-[150px] sm:max-w-none">{user?.email ?? 'Signed out'}</p>
+              <p className="text-sm font-medium text-slate-900 truncate max-w-[200px] sm:max-w-none">
+                {(() => {
+                  const hour = new Date().getHours();
+                  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+                  const name = user?.email?.split('@')[0] ?? 'there';
+                  return `${greeting}, ${name.charAt(0).toUpperCase() + name.slice(1)}`;
+                })()}
+              </p>
               <p className="text-xs text-slate-800 hidden sm:block">{user?.role ?? 'role unknown'}</p>
             </div>
             <button
