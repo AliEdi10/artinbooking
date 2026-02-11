@@ -34,6 +34,7 @@ export default function SuperadminPage() {
 
     const [schoolForm, setSchoolForm] = useState({ name: '', contactEmail: '' });
     const [adminForm, setAdminForm] = useState({ schoolId: '', email: '', fullName: '' });
+    const [studentForm, setStudentForm] = useState({ schoolId: '', email: '', fullName: '' });
 
     // Edit modal state
     const [editingSchool, setEditingSchool] = useState<DrivingSchool | null>(null);
@@ -110,6 +111,27 @@ export default function SuperadminPage() {
             setActionMessage('Invitation sent! Admin will receive an email to complete registration.');
         } catch (err) {
             setActionMessage('Unable to send invitation.');
+        }
+    }
+
+    async function handleInviteStudent(event: React.FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+        if (!token || !studentForm.schoolId) return;
+        setActionMessage('Sending student invitation...');
+        try {
+            await apiFetch(`/schools/${studentForm.schoolId}/invitations`, token, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: studentForm.email,
+                    role: 'STUDENT',
+                    fullName: studentForm.fullName || undefined,
+                }),
+            });
+            setStudentForm({ schoolId: studentForm.schoolId, email: '', fullName: '' });
+            setActionMessage('Student invitation sent!');
+        } catch (err) {
+            setActionMessage('Unable to send student invitation.');
         }
     }
 
@@ -249,7 +271,7 @@ export default function SuperadminPage() {
                         </div>
                     )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {/* Schools List */}
                         <SummaryCard
                             title="Driving Schools"
@@ -387,6 +409,46 @@ export default function SuperadminPage() {
                                     className="w-full bg-blue-600 text-white rounded px-3 py-2 text-sm hover:bg-blue-700"
                                 >
                                     Send Invitation
+                                </button>
+                            </form>
+                        </SummaryCard>
+
+                        {/* Invite Student */}
+                        <SummaryCard
+                            title="Invite Student"
+                            description="Invite a student to a specific school."
+                        >
+                            <form className="space-y-2" onSubmit={handleInviteStudent}>
+                                <select
+                                    className="border rounded px-3 py-2 text-sm w-full text-slate-900"
+                                    value={studentForm.schoolId}
+                                    onChange={(e) => setStudentForm({ ...studentForm, schoolId: e.target.value })}
+                                    required
+                                >
+                                    <option value="">Select school *</option>
+                                    {schools.filter(s => s.status === 'active').map((school) => (
+                                        <option key={school.id} value={school.id}>{school.name}</option>
+                                    ))}
+                                </select>
+                                <input
+                                    className="border rounded px-3 py-2 text-sm w-full text-slate-900"
+                                    placeholder="Student email *"
+                                    type="email"
+                                    value={studentForm.email}
+                                    onChange={(e) => setStudentForm({ ...studentForm, email: e.target.value })}
+                                    required
+                                />
+                                <input
+                                    className="border rounded px-3 py-2 text-sm w-full text-slate-900"
+                                    placeholder="Full name (optional)"
+                                    value={studentForm.fullName}
+                                    onChange={(e) => setStudentForm({ ...studentForm, fullName: e.target.value })}
+                                />
+                                <button
+                                    type="submit"
+                                    className="w-full bg-green-600 text-white rounded px-3 py-2 text-sm hover:bg-green-700"
+                                >
+                                    Send Student Invitation
                                 </button>
                             </form>
                         </SummaryCard>
