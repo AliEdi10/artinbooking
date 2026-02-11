@@ -1,8 +1,10 @@
 import express from 'express';
 import { authenticateRequest } from '../middleware/authentication';
+import { requireRoles } from '../middleware/authorization';
 import { AuthenticatedRequest } from '../types/auth';
 import { query } from '../db';
 import { listAuditLogs } from '../repositories/auditLogs';
+import { getDriverProfileByUserId } from '../repositories/driverProfiles';
 
 const router = express.Router();
 
@@ -22,7 +24,7 @@ function resolveSchoolContext(req: AuthenticatedRequest, res: express.Response):
  * GET /schools/:schoolId/analytics/summary
  * Dashboard summary stats
  */
-router.get('/schools/:schoolId/analytics/summary', authenticateRequest, async (req, res) => {
+router.get('/schools/:schoolId/analytics/summary', authenticateRequest, requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN']), async (req, res) => {
     const schoolId = resolveSchoolContext(req as AuthenticatedRequest, res);
     if (!schoolId) return;
 
@@ -85,7 +87,7 @@ router.get('/schools/:schoolId/analytics/summary', authenticateRequest, async (r
  * GET /schools/:schoolId/analytics/bookings-by-week
  * Weekly booking counts for the last 8 weeks
  */
-router.get('/schools/:schoolId/analytics/bookings-by-week', authenticateRequest, async (req, res) => {
+router.get('/schools/:schoolId/analytics/bookings-by-week', authenticateRequest, requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN']), async (req, res) => {
     const schoolId = resolveSchoolContext(req as AuthenticatedRequest, res);
     if (!schoolId) return;
 
@@ -120,7 +122,7 @@ router.get('/schools/:schoolId/analytics/bookings-by-week', authenticateRequest,
  * GET /schools/:schoolId/analytics/driver-utilization
  * Per-driver stats
  */
-router.get('/schools/:schoolId/analytics/driver-utilization', authenticateRequest, async (req, res) => {
+router.get('/schools/:schoolId/analytics/driver-utilization', authenticateRequest, requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN']), async (req, res) => {
     const schoolId = resolveSchoolContext(req as AuthenticatedRequest, res);
     if (!schoolId) return;
 
@@ -166,10 +168,19 @@ router.get('/schools/:schoolId/analytics/driver-utilization', authenticateReques
  * GET /schools/:schoolId/drivers/:driverId/earnings
  * Driver earnings summary
  */
-router.get('/schools/:schoolId/drivers/:driverId/earnings', authenticateRequest, async (req, res) => {
-    const schoolId = resolveSchoolContext(req as AuthenticatedRequest, res);
+router.get('/schools/:schoolId/drivers/:driverId/earnings', authenticateRequest, requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN', 'DRIVER']), async (req, res) => {
+    const authReq = req as AuthenticatedRequest;
+    const schoolId = resolveSchoolContext(authReq, res);
     if (!schoolId) return;
     const driverId = parseInt(req.params.driverId, 10);
+
+    // Drivers can only view their own earnings
+    if (authReq.user?.role === 'DRIVER') {
+        const driverProfile = await getDriverProfileByUserId(authReq.user.id, schoolId);
+        if (!driverProfile || driverProfile.id !== driverId) {
+            return res.status(403).json({ error: 'Drivers may only view their own earnings' });
+        }
+    }
 
     try {
         // Get driver's hourly rate
@@ -236,10 +247,19 @@ router.get('/schools/:schoolId/drivers/:driverId/earnings', authenticateRequest,
  * GET /schools/:schoolId/drivers/:driverId/earnings/export
  * CSV export of driver earnings
  */
-router.get('/schools/:schoolId/drivers/:driverId/earnings/export', authenticateRequest, async (req, res) => {
-    const schoolId = resolveSchoolContext(req as AuthenticatedRequest, res);
+router.get('/schools/:schoolId/drivers/:driverId/earnings/export', authenticateRequest, requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN', 'DRIVER']), async (req, res) => {
+    const authReq = req as AuthenticatedRequest;
+    const schoolId = resolveSchoolContext(authReq, res);
     if (!schoolId) return;
     const driverId = parseInt(req.params.driverId, 10);
+
+    // Drivers can only export their own earnings
+    if (authReq.user?.role === 'DRIVER') {
+        const driverProfile = await getDriverProfileByUserId(authReq.user.id, schoolId);
+        if (!driverProfile || driverProfile.id !== driverId) {
+            return res.status(403).json({ error: 'Drivers may only export their own earnings' });
+        }
+    }
 
     try {
         const driverResult = await query<{ hourly_rate: string | null; full_name: string }>(
@@ -297,7 +317,7 @@ router.get('/schools/:schoolId/drivers/:driverId/earnings/export', authenticateR
  * GET /schools/:schoolId/audit-logs
  * Get audit logs for school
  */
-router.get('/schools/:schoolId/audit-logs', authenticateRequest, async (req, res) => {
+router.get('/schools/:schoolId/audit-logs', authenticateRequest, requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN']), async (req, res) => {
     const schoolId = resolveSchoolContext(req as AuthenticatedRequest, res);
     if (!schoolId) return;
 

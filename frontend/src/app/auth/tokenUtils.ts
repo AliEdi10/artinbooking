@@ -30,6 +30,11 @@ export function parseToken(token: string): AuthUser | null {
       (json.drivingSchoolId as number | undefined) ??
       (json['https://artinbk.app/driving_school_id'] as number | undefined);
 
+    // Reject expired tokens
+    if (typeof json.exp === 'number' && json.exp < Date.now() / 1000) {
+      return null;
+    }
+
     const normalizedRole = typeof role === 'string' ? role.toLowerCase() : undefined;
 
     return {

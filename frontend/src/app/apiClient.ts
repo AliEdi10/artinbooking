@@ -167,6 +167,13 @@ export async function apiFetch<T>(
   }
 
   if (!response.ok) {
+    // Auto-logout on 401 (expired/invalid token)
+    if (response.status === 401) {
+      try {
+        window.localStorage.removeItem('idToken');
+        window.location.href = '/login';
+      } catch { /* SSR guard */ }
+    }
     const { message, code, details } = await parseErrorResponse(response);
     throw new ApiError(message, response.status, code, details);
   }

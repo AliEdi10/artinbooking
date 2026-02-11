@@ -14,12 +14,31 @@ import {
 
 const router = express.Router();
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validatePassword(password: string): string | null {
+    if (password.length < 8) return 'Password must be at least 8 characters long';
+    if (password.length > 128) return 'Password must be at most 128 characters long';
+    return null;
+}
+
 router.post('/register', async (req, res, next) => {
     try {
         const { email, password, role, drivingSchoolId, fullName } = req.body;
 
         if (!email || !password || !role || !drivingSchoolId || !fullName) {
             res.status(400).json({ error: 'Missing required fields: email, password, role, drivingSchoolId, fullName' });
+            return;
+        }
+
+        if (!EMAIL_REGEX.test(email)) {
+            res.status(400).json({ error: 'Invalid email format' });
+            return;
+        }
+
+        const passwordError = validatePassword(password);
+        if (passwordError) {
+            res.status(400).json({ error: passwordError });
             return;
         }
 
@@ -74,6 +93,11 @@ router.post('/login', async (req, res, next) => {
             return;
         }
 
+        if (!EMAIL_REGEX.test(email)) {
+            res.status(400).json({ error: 'Invalid email format' });
+            return;
+        }
+
         const user = await loadUserByIdentity(undefined, email);
         if (!user || !user.passwordHash) {
             // If user has no password hash (e.g. google auth user), fail
@@ -124,6 +148,11 @@ router.post('/forgot-password', async (req, res, next) => {
             return;
         }
 
+        if (!EMAIL_REGEX.test(email)) {
+            res.status(400).json({ error: 'Invalid email format' });
+            return;
+        }
+
         // Always return same response to prevent email enumeration
         const successMessage = 'If an account exists with this email, you will receive a password reset link.';
 
@@ -153,9 +182,9 @@ router.post('/reset-password', async (req, res, next) => {
             return;
         }
 
-        // Validate password strength
-        if (password.length < 8) {
-            res.status(400).json({ error: 'Password must be at least 8 characters long' });
+        const passwordError = validatePassword(password);
+        if (passwordError) {
+            res.status(400).json({ error: passwordError });
             return;
         }
 

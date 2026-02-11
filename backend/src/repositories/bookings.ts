@@ -293,6 +293,23 @@ export async function cancelBooking(
   return mapBooking(result.rows[0]);
 }
 
+export async function completeBooking(
+  id: number,
+  drivingSchoolId: number,
+): Promise<Booking | null> {
+  const result = await getPool().query<BookingRow>(
+    `UPDATE bookings
+     SET status = 'completed',
+         updated_at = NOW()
+     WHERE id = $1 AND driving_school_id = $2 AND status = 'scheduled'
+     RETURNING *`,
+    [id, drivingSchoolId],
+  );
+
+  if (result.rowCount === 0) return null;
+  return mapBooking(result.rows[0]);
+}
+
 /**
  * Get bookings that need reminder emails sent
  * Finds scheduled bookings starting in 23-25 hours that haven't received a reminder yet

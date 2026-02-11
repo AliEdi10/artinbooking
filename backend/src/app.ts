@@ -22,7 +22,7 @@ import {
   updateStudentProfile,
 } from './repositories/studentProfiles';
 import { createAddress, getAddressById, getAddressesByIds, listAddressesForStudent, updateAddress } from './repositories/studentAddresses';
-import { cancelBooking, createBooking, createBookingAtomic, getBookingById, listBookings, updateBooking, countScheduledBookingsForStudentOnDate, getTotalBookedHoursForStudent, checkBookingOverlap } from './repositories/bookings';
+import { cancelBooking, completeBooking, createBooking, createBookingAtomic, getBookingById, listBookings, updateBooking, countScheduledBookingsForStudentOnDate, getTotalBookedHoursForStudent, checkBookingOverlap } from './repositories/bookings';
 import { createAvailability, deleteAvailability, listAvailability, getDriverHolidaysForSchool } from './repositories/driverAvailability';
 import { getSchoolSettings, upsertSchoolSettings } from './repositories/schoolSettings';
 import { UserRole } from './models';
@@ -1905,6 +1905,49 @@ export function createApp() {
     },
   );
 
+  app.post(
+    '/schools/:schoolId/bookings/:bookingId/complete',
+    authenticateRequest,
+    requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN', 'DRIVER']),
+    async (req: AuthenticatedRequest, res, next) => {
+      try {
+        const schoolId = await resolveSchoolContext(req, res);
+        if (!schoolId) return;
+
+        const bookingId = Number(req.params.bookingId);
+        if (Number.isNaN(bookingId)) {
+          res.status(400).json({ error: 'Invalid booking id' });
+          return;
+        }
+
+        const booking = await getBookingById(bookingId, schoolId);
+        if (!booking) {
+          res.status(404).json({ error: 'Booking not found' });
+          return;
+        }
+
+        // Drivers can only complete their own bookings
+        if (req.user?.role === 'DRIVER') {
+          const driver = await getDriverProfileByUserId(req.user.id, schoolId);
+          if (!driver || driver.id !== booking.driverId) {
+            res.status(403).json({ error: 'Drivers may only complete their own bookings' });
+            return;
+          }
+        }
+
+        const completed = await completeBooking(booking.id, schoolId);
+        if (!completed) {
+          res.status(400).json({ error: 'Only scheduled bookings can be marked as completed' });
+          return;
+        }
+
+        res.json(completed);
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
+
   app.get(
     '/schools/:schoolId/settings',
     authenticateRequest,
@@ -1932,23 +1975,23 @@ export function createApp() {
         if (!schoolId) return;
 
         const body = req.body;
-        const numericFields: Array<{ key: string; min: number }> = [
-          { key: 'minBookingLeadTimeHours', min: 0 },
-          { key: 'cancellationCutoffHours', min: 0 },
-          { key: 'defaultLessonDurationMinutes', min: 15 },
-          { key: 'defaultBufferMinutesBetweenLessons', min: 0 },
-          { key: 'defaultServiceRadiusKm', min: 0 },
-          { key: 'defaultMaxSegmentTravelTimeMin', min: 0 },
-          { key: 'defaultMaxSegmentTravelDistanceKm', min: 0 },
-          { key: 'defaultDailyMaxTravelTimeMin', min: 0 },
-          { key: 'defaultDailyMaxTravelDistanceKm', min: 0 },
-          { key: 'dailyBookingCapPerDriver', min: 1 },
+        const numericFields: Array<{ key: string; min: number; max: number }> = [
+          { key: 'minBookingLeadTimeHours', min: 0, max: 720 },
+          { key: 'cancellationCutoffHours', min: 0, max: 720 },
+          { key: 'defaultLessonDurationMinutes', min: 15, max: 480 },
+          { key: 'defaultBufferMinutesBetweenLessons', min: 0, max: 120 },
+          { key: 'defaultServiceRadiusKm', min: 0, max: 500 },
+          { key: 'defaultMaxSegmentTravelTimeMin', min: 0, max: 480 },
+          { key: 'defaultMaxSegmentTravelDistanceKm', min: 0, max: 500 },
+          { key: 'defaultDailyMaxTravelTimeMin', min: 0, max: 720 },
+          { key: 'defaultDailyMaxTravelDistanceKm', min: 0, max: 1000 },
+          { key: 'dailyBookingCapPerDriver', min: 1, max: 50 },
         ];
-        for (const { key, min } of numericFields) {
+        for (const { key, min, max } of numericFields) {
           if (body[key] !== undefined && body[key] !== null) {
             const val = Number(body[key]);
-            if (!Number.isFinite(val) || val < min) {
-              res.status(400).json({ error: `${key} must be a number >= ${min}` });
+            if (!Number.isFinite(val) || val < min || val > max) {
+              res.status(400).json({ error: `${key} must be a number between ${min} and ${max}` });
               return;
             }
           }
