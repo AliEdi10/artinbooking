@@ -247,12 +247,14 @@ export async function updateBooking(
   drivingSchoolId: number,
   updates: Partial<CreateBookingInput>,
 ): Promise<Booking | null> {
+  const allowedColumns = new Set(['student_id', 'driver_id', 'pickup_address_id', 'dropoff_address_id', 'start_time', 'end_time', 'status', 'cancellation_reason_code', 'price_amount', 'notes', 'cancelled_at', 'reminder_sent_at']);
   const fields: string[] = [];
   const values: unknown[] = [];
 
   Object.entries(updates).forEach(([key, value]) => {
     if (value === undefined) return;
     const column = key.replace(/[A-Z]/g, (m) => `_${m.toLowerCase()}`);
+    if (!allowedColumns.has(column)) return;
     fields.push(`${column} = $${fields.length + 1}`);
     values.push(value);
   });

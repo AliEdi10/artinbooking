@@ -116,9 +116,11 @@ export async function updateAddress(
   const fields: string[] = [];
   const values: unknown[] = [];
 
+  const allowedColumns = new Set(['label', 'line1', 'line2', 'city', 'province_or_state', 'postal_code', 'country', 'latitude', 'longitude', 'is_default_pickup', 'is_default_dropoff', 'active']);
   Object.entries(updates).forEach(([key, value]) => {
     if (value === undefined) return;
     const column = key.replace(/[A-Z]/g, (m) => `_${m.toLowerCase()}`);
+    if (!allowedColumns.has(column)) return;
     fields.push(`${column} = $${fields.length + 1}`);
     values.push(value);
   });

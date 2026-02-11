@@ -54,6 +54,7 @@ export default function StudentPage() {
   const [pastBookings, setPastBookings] = useState<Booking[]>([]);
   const [suggestedSlots, setSuggestedSlots] = useState<SuggestedSlot[]>([]);
   const [usedHours, setUsedHours] = useState<number>(0);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [status, setStatus] = useState<string>('Loading student data...');
   const [addressForm, setAddressForm] = useState({
     label: '',
@@ -118,6 +119,7 @@ export default function StudentPage() {
 
       if (!activeStudent) {
         setStatus('No student profile found.');
+        setInitialLoading(false);
         return;
       }
 
@@ -162,8 +164,10 @@ export default function StudentPage() {
       } else {
         setStatus('Add a driver and pickup/dropoff addresses to query live availability.');
       }
+      setInitialLoading(false);
     } catch (error) {
       setStatus('Unable to load student portal data. Check your token and backend availability.');
+      setInitialLoading(false);
     }
   }
 
@@ -320,7 +324,7 @@ export default function StudentPage() {
     ? `Signed in as ${student.fullName}`
     : status;
 
-  if (!student && status.startsWith('Loading')) {
+  if (!student && initialLoading) {
     return (
       <Protected allowedRoles={['student', 'school_admin', 'superadmin']}>
         <AppShell><PageLoading message="Loading student portal..." /></AppShell>

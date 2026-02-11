@@ -28,7 +28,7 @@ export async function sendInvitationEmail(params: SendInvitationEmailParams): Pr
   const inviteeName = escapeHtml(params.inviteeName);
   const schoolName = escapeHtml(params.schoolName);
 
-  const registrationUrl = `${FRONTEND_URL}/register?token=${invitationToken}`;
+  const registrationUrl = `${FRONTEND_URL}/register?token=${encodeURIComponent(invitationToken)}`;
 
   const roleDisplay = role === 'STUDENT' ? 'student' : role === 'DRIVER' ? 'instructor' : 'team member';
 
@@ -82,7 +82,7 @@ export async function sendInvitationEmail(params: SendInvitationEmailParams): Pr
 }
 
 export async function sendPasswordResetEmail(to: string, resetToken: string): Promise<void> {
-  const resetUrl = `${FRONTEND_URL}/reset-password?token=${resetToken}`;
+  const resetUrl = `${FRONTEND_URL}/reset-password?token=${encodeURIComponent(resetToken)}`;
 
   try {
     await resend.emails.send({

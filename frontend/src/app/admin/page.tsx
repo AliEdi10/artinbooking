@@ -429,7 +429,7 @@ export default function AdminPage() {
     }
   }
 
-  if (loadingSettings && loadingRoster && !settings) {
+  if ((loadingSettings || loadingRoster) && !settings) {
     return (
       <Protected allowedRoles={['superadmin', 'school_admin']}>
         <AppShell><PageLoading message="Loading admin workspace..." /></AppShell>

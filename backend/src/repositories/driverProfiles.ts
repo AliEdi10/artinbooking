@@ -111,9 +111,11 @@ export async function updateDriverProfile(
   const fields: string[] = [];
   const values: unknown[] = [];
 
+  const allowedColumns = new Set(['full_name', 'phone', 'service_center_location', 'work_day_start', 'work_day_end', 'lesson_duration_minutes', 'buffer_minutes_between_lessons', 'service_radius_km', 'max_segment_travel_time_min', 'max_segment_travel_distance_km', 'daily_max_travel_time_min', 'daily_max_travel_distance_km', 'notes', 'active']);
   Object.entries(updates).forEach(([key, value]) => {
     if (value === undefined) return;
     const column = key.replace(/[A-Z]/g, (m) => `_${m.toLowerCase()}`);
+    if (!allowedColumns.has(column)) return;
     fields.push(`${column} = $${fields.length + 1}`);
     values.push(value);
   });

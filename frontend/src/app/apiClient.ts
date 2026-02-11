@@ -110,7 +110,7 @@ function getDefaultErrorMessage(status: number): string {
   }
 }
 
-let isLoggingOut = false;
+let logoutTimestamp = 0;
 
 const DEFAULT_TIMEOUT_MS = 30000; // 30 seconds
 const MAX_RETRIES = 2;
@@ -170,8 +170,8 @@ export async function apiFetch<T>(
 
   if (!response.ok) {
     // Auto-logout on 401 (expired/invalid token) — debounced to prevent multiple redirects
-    if (response.status === 401 && !isLoggingOut) {
-      isLoggingOut = true;
+    if (response.status === 401 && Date.now() - logoutTimestamp > 3000) {
+      logoutTimestamp = Date.now();
       try {
         window.localStorage.removeItem('idToken');
         window.location.href = '/login';

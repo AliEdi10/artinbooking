@@ -102,9 +102,11 @@ export async function updateStudentProfile(
   const fields: string[] = [];
   const values: unknown[] = [];
 
+  const allowedColumns = new Set(['full_name', 'date_of_birth', 'phone', 'email', 'licence_number', 'licence_expiry_date', 'licence_province_or_state', 'licence_image_url', 'licence_status', 'licence_rejection_note', 'allowed_hours', 'max_lessons_per_day', 'is_minor', 'guardian_phone', 'guardian_email', 'active']);
   Object.entries(updates).forEach(([key, value]) => {
     if (value === undefined) return;
     const column = key.replace(/[A-Z]/g, (m) => `_${m.toLowerCase()}`);
+    if (!allowedColumns.has(column)) return;
     fields.push(`${column} = $${fields.length + 1}`);
     values.push(value);
   });

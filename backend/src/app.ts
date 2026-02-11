@@ -915,7 +915,8 @@ export function createApp() {
         const schoolId = await resolveSchoolContext(req, res);
         if (!schoolId) return;
 
-        const body = req.body as Partial<CreateStudentProfileInput>;
+        const studentFields = ['userId', 'fullName', 'dateOfBirth', 'phone', 'email', 'licenceNumber', 'licenceExpiryDate', 'licenceProvinceOrState', 'licenceImageUrl', 'licenceStatus', 'isMinor', 'guardianPhone', 'guardianEmail', 'allowedHours', 'maxLessonsPerDay'];
+        const body = pick(req.body, studentFields) as Partial<CreateStudentProfileInput>;
         if (!body.userId || !body.fullName) {
           res.status(400).json({ error: 'userId and fullName are required' });
           return;
@@ -1080,14 +1081,16 @@ export function createApp() {
           }
         }
 
-        const { line1 } = req.body as { line1?: string };
+        const addrCreateFields = ['label', 'line1', 'line2', 'city', 'provinceOrState', 'postalCode', 'country', 'latitude', 'longitude', 'isDefaultPickup', 'isDefaultDropoff'];
+        const addrBody = pick(req.body, addrCreateFields);
+        const line1 = addrBody.line1 as string | undefined;
         if (!line1) {
           res.status(400).json({ error: 'line1 is required' });
           return;
         }
 
         const address = await createAddress({
-          ...req.body,
+          ...addrBody,
           drivingSchoolId: schoolId,
           studentId,
           line1,
