@@ -2,6 +2,7 @@ import express from 'express';
 import { createUserWithPassword, loadUserByIdentity } from '../repositories/users';
 import { createStudentProfile, getStudentProfileByUserId } from '../repositories/studentProfiles';
 import { getDriverProfileByUserId } from '../repositories/driverProfiles';
+import { getDrivingSchoolById } from '../repositories/drivingSchools';
 import { hashPassword, comparePassword } from '../services/password';
 import { issueLocalJwt } from '../services/jwtIssuer';
 import { sendPasswordResetEmail } from '../services/email';
@@ -45,6 +46,12 @@ router.post('/register', async (req, res, next) => {
         if (role !== 'STUDENT') {
             // For now only allow public registration for students
             res.status(400).json({ error: 'Public registration is only available for students' });
+            return;
+        }
+
+        const school = await getDrivingSchoolById(drivingSchoolId);
+        if (!school || school.status !== 'active') {
+            res.status(400).json({ error: 'Invalid or inactive driving school' });
             return;
         }
 

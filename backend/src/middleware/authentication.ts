@@ -4,6 +4,10 @@ import { UserRole } from '../models';
 import { verifyJwtFromRequest } from '../services/jwtVerifier';
 import { AuthenticatedRequest, AuthenticatedUser } from '../types/auth';
 
+if (process.env.AUTH_EMULATOR === 'true') {
+  console.warn('WARNING: AUTH_EMULATOR is enabled. Do NOT use in production!');
+}
+
 function respondUnauthorized(res: express.Response, message: string) {
   res.status(401).json({ error: message });
 }

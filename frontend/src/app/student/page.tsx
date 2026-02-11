@@ -13,6 +13,7 @@ import { AddToCalendarButton } from '../components/AddToCalendarButton';
 import { createStudentLessonEvent } from '../utils/calendar';
 import { useAuth } from '../auth/AuthProvider';
 import { apiFetch } from '../apiClient';
+import { PageLoading } from '../components/LoadingSpinner';
 
 type StudentProfile = {
   id: number;
@@ -282,6 +283,11 @@ export default function StudentPage() {
     const file = event.target.files?.[0];
     if (!file || !token || !schoolId || !student) return;
 
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be under 5MB');
+      return;
+    }
+
     setUploadingLicence(true);
     const toastId = toast.loading('Uploading licence image...');
 
@@ -313,6 +319,14 @@ export default function StudentPage() {
   const policyHint = student
     ? `Signed in as ${student.fullName}`
     : status;
+
+  if (!student && status.startsWith('Loading')) {
+    return (
+      <Protected allowedRoles={['student', 'school_admin', 'superadmin']}>
+        <AppShell><PageLoading message="Loading student portal..." /></AppShell>
+      </Protected>
+    );
+  }
 
   return (
     <Protected allowedRoles={['student', 'school_admin', 'superadmin']}>

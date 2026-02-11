@@ -110,6 +110,8 @@ function getDefaultErrorMessage(status: number): string {
   }
 }
 
+let isLoggingOut = false;
+
 const DEFAULT_TIMEOUT_MS = 30000; // 30 seconds
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 1000;
@@ -167,8 +169,9 @@ export async function apiFetch<T>(
   }
 
   if (!response.ok) {
-    // Auto-logout on 401 (expired/invalid token)
-    if (response.status === 401) {
+    // Auto-logout on 401 (expired/invalid token) — debounced to prevent multiple redirects
+    if (response.status === 401 && !isLoggingOut) {
+      isLoggingOut = true;
       try {
         window.localStorage.removeItem('idToken');
         window.location.href = '/login';

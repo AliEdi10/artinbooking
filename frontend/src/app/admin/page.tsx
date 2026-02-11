@@ -9,6 +9,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { AnalyticsDashboard, AdminTab } from '../components/AnalyticsDashboard';
 import { useAuth } from '../auth/AuthProvider';
 import { apiFetch, ApiError } from '../apiClient';
+import { PageLoading } from '../components/LoadingSpinner';
 
 type SchoolSettings = {
   id: number;
@@ -426,6 +427,14 @@ export default function AdminPage() {
     } catch (err) {
       toast.error('Unable to update licence status.', { id: toastId });
     }
+  }
+
+  if (loadingSettings && loadingRoster && !settings) {
+    return (
+      <Protected allowedRoles={['superadmin', 'school_admin']}>
+        <AppShell><PageLoading message="Loading admin workspace..." /></AppShell>
+      </Protected>
+    );
   }
 
   return (

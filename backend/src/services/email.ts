@@ -6,6 +6,15 @@ const FROM_EMAIL = process.env.EMAIL_FROM || 'onboarding@resend.dev';
 const APP_NAME = process.env.APP_NAME || 'Artin Driving School';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://artinbooking.vercel.app';
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export interface SendInvitationEmailParams {
   to: string;
   inviteeName: string;
@@ -15,7 +24,9 @@ export interface SendInvitationEmailParams {
 }
 
 export async function sendInvitationEmail(params: SendInvitationEmailParams): Promise<void> {
-  const { to, inviteeName, role, schoolName, invitationToken } = params;
+  const { to, role, invitationToken } = params;
+  const inviteeName = escapeHtml(params.inviteeName);
+  const schoolName = escapeHtml(params.schoolName);
 
   const registrationUrl = `${FRONTEND_URL}/register?token=${invitationToken}`;
 
@@ -114,7 +125,14 @@ export interface BookingEmailParams {
 }
 
 export async function sendBookingConfirmationEmail(params: BookingEmailParams): Promise<void> {
-  const { to, studentName, driverName, schoolName, lessonDate, lessonTime, pickupAddress, dropoffAddress } = params;
+  const { to } = params;
+  const studentName = escapeHtml(params.studentName);
+  const driverName = escapeHtml(params.driverName);
+  const schoolName = escapeHtml(params.schoolName);
+  const lessonDate = escapeHtml(params.lessonDate);
+  const lessonTime = escapeHtml(params.lessonTime);
+  const pickupAddress = escapeHtml(params.pickupAddress);
+  const dropoffAddress = escapeHtml(params.dropoffAddress);
 
   if (!process.env.RESEND_API_KEY) {
     console.error('RESEND_API_KEY is not set! Booking confirmation email will not be sent.');
@@ -174,7 +192,13 @@ export async function sendBookingConfirmationEmail(params: BookingEmailParams): 
 }
 
 export async function sendBookingCancellationEmail(params: Omit<BookingEmailParams, 'driverName'>): Promise<void> {
-  const { to, studentName, schoolName, lessonDate, lessonTime, pickupAddress, dropoffAddress } = params;
+  const { to } = params;
+  const studentName = escapeHtml(params.studentName);
+  const schoolName = escapeHtml(params.schoolName);
+  const lessonDate = escapeHtml(params.lessonDate);
+  const lessonTime = escapeHtml(params.lessonTime);
+  const pickupAddress = escapeHtml(params.pickupAddress);
+  const dropoffAddress = escapeHtml(params.dropoffAddress);
 
   if (!process.env.RESEND_API_KEY) {
     console.error('RESEND_API_KEY is not set! Cancellation email will not be sent.');
@@ -222,14 +246,22 @@ export async function sendBookingCancellationEmail(params: Omit<BookingEmailPara
 
 export async function sendDriverBookingNotification(
   to: string,
-  driverName: string,
-  studentName: string,
-  lessonDate: string,
-  lessonTime: string,
-  pickupAddress: string,
-  dropoffAddress: string,
-  schoolName: string
+  rawDriverName: string,
+  rawStudentName: string,
+  rawLessonDate: string,
+  rawLessonTime: string,
+  rawPickupAddress: string,
+  rawDropoffAddress: string,
+  rawSchoolName: string
 ): Promise<void> {
+  const driverName = escapeHtml(rawDriverName);
+  const studentName = escapeHtml(rawStudentName);
+  const lessonDate = escapeHtml(rawLessonDate);
+  const lessonTime = escapeHtml(rawLessonTime);
+  const pickupAddress = escapeHtml(rawPickupAddress);
+  const dropoffAddress = escapeHtml(rawDropoffAddress);
+  const schoolName = escapeHtml(rawSchoolName);
+
   if (!process.env.RESEND_API_KEY) {
     console.error('RESEND_API_KEY is not set! Driver notification will not be sent.');
     return;
@@ -245,7 +277,7 @@ export async function sendDriverBookingNotification(
           <h2 style="color: #1e40af;">📅 New Lesson Assignment</h2>
           <p>Hi ${driverName},</p>
           <p>A new lesson has been booked with you!</p>
-          
+
           <div style="background-color: #eff6ff; border: 1px solid #93c5fd; border-radius: 8px; padding: 16px; margin: 20px 0;">
             <p style="margin: 4px 0;"><strong>Student:</strong> ${studentName}</p>
             <p style="margin: 4px 0;"><strong>Date:</strong> ${lessonDate}</p>
@@ -282,7 +314,13 @@ export interface LessonReminderEmailParams {
  * Send a lesson reminder email to a student (24 hours before)
  */
 export async function sendStudentLessonReminderEmail(params: LessonReminderEmailParams): Promise<void> {
-  const { to, recipientName, driverName, schoolName, lessonDate, lessonTime, pickupAddress } = params;
+  const { to } = params;
+  const recipientName = escapeHtml(params.recipientName);
+  const driverName = escapeHtml(params.driverName);
+  const schoolName = escapeHtml(params.schoolName);
+  const lessonDate = escapeHtml(params.lessonDate);
+  const lessonTime = escapeHtml(params.lessonTime);
+  const pickupAddress = escapeHtml(params.pickupAddress);
 
   if (!process.env.RESEND_API_KEY) {
     console.error('RESEND_API_KEY is not set! Student reminder email will not be sent.');
@@ -344,7 +382,13 @@ export async function sendStudentLessonReminderEmail(params: LessonReminderEmail
  * Send a lesson reminder email to a driver/instructor (24 hours before)
  */
 export async function sendDriverLessonReminderEmail(params: LessonReminderEmailParams): Promise<void> {
-  const { to, recipientName, studentName, schoolName, lessonDate, lessonTime, pickupAddress } = params;
+  const { to } = params;
+  const recipientName = escapeHtml(params.recipientName);
+  const studentName = escapeHtml(params.studentName);
+  const schoolName = escapeHtml(params.schoolName);
+  const lessonDate = escapeHtml(params.lessonDate);
+  const lessonTime = escapeHtml(params.lessonTime);
+  const pickupAddress = escapeHtml(params.pickupAddress);
 
   if (!process.env.RESEND_API_KEY) {
     console.error('RESEND_API_KEY is not set! Driver reminder email will not be sent.');

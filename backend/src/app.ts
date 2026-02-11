@@ -69,6 +69,14 @@ async function resolveSchoolContext(req: AuthenticatedRequest, res: express.Resp
 
 const travelCalculator = buildGoogleMapsTravelCalculatorFromEnv();
 
+function pick(obj: Record<string, unknown>, keys: string[]): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const key of keys) {
+    if (key in obj) result[key] = obj[key];
+  }
+  return result;
+}
+
 function addressToLocation(address?: { latitude: number | null; longitude: number | null } | null): Location | null {
   if (!address || address.latitude === null || address.longitude === null) return null;
   return { latitude: Number(address.latitude), longitude: Number(address.longitude) };
@@ -149,7 +157,7 @@ export function createApp() {
     },
     credentials: true,
   }));
-  app.use(express.json());
+  app.use(express.json({ limit: '1mb' }));
 
   // Apply general rate limiting to all routes
   app.use(generalLimiter);
@@ -168,7 +176,7 @@ export function createApp() {
     res.json({ message: 'Hello from artinbk backend' });
   });
 
-  app.post('/auth/local-token', (req, res) => {
+  app.post('/auth/local-token', authLimiter, (req, res) => {
     if (process.env.AUTH_LOCAL_JWT !== 'true') {
       res.status(404).json({ error: 'Local token issuance is disabled' });
       return;
@@ -858,7 +866,11 @@ export function createApp() {
           return;
         }
 
-        const updated = await updateDriverProfile(driverId, schoolId, req.body);
+        const allowedFields = ['fullName', 'phone', 'workDayStart', 'workDayEnd', 'notes', 'active',
+          'serviceCenterLocation', 'serviceRadiusKm', 'lessonDurationMinutes',
+          'maxSegmentTravelTimeMin', 'maxSegmentTravelDistanceKm',
+          'dailyMaxTravelTimeMin', 'dailyMaxTravelDistanceKm'];
+        const updated = await updateDriverProfile(driverId, schoolId, pick(req.body, allowedFields));
         res.json(updated);
       } catch (error) {
         next(error);
@@ -1117,7 +1129,9 @@ export function createApp() {
           }
         }
 
-        const updated = await updateAddress(addressId, schoolId, req.body);
+        const addressFields = ['label', 'line1', 'line2', 'city', 'provinceOrState', 'postalCode',
+          'country', 'latitude', 'longitude', 'isDefaultPickup', 'isDefaultDropoff'];
+        const updated = await updateAddress(addressId, schoolId, pick(req.body, addressFields));
         res.json(updated);
       } catch (error) {
         next(error);
@@ -1212,7 +1226,8 @@ export function createApp() {
           }
         }
 
-        const record = await createAvailability(driverId, schoolId, req.body);
+        const availFields = ['date', 'startTime', 'endTime', 'type', 'notes'];
+        const record = await createAvailability(driverId, schoolId, pick(req.body, availFields) as { date: string; startTime: string; endTime: string; type?: string; notes?: string });
         res.status(201).json(record);
       } catch (error) {
         next(error);
@@ -1863,7 +1878,8 @@ export function createApp() {
           }
         } else {
           // Non-time update (notes, etc.)
-          const updated = await updateBooking(bookingId, schoolId, req.body);
+          const bookingFields = ['notes', 'pickupAddressId', 'dropoffAddressId'];
+          const updated = await updateBooking(bookingId, schoolId, pick(req.body, bookingFields));
           res.json(updated);
         }
       } catch (error) {

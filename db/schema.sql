@@ -51,7 +51,7 @@ CREATE TABLE driver_profiles (
     driving_school_id BIGINT NOT NULL REFERENCES driving_schools(id) ON DELETE CASCADE,
     full_name TEXT NOT NULL,
     phone TEXT,
-    service_center_location GEOGRAPHY(POINT, 4326),
+    service_center_location JSONB,  -- {latitude, longitude} or null
     work_day_start TIME,
     work_day_end TIME,
     lesson_duration_minutes INTEGER,

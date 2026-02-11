@@ -6,6 +6,7 @@ import { AppShell } from '../components/AppShell';
 import { SummaryCard } from '../components/SummaryCard';
 import { useAuth } from '../auth/AuthProvider';
 import { apiFetch } from '../apiClient';
+import { PageLoading } from '../components/LoadingSpinner';
 
 type DrivingSchool = {
     id: number;
@@ -28,7 +29,7 @@ export default function SuperadminPage() {
 
     const [schools, setSchools] = useState<DrivingSchool[]>([]);
     const [admins, setAdmins] = useState<SchoolAdmin[]>([]);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [actionMessage, setActionMessage] = useState('');
 
@@ -159,7 +160,7 @@ export default function SuperadminPage() {
     return (
         <Protected allowedRoles={['superadmin']}>
             <AppShell>
-                <div className="space-y-6">
+                {loading && schools.length === 0 ? <PageLoading message="Loading schools..." /> : <div className="space-y-6">
                     <div>
                         <h1 className="text-2xl font-semibold text-slate-900">Superadmin Dashboard</h1>
                         <p className="text-sm text-slate-800">
@@ -390,7 +391,7 @@ export default function SuperadminPage() {
                             </form>
                         </SummaryCard>
                     </div>
-                </div>
+                </div>}
             </AppShell>
         </Protected>
     );

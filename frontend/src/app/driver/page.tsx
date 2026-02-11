@@ -17,6 +17,7 @@ import { EarningsCard } from '../components/EarningsCard';
 import { createDriverLessonEvent } from '../utils/calendar';
 import { useAuth } from '../auth/AuthProvider';
 import { apiFetch, ApiError } from '../apiClient';
+import { PageLoading } from '../components/LoadingSpinner';
 
 type DriverProfile = {
   id: number;
@@ -597,6 +598,14 @@ function DriverPageContent() {
     } catch (err) {
       toast.error('Unable to mark lesson as completed.', { id: toastId });
     }
+  }
+
+  if (!driverState.driver && status.startsWith('Loading')) {
+    return (
+      <Protected allowedRoles={['driver', 'school_admin', 'superadmin']}>
+        <AppShell><PageLoading message="Loading instructor dashboard..." /></AppShell>
+      </Protected>
+    );
   }
 
   return (
