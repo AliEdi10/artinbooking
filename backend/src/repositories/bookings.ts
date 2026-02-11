@@ -310,6 +310,43 @@ export async function completeBooking(
   return mapBooking(result.rows[0]);
 }
 
+export async function rescheduleBookingAtomic(
+  id: number,
+  drivingSchoolId: number,
+  driverId: number,
+  newStartTime: string,
+  newEndTime: string,
+): Promise<Booking | null> {
+  return withTransaction(async (client) => {
+    const overlapResult = await client.query<{ count: string }>(
+      `SELECT COUNT(*) AS count FROM bookings
+       WHERE driving_school_id = $1
+         AND driver_id = $2
+         AND status = 'scheduled'
+         AND id != $3
+         AND start_time < $5
+         AND end_time > $4
+       FOR UPDATE`,
+      [drivingSchoolId, driverId, id, newStartTime, newEndTime],
+    );
+
+    if (Number(overlapResult.rows[0].count) > 0) {
+      throw new Error('BOOKING_OVERLAP');
+    }
+
+    const result = await client.query<BookingRow>(
+      `UPDATE bookings
+       SET start_time = $1, end_time = $2, updated_at = NOW()
+       WHERE id = $3 AND driving_school_id = $4 AND status = 'scheduled'
+       RETURNING *`,
+      [newStartTime, newEndTime, id, drivingSchoolId],
+    );
+
+    if (result.rowCount === 0) return null;
+    return mapBooking(result.rows[0]);
+  });
+}
+
 /**
  * Get bookings that need reminder emails sent
  * Finds scheduled bookings starting in 23-25 hours that haven't received a reminder yet

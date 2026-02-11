@@ -16,7 +16,7 @@ import { AddToCalendarButton } from '../components/AddToCalendarButton';
 import { EarningsCard } from '../components/EarningsCard';
 import { createDriverLessonEvent } from '../utils/calendar';
 import { useAuth } from '../auth/AuthProvider';
-import { apiFetch } from '../apiClient';
+import { apiFetch, ApiError } from '../apiClient';
 
 type DriverProfile = {
   id: number;
@@ -534,19 +534,31 @@ function DriverPageContent() {
     }
   }
 
-  async function updateBooking(bookingId: number, newStart: string) {
+  async function updateBooking(bookingId: number, newStart: string, force = false) {
     if (!token || !schoolId || !newStart) return;
     const toastId = toast.loading('Rescheduling...');
     try {
+      const body: Record<string, string | boolean> = { startTime: new Date(newStart).toISOString() };
+      if (force) body.force = true;
       await apiFetch(`/schools/${schoolId}/bookings/${bookingId}`, token, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ startTime: new Date(newStart).toISOString() }),
+        body: JSON.stringify(body),
       });
       setReschedule((prev) => ({ ...prev, [bookingId]: '' }));
       await loadDriverContext();
       toast.success('Booking rescheduled!', { id: toastId });
     } catch (err) {
+      if (err instanceof ApiError && err.code === 'REQUIRES_FORCE') {
+        toast.dismiss(toastId);
+        const confirmed = window.confirm(
+          `${err.message}\n\nDo you want to proceed anyway?`
+        );
+        if (confirmed) {
+          updateBooking(bookingId, newStart, true);
+        }
+        return;
+      }
       toast.error('Unable to reschedule.', { id: toastId });
     }
   }

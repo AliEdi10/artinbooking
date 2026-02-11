@@ -8,7 +8,7 @@ import { SummaryCard } from '../components/SummaryCard';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { AnalyticsDashboard, AdminTab } from '../components/AnalyticsDashboard';
 import { useAuth } from '../auth/AuthProvider';
-import { apiFetch } from '../apiClient';
+import { apiFetch, ApiError } from '../apiClient';
 
 type SchoolSettings = {
   id: number;
@@ -344,14 +344,15 @@ export default function AdminPage() {
     }
   }
 
-  async function handleReschedule(event: React.FormEvent<HTMLFormElement>) {
+  async function handleReschedule(event: React.FormEvent<HTMLFormElement>, force = false) {
     event.preventDefault();
     if (!token || !schoolId || !selectedBookingId) return;
     const toastId = toast.loading('Updating booking...');
     try {
-      const patch: Record<string, string | number> = {};
+      const patch: Record<string, string | number | boolean> = {};
       if (rescheduleStart) patch.startTime = new Date(rescheduleStart).toISOString();
       if (rescheduleDriverId) patch.driverId = Number(rescheduleDriverId);
+      if (force) patch.force = true;
       await apiFetch(`/schools/${schoolId}/bookings/${selectedBookingId}`, token, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -362,6 +363,16 @@ export default function AdminPage() {
       await loadBookings();
       toast.success('Booking updated!', { id: toastId });
     } catch (err) {
+      if (err instanceof ApiError && err.code === 'REQUIRES_FORCE') {
+        toast.dismiss(toastId);
+        const confirmed = window.confirm(
+          `${err.message}\n\nDo you want to proceed anyway?`
+        );
+        if (confirmed) {
+          handleReschedule(event, true);
+        }
+        return;
+      }
       toast.error('Unable to update booking.', { id: toastId });
     }
   }

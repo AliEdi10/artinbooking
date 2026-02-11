@@ -22,7 +22,7 @@ import {
   updateStudentProfile,
 } from './repositories/studentProfiles';
 import { createAddress, getAddressById, getAddressesByIds, listAddressesForStudent, updateAddress } from './repositories/studentAddresses';
-import { cancelBooking, completeBooking, createBooking, createBookingAtomic, getBookingById, listBookings, updateBooking, countScheduledBookingsForStudentOnDate, getTotalBookedHoursForStudent, checkBookingOverlap } from './repositories/bookings';
+import { cancelBooking, completeBooking, createBooking, createBookingAtomic, getBookingById, listBookings, updateBooking, rescheduleBookingAtomic, countScheduledBookingsForStudentOnDate, getTotalBookedHoursForStudent, checkBookingOverlap } from './repositories/bookings';
 import { createAvailability, deleteAvailability, listAvailability, getDriverHolidaysForSchool } from './repositories/driverAvailability';
 import { getSchoolSettings, upsertSchoolSettings } from './repositories/schoolSettings';
 import { UserRole } from './models';
@@ -1764,8 +1764,8 @@ export function createApp() {
           }
         }
 
-        // Validate rescheduling: past-date blocking and overlap check
-        const patchBody = req.body as { startTime?: string; endTime?: string; [key: string]: unknown };
+        const patchBody = req.body as { startTime?: string; endTime?: string; force?: boolean; [key: string]: unknown };
+
         if (patchBody.startTime) {
           const newStart = new Date(patchBody.startTime);
           if (newStart.getTime() < Date.now()) {
@@ -1775,17 +1775,97 @@ export function createApp() {
 
           const existingDuration = existing.endTime.getTime() - existing.startTime.getTime();
           const newEnd = patchBody.endTime ? new Date(patchBody.endTime) : new Date(newStart.getTime() + existingDuration);
+          const driverId = patchBody.driverId ? Number(patchBody.driverId) : existing.driverId;
 
-          const driverId = (patchBody.driverId ? Number(patchBody.driverId) : existing.driverId);
-          const hasOverlap = await checkBookingOverlap(schoolId, driverId, newStart, newEnd, bookingId);
-          if (hasOverlap) {
-            res.status(409).json({ error: 'Rescheduled time conflicts with an existing booking' });
+          // Validate slot feasibility using the same logic as booking creation
+          const driver = await getDriverProfileById(driverId, schoolId);
+          if (!driver) {
+            res.status(404).json({ error: 'Driver not found' });
             return;
           }
-        }
 
-        const updated = await updateBooking(bookingId, schoolId, req.body);
-        res.json(updated);
+          const settings = await getSchoolSettings(schoolId);
+          const driverAvailabilities = await listAvailability(driverId, schoolId);
+
+          // Build day bookings excluding the booking being rescheduled
+          const dayBookings = (await buildDriverDayBookings(schoolId, driverId, newStart))
+            .filter((b) => b.id !== bookingId);
+
+          // Resolve pickup/dropoff locations from the existing booking
+          const pickupAddress = existing.pickupAddressId ? await getAddressById(existing.pickupAddressId, schoolId) : null;
+          const dropoffAddress = existing.dropoffAddressId ? await getAddressById(existing.dropoffAddressId, schoolId) : null;
+          const pickupLocation = addressToLocation(pickupAddress);
+          const dropoffLocation = addressToLocation(dropoffAddress);
+
+          if (pickupLocation && dropoffLocation && driver.serviceCenterLocation) {
+            const availabilityRequest: AvailabilityRequest = {
+              date: newStart,
+              driverProfile: driver,
+              bookings: dayBookings,
+              pickupLocation,
+              dropoffLocation,
+              schoolSettings: settings,
+              availabilities: driverAvailabilities.filter(
+                (entry) => entry.date.toISOString().slice(0, 10) === newStart.toISOString().slice(0, 10),
+              ),
+            };
+
+            const availableSlots = await computeAvailableSlots(availabilityRequest, travelCalculator);
+            const normalizedStart = new Date(newStart);
+            normalizedStart.setSeconds(0, 0);
+            const isValidSlot = availableSlots.some(
+              (slot) => slot.getTime() === normalizedStart.getTime(),
+            );
+
+            if (!isValidSlot) {
+              if (req.user?.role === 'STUDENT') {
+                res.status(400).json({ error: 'Selected time is not available for this driver' });
+                return;
+              }
+              if (!patchBody.force) {
+                res.status(409).json({
+                  error: 'The selected time falls outside the driver\'s computed available slots. This may cause logistical issues (travel time, buffer, or daily limits).',
+                  code: 'REQUIRES_FORCE',
+                  details: ['New time is outside computed available slots for this driver'],
+                });
+                return;
+              }
+            }
+          }
+
+          // Atomic reschedule: overlap check + update in one transaction
+          try {
+            const rescheduled = await rescheduleBookingAtomic(
+              bookingId, schoolId, driverId,
+              newStart.toISOString(), newEnd.toISOString(),
+            );
+            if (!rescheduled) {
+              res.status(404).json({ error: 'Booking not found or not in scheduled status' });
+              return;
+            }
+
+            // If there are other fields to update besides time, apply them
+            const { startTime: _st, endTime: _et, force: _f, driverId: patchDriverId, ...otherUpdates } = patchBody;
+            const extraUpdates: Record<string, unknown> = { ...otherUpdates };
+            if (patchDriverId) extraUpdates.driverId = Number(patchDriverId);
+            if (Object.keys(extraUpdates).length > 0) {
+              const finalResult = await updateBooking(bookingId, schoolId, extraUpdates);
+              res.json(finalResult);
+            } else {
+              res.json(rescheduled);
+            }
+          } catch (err) {
+            if (err instanceof Error && err.message === 'BOOKING_OVERLAP') {
+              res.status(409).json({ error: 'Rescheduled time conflicts with an existing booking' });
+              return;
+            }
+            throw err;
+          }
+        } else {
+          // Non-time update (notes, etc.)
+          const updated = await updateBooking(bookingId, schoolId, req.body);
+          res.json(updated);
+        }
       } catch (error) {
         next(error);
       }
