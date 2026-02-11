@@ -60,12 +60,16 @@ export default function AdminPage() {
   const [confirmCancelInvitation, setConfirmCancelInvitation] = useState<number | null>(null);
   const [isCancellingInvitation, setIsCancellingInvitation] = useState(false);
 
+  const [schools, setSchools] = useState<{ id: number; name: string }[]>([]);
+  const isSuperadmin = user?.role === 'superadmin';
+
   const [driverForm, setDriverForm] = useState({ email: '', fullName: '' });
   const [studentForm, setStudentForm] = useState({
     email: '',
     fullName: '',
     allowedHours: '',
-    maxLessonsPerDay: '2',
+    maxLessonsPerDay: '1',
+    schoolId: '',
   });
   const [settingsForm, setSettingsForm] = useState({
     minBookingLeadTimeHours: '',
@@ -164,6 +168,13 @@ export default function AdminPage() {
   useEffect(() => {
     loadBookings();
   }, [schoolId, token]);
+
+  useEffect(() => {
+    if (!token || !isSuperadmin) return;
+    apiFetch<{ id: number; name: string }[]>('/schools', token)
+      .then(setSchools)
+      .catch(() => {});
+  }, [token, isSuperadmin]);
 
   // Phase 3: Load driver holidays
   async function loadDriverHolidays() {
@@ -269,7 +280,8 @@ export default function AdminPage() {
 
   async function handleCreateStudent(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!token || !schoolId) return;
+    const targetSchoolId = isSuperadmin ? Number(studentForm.schoolId) : schoolId;
+    if (!token || !targetSchoolId) return;
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -281,7 +293,7 @@ export default function AdminPage() {
 
     const toastId = toast.loading('Sending invitation...');
     try {
-      await apiFetch(`/schools/${schoolId}/invitations`, token, {
+      await apiFetch(`/schools/${targetSchoolId}/invitations`, token, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -289,10 +301,10 @@ export default function AdminPage() {
           role: 'STUDENT',
           fullName: studentForm.fullName || undefined,
           allowedHours: studentForm.allowedHours ? Number(studentForm.allowedHours) : undefined,
-          maxLessonsPerDay: studentForm.maxLessonsPerDay ? Number(studentForm.maxLessonsPerDay) : 2,
+          maxLessonsPerDay: studentForm.maxLessonsPerDay ? Number(studentForm.maxLessonsPerDay) : 1,
         }),
       });
-      setStudentForm({ email: '', fullName: '', allowedHours: '', maxLessonsPerDay: '2' });
+      setStudentForm({ email: '', fullName: '', allowedHours: '', maxLessonsPerDay: '1', schoolId: studentForm.schoolId });
       toast.success('Invitation sent! Student will receive an email.', { id: toastId });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to send invitation';
@@ -720,6 +732,19 @@ export default function AdminPage() {
               )}
               <form className="mt-3 space-y-3" onSubmit={handleCreateStudent}>
                 <div className="text-xs font-medium text-slate-800 mb-1">Invite New Student</div>
+                {isSuperadmin && (
+                  <select
+                    className="border rounded px-3 py-2 text-sm w-full text-slate-900"
+                    value={studentForm.schoolId}
+                    onChange={(e) => setStudentForm({ ...studentForm, schoolId: e.target.value })}
+                    required
+                  >
+                    <option value="">Select school *</option>
+                    {schools.map((s) => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                )}
                 <div>
                   <input
                     className={`border rounded px-3 py-2 text-sm w-full ${formErrors.studentEmail ? 'border-red-500 bg-red-50' : ''}`}
@@ -747,7 +772,7 @@ export default function AdminPage() {
                     <label className="text-xs text-slate-800">Allowed Hours</label>
                     <input
                       className="border rounded px-3 py-2 text-sm w-full mt-1"
-                      placeholder="e.g. 20"
+                      placeholder="e.g. 10"
                       type="number"
                       min="1"
                       value={studentForm.allowedHours}
@@ -758,7 +783,7 @@ export default function AdminPage() {
                     <label className="text-xs text-slate-800">Max Lessons/Day</label>
                     <input
                       className="border rounded px-3 py-2 text-sm w-full mt-1"
-                      placeholder="e.g. 2"
+                      placeholder="e.g. 1"
                       type="number"
                       min="1"
                       max="5"
