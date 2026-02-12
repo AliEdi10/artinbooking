@@ -1,6 +1,13 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let _resend: Resend | null = null;
+
+function getResend(): Resend {
+  if (!_resend) {
+    _resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return _resend;
+}
 
 const FROM_EMAIL = process.env.EMAIL_FROM || 'onboarding@resend.dev';
 const APP_NAME = process.env.APP_NAME || 'Artin Driving School';
@@ -48,7 +55,7 @@ export async function sendInvitationEmail(params: SendInvitationEmailParams): Pr
          </p>`
       : '';
 
-    const result = await resend.emails.send({
+    const result = await getResend().emails.send({
       from: FROM_EMAIL,
       to,
       subject: `You're invited to join ${schoolName}`,
@@ -85,7 +92,7 @@ export async function sendPasswordResetEmail(to: string, resetToken: string): Pr
   const resetUrl = `${FRONTEND_URL}/reset-password?token=${encodeURIComponent(resetToken)}`;
 
   try {
-    await resend.emails.send({
+    await getResend().emails.send({
       from: FROM_EMAIL,
       to,
       subject: `Reset your ${APP_NAME} password`,
@@ -142,7 +149,7 @@ export async function sendBookingConfirmationEmail(params: BookingEmailParams): 
   console.log(`Sending booking confirmation email to ${to}...`);
 
   try {
-    const result = await resend.emails.send({
+    const result = await getResend().emails.send({
       from: FROM_EMAIL,
       to,
       subject: `✅ Lesson Confirmed - ${lessonDate} at ${lessonTime}`,
@@ -208,7 +215,7 @@ export async function sendBookingCancellationEmail(params: Omit<BookingEmailPara
   console.log(`Sending booking cancellation email to ${to}...`);
 
   try {
-    const result = await resend.emails.send({
+    const result = await getResend().emails.send({
       from: FROM_EMAIL,
       to,
       subject: `❌ Lesson Cancelled - ${lessonDate}`,
@@ -268,7 +275,7 @@ export async function sendDriverBookingNotification(
   }
 
   try {
-    await resend.emails.send({
+    await getResend().emails.send({
       from: FROM_EMAIL,
       to,
       subject: `📅 New Lesson Booked - ${lessonDate} at ${lessonTime}`,
@@ -330,7 +337,7 @@ export async function sendStudentLessonReminderEmail(params: LessonReminderEmail
   console.log(`Sending student lesson reminder email to ${to}...`);
 
   try {
-    await resend.emails.send({
+    await getResend().emails.send({
       from: FROM_EMAIL,
       to,
       subject: `⏰ Reminder: Driving Lesson Tomorrow at ${lessonTime}`,
@@ -398,7 +405,7 @@ export async function sendDriverLessonReminderEmail(params: LessonReminderEmailP
   console.log(`Sending driver lesson reminder email to ${to}...`);
 
   try {
-    await resend.emails.send({
+    await getResend().emails.send({
       from: FROM_EMAIL,
       to,
       subject: `⏰ Reminder: Lesson Tomorrow with ${studentName} at ${lessonTime}`,

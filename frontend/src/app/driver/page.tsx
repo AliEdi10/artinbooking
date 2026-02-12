@@ -632,7 +632,7 @@ function DriverPageContent() {
             return (
               <div className="bg-amber-50 border border-amber-300 rounded-xl p-4 shadow-sm">
                 <h2 className="text-sm font-semibold text-amber-800 mb-2">
-                  Attention: {overdue.length} lesson(s) past their scheduled time but still marked as "scheduled"
+                  Attention: {overdue.length} lesson(s) past their scheduled time but still marked as &quot;scheduled&quot;
                 </h2>
                 <ul className="space-y-2">
                   {overdue.map(b => {
@@ -669,7 +669,7 @@ function DriverPageContent() {
           {upcomingLessons.length > 0 && (
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 shadow-sm">
               <h2 className="text-lg font-semibold text-slate-800 mb-3 flex items-center gap-2">
-                🚗 Today's Schedule
+                🚗 Today&apos;s Schedule
                 <span className="text-xs font-normal bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
                   {upcomingLessons.filter(l => {
                     const lessonDate = new Date(l.rawStartTime).toDateString();
@@ -748,7 +748,7 @@ function DriverPageContent() {
                 >
                   <div className="space-y-3">
                     <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
-                      ⚠️ Click on the map to set your location, adjust the radius, then click "Save Service Center" below.
+                      ⚠️ Click on the map to set your location, adjust the radius, then click &quot;Save Service Center&quot; below.
                     </p>
                     <div>
                       <label className="block text-xs font-medium text-slate-800 mb-1">

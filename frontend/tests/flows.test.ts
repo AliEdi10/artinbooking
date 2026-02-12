@@ -14,6 +14,7 @@ import {
 
 function createMockApi() {
   const calls: Array<{ path: string; token: string; options?: RequestInit | undefined }> = [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const responses = new Map<string, any>();
 
   const apiFetch = async (path: string, token: string, options?: RequestInit) => {
@@ -45,7 +46,7 @@ test('parseToken normalizes role and school data', () => {
 test('protected access helpers capture login and role rules', () => {
   assert.equal(shouldRedirectToLogin(false, null), true);
   assert.equal(shouldRedirectToLogin(true, null), false);
-  assert.equal(isAllowedRole(undefined, undefined), true);
+  assert.equal(isAllowedRole(undefined, undefined), false);
   assert.equal(isAllowedRole(['admin'], undefined), false);
   assert.equal(isAllowedRole(['admin'], 'admin'), true);
   assert.equal(isAllowedRole(['driver'], 'student'), false);

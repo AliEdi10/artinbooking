@@ -108,7 +108,7 @@ function AdminOverview({ token, schoolId }: { token: string; schoolId: number })
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-slate-900">School Admin Dashboard</h1>
-        <p className="text-slate-800">Today's overview and quick actions.</p>
+        <p className="text-slate-800">Today&apos;s overview and quick actions.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -173,12 +173,18 @@ function DriverOverview({ token, schoolId }: { token: string; schoolId: number }
     load();
   }, [token, schoolId]);
 
+  const [renderTime] = useState(() => Date.now());
+  const todayStr = new Date(renderTime).toDateString();
+
   const todayBookings = bookings.filter(b => {
     const bookingDate = new Date(b.startTime).toDateString();
-    return bookingDate === new Date().toDateString();
+    return bookingDate === todayStr;
   }).sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
 
   const nextLesson = todayBookings[0];
+  const overdueBookings = bookings.filter(
+    b => b.status === 'scheduled' && new Date(b.startTime).getTime() < renderTime
+  );
 
   return (
     <div className="space-y-6">
@@ -210,18 +216,13 @@ function DriverOverview({ token, schoolId }: { token: string; schoolId: number }
       </div>
 
       {/* Overdue Bookings Alert */}
-      {(() => {
-        const overdue = bookings.filter(
-          b => b.status === 'scheduled' && new Date(b.startTime).getTime() < Date.now()
-        );
-        if (overdue.length === 0) return null;
-        return (
+      {overdueBookings.length > 0 && (
           <div className="bg-amber-50 border border-amber-300 rounded-xl p-4 shadow-sm">
             <h2 className="text-sm font-semibold text-amber-800 mb-2">
-              Attention: {overdue.length} lesson(s) past their scheduled time but still marked as &quot;scheduled&quot;
+              Attention: {overdueBookings.length} lesson(s) past their scheduled time but still marked as &quot;scheduled&quot;
             </h2>
             <ul className="space-y-2">
-              {overdue.map(b => {
+              {overdueBookings.map(b => {
                 const student = students.find(s => s.id === b.studentId);
                 return (
                   <li key={b.id} className="flex items-center justify-between bg-white border border-amber-200 rounded p-2">
@@ -237,8 +238,7 @@ function DriverOverview({ token, schoolId }: { token: string; schoolId: number }
               })}
             </ul>
           </div>
-        );
-      })()}
+      )}
 
       {todayBookings.length > 0 && (
         <SummaryCard title="🚗 Today's Schedule" description="" footer="">

@@ -694,7 +694,7 @@ export default function StudentPage() {
                   ))}
                   {suggestedSlots.length === 0 && !status ? (
                     <li className="text-sm text-slate-800 text-center py-4">
-                      Select options above and click "Find Available Slots" to see booking times.
+                      Select options above and click &quot;Find Available Slots&quot; to see booking times.
                     </li>
                   ) : null}
                 </ul>

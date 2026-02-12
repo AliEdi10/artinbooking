@@ -180,7 +180,7 @@ function RegisterContent() {
                     </h1>
                     {invitationInfo && (
                         <p className="text-slate-800 text-sm">
-                            You've been invited to join <strong>{invitationInfo.schoolName}</strong>
+                            You&apos;ve been invited to join <strong>{invitationInfo.schoolName}</strong>
                         </p>
                     )}
                     {isPublic && (
@@ -263,7 +263,7 @@ function RegisterContent() {
                                             onChange={() => setForm({ ...form, isMinor: false })}
                                             className="w-4 h-4 text-blue-600"
                                         />
-                                        <span className="text-sm">Yes, I'm 18+</span>
+                                        <span className="text-sm">Yes, I&apos;m 18+</span>
                                     </label>
                                     <label className="flex items-center gap-2 cursor-pointer">
                                         <input
@@ -273,7 +273,7 @@ function RegisterContent() {
                                             onChange={() => setForm({ ...form, isMinor: true })}
                                             className="w-4 h-4 text-blue-600"
                                         />
-                                        <span className="text-sm">No, I'm under 18</span>
+                                        <span className="text-sm">No, I&apos;m under 18</span>
                                     </label>
                                 </div>
                             </div>

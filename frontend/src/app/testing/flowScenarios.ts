@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 type ApiFetch = (path: string, token: string, options?: RequestInit) => Promise<any>;
 
 export async function loadAdminData(apiFetch: ApiFetch, schoolId: number, token: string) {
@@ -114,4 +115,3 @@ export function simulateLocalLoginFlow(
   replace('/');
   return true;
 }
-
