@@ -2076,7 +2076,12 @@ export function createApp() {
         const schoolId = await resolveSchoolContext(req, res);
         if (!schoolId) return;
 
-        const body = req.body;
+        const settingsFields = ['minBookingLeadTimeHours', 'cancellationCutoffHours',
+          'defaultLessonDurationMinutes', 'defaultBufferMinutesBetweenLessons',
+          'defaultServiceRadiusKm', 'defaultMaxSegmentTravelTimeMin', 'defaultMaxSegmentTravelDistanceKm',
+          'defaultDailyMaxTravelTimeMin', 'defaultDailyMaxTravelDistanceKm',
+          'dailyBookingCapPerDriver', 'allowStudentToPickDriver', 'allowDriverSelfAvailabilityEdit'];
+        const body = pick(req.body, settingsFields);
         const numericFields: Array<{ key: string; min: number; max: number }> = [
           { key: 'minBookingLeadTimeHours', min: 0, max: 720 },
           { key: 'cancellationCutoffHours', min: 0, max: 720 },

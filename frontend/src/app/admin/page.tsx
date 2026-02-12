@@ -53,8 +53,8 @@ export default function AdminPage() {
   const [driverHolidays, setDriverHolidays] = useState<DriverHoliday[]>([]);
   const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
 
-  const [loadingSettings, setLoadingSettings] = useState(false);
-  const [loadingRoster, setLoadingRoster] = useState(false);
+  const [loadingSettings, setLoadingSettings] = useState(true);
+  const [loadingRoster, setLoadingRoster] = useState(true);
   const [loadingBookings, setLoadingBookings] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState('');
