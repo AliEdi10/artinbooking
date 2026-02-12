@@ -867,7 +867,7 @@ export function createApp() {
         }
 
         const allowedFields = ['fullName', 'phone', 'workDayStart', 'workDayEnd', 'notes', 'active',
-          'serviceCenterLocation', 'serviceRadiusKm', 'lessonDurationMinutes',
+          'serviceCenterLocation', 'serviceRadiusKm', 'lessonDurationMinutes', 'bufferMinutesBetweenLessons',
           'maxSegmentTravelTimeMin', 'maxSegmentTravelDistanceKm',
           'dailyMaxTravelTimeMin', 'dailyMaxTravelDistanceKm'];
         const updated = await updateDriverProfile(driverId, schoolId, pick(req.body, allowedFields));
@@ -963,7 +963,10 @@ export function createApp() {
         }
 
         // Students cannot change their own licenceStatus - only admins/drivers can approve
-        const body = req.body as Record<string, unknown>;
+        const studentUpdateFields = ['fullName', 'dateOfBirth', 'phone', 'email', 'licenceNumber',
+          'licenceExpiryDate', 'licenceProvinceOrState', 'licenceImageUrl', 'licenceStatus',
+          'licenceRejectionNote', 'allowedHours', 'maxLessonsPerDay', 'isMinor', 'guardianPhone', 'guardianEmail', 'active'];
+        const body = pick(req.body, studentUpdateFields) as Record<string, unknown>;
         if (req.user?.role === 'STUDENT' && body.licenceStatus !== undefined) {
           res.status(403).json({ error: 'Students cannot change their licence status. Please wait for admin or instructor approval.' });
           return;
@@ -972,7 +975,7 @@ export function createApp() {
         // If student updates licence info, reset status to pending_review (require re-approval)
         const licenceFields = ['licenceNumber', 'licenceImageUrl', 'licenceExpiryDate', 'licenceProvinceOrState'];
         const isLicenceUpdate = req.user?.role === 'STUDENT' && licenceFields.some((field) => body[field] !== undefined);
-        const updateData = { ...req.body };
+        const updateData = { ...body };
         if (isLicenceUpdate && existing.licenceStatus === 'approved') {
           updateData.licenceStatus = 'pending_review';
         }
@@ -1863,9 +1866,9 @@ export function createApp() {
             }
 
             // If there are other fields to update besides time, apply them
-            const { startTime: _st, endTime: _et, force: _f, driverId: patchDriverId, ...otherUpdates } = patchBody;
-            const extraUpdates: Record<string, unknown> = { ...otherUpdates };
-            if (patchDriverId) extraUpdates.driverId = Number(patchDriverId);
+            const bookingExtraFields = ['notes', 'pickupAddressId', 'dropoffAddressId', 'driverId'];
+            const extraUpdates = pick(patchBody, bookingExtraFields) as Record<string, unknown>;
+            if (extraUpdates.driverId) extraUpdates.driverId = Number(extraUpdates.driverId);
             if (Object.keys(extraUpdates).length > 0) {
               const finalResult = await updateBooking(bookingId, schoolId, extraUpdates);
               res.json(finalResult);

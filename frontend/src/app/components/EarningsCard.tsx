@@ -8,17 +8,14 @@ type WeeklyEarning = {
     weekStart: string;
     lessons: number;
     hours: number;
-    earnings: number | null;
 };
 
 type EarningsData = {
     driverName: string;
-    hourlyRate: number | null;
     weeklyData: WeeklyEarning[];
     totals: {
         lessons: number;
         hours: number;
-        earnings: number | null;
     };
 };
 

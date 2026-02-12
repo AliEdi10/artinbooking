@@ -183,9 +183,8 @@ router.get('/schools/:schoolId/drivers/:driverId/earnings', authenticateRequest,
     }
 
     try {
-        // Get driver's hourly rate
-        const driverResult = await query<{ hourly_rate: string | null; full_name: string }>(
-            'SELECT hourly_rate, full_name FROM driver_profiles WHERE id = $1 AND driving_school_id = $2',
+        const driverResult = await query<{ full_name: string }>(
+            'SELECT full_name FROM driver_profiles WHERE id = $1 AND driving_school_id = $2',
             [driverId, schoolId]
         );
 
@@ -193,20 +192,18 @@ router.get('/schools/:schoolId/drivers/:driverId/earnings', authenticateRequest,
             return res.status(404).json({ error: 'Driver not found' });
         }
 
-        const hourlyRate = driverResult.rows[0].hourly_rate ? parseFloat(driverResult.rows[0].hourly_rate) : 0;
-
         // Get completed lessons with hours
         const lessonsResult = await query<{
             period: string;
             lessons: string;
             hours: string;
         }>(
-            `SELECT 
+            `SELECT
          to_char(date_trunc('week', start_time), 'YYYY-MM-DD') as period,
          COUNT(*) as lessons,
          COALESCE(SUM(EXTRACT(EPOCH FROM (end_time - start_time)) / 3600), 0) as hours
-       FROM bookings 
-       WHERE driver_id = $1 
+       FROM bookings
+       WHERE driver_id = $1
        AND driving_school_id = $2
        AND status = 'completed'
        AND start_time >= CURRENT_DATE - INTERVAL '12 weeks'
@@ -219,22 +216,18 @@ router.get('/schools/:schoolId/drivers/:driverId/earnings', authenticateRequest,
             weekStart: row.period,
             lessons: parseInt(row.lessons, 10),
             hours: Math.round(parseFloat(row.hours) * 10) / 10,
-            earnings: hourlyRate > 0 ? Math.round(parseFloat(row.hours) * hourlyRate * 100) / 100 : null,
         }));
 
         // Calculate totals
         const totalHours = weeklyData.reduce((sum, w) => sum + w.hours, 0);
         const totalLessons = weeklyData.reduce((sum, w) => sum + w.lessons, 0);
-        const totalEarnings = hourlyRate > 0 ? totalHours * hourlyRate : null;
 
         res.json({
             driverName: driverResult.rows[0].full_name,
-            hourlyRate: hourlyRate > 0 ? hourlyRate : null,
             weeklyData,
             totals: {
                 lessons: totalLessons,
                 hours: Math.round(totalHours * 10) / 10,
-                earnings: totalEarnings ? Math.round(totalEarnings * 100) / 100 : null,
             },
         });
     } catch (error) {
@@ -262,16 +255,14 @@ router.get('/schools/:schoolId/drivers/:driverId/earnings/export', authenticateR
     }
 
     try {
-        const driverResult = await query<{ hourly_rate: string | null; full_name: string }>(
-            'SELECT hourly_rate, full_name FROM driver_profiles WHERE id = $1 AND driving_school_id = $2',
+        const driverResult = await query<{ full_name: string }>(
+            'SELECT full_name FROM driver_profiles WHERE id = $1 AND driving_school_id = $2',
             [driverId, schoolId]
         );
 
         if (driverResult.rows.length === 0) {
             return res.status(404).json({ error: 'Driver not found' });
         }
-
-        const hourlyRate = driverResult.rows[0].hourly_rate ? parseFloat(driverResult.rows[0].hourly_rate) : 0;
 
         // Get all completed bookings
         const bookingsResult = await query<{
@@ -282,7 +273,7 @@ router.get('/schools/:schoolId/drivers/:driverId/earnings/export', authenticateR
             `SELECT b.start_time, b.end_time, s.full_name as student_name
        FROM bookings b
        JOIN student_profiles s ON s.id = b.student_id
-       WHERE b.driver_id = $1 
+       WHERE b.driver_id = $1
        AND b.driving_school_id = $2
        AND b.status = 'completed'
        ORDER BY b.start_time DESC`,
@@ -290,22 +281,22 @@ router.get('/schools/:schoolId/drivers/:driverId/earnings/export', authenticateR
         );
 
         // Build CSV
-        const csvRows = ['Date,Start Time,End Time,Student,Duration (hours),Earnings'];
+        const csvRows = ['Date,Start Time,End Time,Student,Duration (hours)'];
         for (const row of bookingsResult.rows) {
             const duration = (new Date(row.end_time).getTime() - new Date(row.start_time).getTime()) / (1000 * 60 * 60);
-            const earnings = hourlyRate > 0 ? (duration * hourlyRate).toFixed(2) : 'N/A';
+            const studentName = row.student_name.replace(/"/g, '""');
             csvRows.push([
                 new Date(row.start_time).toLocaleDateString(),
                 new Date(row.start_time).toLocaleTimeString(),
                 new Date(row.end_time).toLocaleTimeString(),
-                `"${row.student_name}"`,
+                `"${studentName}"`,
                 duration.toFixed(2),
-                earnings,
             ].join(','));
         }
 
+        const safeFilename = driverResult.rows[0].full_name.replace(/[^a-zA-Z0-9_-]/g, '_');
         res.setHeader('Content-Type', 'text/csv');
-        res.setHeader('Content-Disposition', `attachment; filename="earnings-${driverResult.rows[0].full_name.replace(/\s+/g, '_')}.csv"`);
+        res.setHeader('Content-Disposition', `attachment; filename="earnings-${safeFilename}.csv"`);
         res.send(csvRows.join('\n'));
     } catch (error) {
         console.error('Earnings export error:', error);
