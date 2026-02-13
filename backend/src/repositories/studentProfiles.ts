@@ -48,6 +48,8 @@ export interface CreateStudentProfileInput {
   isMinor?: boolean;
   guardianPhone?: string;
   guardianEmail?: string;
+  allowedHours?: number;
+  maxLessonsPerDay?: number;
   active?: boolean;
 }
 
@@ -68,9 +70,11 @@ export async function createStudentProfile(input: CreateStudentProfileInput): Pr
       is_minor,
       guardian_phone,
       guardian_email,
+      allowed_hours,
+      max_lessons_per_day,
       active
     ) VALUES (
-      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15
+      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17
     ) RETURNING *`,
     [
       input.userId,
@@ -87,6 +91,8 @@ export async function createStudentProfile(input: CreateStudentProfileInput): Pr
       input.isMinor ?? false,
       input.guardianPhone ?? null,
       input.guardianEmail ?? null,
+      input.allowedHours ?? null,
+      input.maxLessonsPerDay ?? null,
       input.active ?? true,
     ],
   );

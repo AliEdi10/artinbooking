@@ -98,3 +98,19 @@ export async function deleteInvitation(id: number, drivingSchoolId: number): Pro
 
   return (result.rowCount ?? 0) > 0;
 }
+
+export async function findInvitationByEmail(
+  email: string,
+  drivingSchoolId: number,
+  role: string,
+): Promise<SchoolInvitation | null> {
+  const result = await getPool().query<SchoolInvitationRow>(
+    `SELECT * FROM school_invitations
+     WHERE email = $1 AND driving_school_id = $2 AND role = $3
+     ORDER BY created_at DESC LIMIT 1`,
+    [email.toLowerCase(), drivingSchoolId, role],
+  );
+
+  if (result.rowCount === 0) return null;
+  return mapSchoolInvitation(result.rows[0]);
+}

@@ -701,6 +701,8 @@ export function createApp() {
             isMinor: isMinor ?? false,
             guardianPhone: isMinor ? guardianPhone : undefined,
             guardianEmail: isMinor ? guardianEmail : undefined,
+            allowedHours: invitation.allowedHours ?? undefined,
+            maxLessonsPerDay: invitation.maxLessonsPerDay ?? undefined,
           });
         }
 
@@ -1537,10 +1539,9 @@ export function createApp() {
             res.status(403).json({ error: 'Student profile required' });
             return;
           }
-          if (settings && !settings.allowStudentToPickDriver && body.driverId !== undefined) {
-            res.status(403).json({ error: 'Students cannot pick drivers for this school' });
-            return;
-          }
+          // Note: allowStudentToPickDriver is a UI-level preference only.
+          // The driverId is always required for slot-based booking to work,
+          // so we don't reject bookings with a driverId here.
           studentId = student.id;
         }
 

@@ -2,6 +2,7 @@ import express from 'express';
 import { createUserWithPassword, loadUserByIdentity } from '../repositories/users';
 import { createStudentProfile, getStudentProfileByUserId } from '../repositories/studentProfiles';
 import { getDriverProfileByUserId } from '../repositories/driverProfiles';
+import { findInvitationByEmail } from '../repositories/invitations';
 import { getDrivingSchoolById } from '../repositories/drivingSchools';
 import { hashPassword, comparePassword } from '../services/password';
 import { issueLocalJwt } from '../services/jwtIssuer';
@@ -70,10 +71,15 @@ router.post('/register', async (req, res, next) => {
             drivingSchoolId,
         });
 
+        // Look up invitation to copy allowedHours / maxLessonsPerDay if set
+        const invitation = await findInvitationByEmail(email, drivingSchoolId, 'STUDENT');
+
         await createStudentProfile({
             userId: user.id,
             drivingSchoolId,
             fullName,
+            allowedHours: invitation?.allowedHours ?? undefined,
+            maxLessonsPerDay: invitation?.maxLessonsPerDay ?? undefined,
         });
 
         const token = issueLocalJwt({
