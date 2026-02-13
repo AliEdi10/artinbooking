@@ -181,6 +181,10 @@ export default function StudentPage() {
   async function addAddress(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!token || !schoolId || !student) return;
+    if (!addressForm.line1.trim()) {
+      toast.error('Street address (line1) is required. Please select a location on the map or enter it manually.');
+      return;
+    }
     const toastId = toast.loading('Saving address...');
     try {
       await apiFetch(`/schools/${schoolId}/students/${student.id}/addresses`, token, {
@@ -211,16 +215,23 @@ export default function StudentPage() {
 
   async function createBooking(startTime: string) {
     if (!token || !schoolId || !student) return;
+    const driverId = Number(bookingForm.driverId || suggestedSlots[0]?.driverId);
+    const pickupId = Number(bookingForm.pickupId);
+    const dropoffId = Number(bookingForm.dropoffId);
+    if (!driverId || !pickupId || !dropoffId) {
+      toast.error('Please select a driver, pickup address, and dropoff address before booking.');
+      return;
+    }
     const toastId = toast.loading('Creating booking...');
     try {
       await apiFetch(`/schools/${schoolId}/bookings`, token, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          driverId: Number(bookingForm.driverId || suggestedSlots[0]?.driverId),
+          driverId,
           studentId: student.id,
-          pickupAddressId: Number(bookingForm.pickupId),
-          dropoffAddressId: Number(bookingForm.dropoffId),
+          pickupAddressId: pickupId,
+          dropoffAddressId: dropoffId,
           startTime,
         }),
       });

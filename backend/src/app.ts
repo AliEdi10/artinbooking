@@ -1002,7 +1002,7 @@ export function createApp() {
   app.get(
     '/schools/:schoolId/students/:studentId/usage',
     authenticateRequest,
-    requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN', 'STUDENT']),
+    requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN', 'DRIVER', 'STUDENT']),
     async (req: AuthenticatedRequest, res, next) => {
       try {
         const schoolId = await resolveSchoolContext(req, res);
@@ -2110,7 +2110,7 @@ export function createApp() {
   app.put(
     '/schools/:schoolId/settings',
     authenticateRequest,
-    requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN']),
+    requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN', 'DRIVER']),
     async (req: AuthenticatedRequest, res, next) => {
       try {
         const schoolId = await resolveSchoolContext(req, res);
