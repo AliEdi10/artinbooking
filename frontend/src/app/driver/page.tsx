@@ -18,6 +18,7 @@ import { createDriverLessonEvent } from '../utils/calendar';
 import { useAuth } from '../auth/AuthProvider';
 import { apiFetch, ApiError } from '../apiClient';
 import { PageLoading } from '../components/LoadingSpinner';
+import { SchoolSelectorBanner } from '../components/SchoolSelectorBanner';
 
 type DriverProfile = {
   id: number;
@@ -95,7 +96,9 @@ export default function DriverPage() {
 
 function DriverPageContent() {
   const { token, user } = useAuth();
-  const schoolId = useMemo(() => user?.schoolId, [user?.schoolId]);
+  const isSuperadmin = user?.role === 'superadmin';
+  const [overrideSchoolId, setOverrideSchoolId] = useState<number | null>(null);
+  const schoolId = useMemo(() => overrideSchoolId ?? user?.schoolId, [overrideSchoolId, user?.schoolId]);
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -600,6 +603,20 @@ function DriverPageContent() {
     }
   }
 
+  // Superadmin without a school selected — show selector only
+  if (isSuperadmin && !schoolId) {
+    return (
+      <Protected allowedRoles={['driver', 'school_admin', 'superadmin']}>
+        <AppShell>
+          <div className="space-y-4">
+            <h1 className="text-2xl font-semibold text-slate-900">Instructor Dashboard</h1>
+            <SchoolSelectorBanner selectedSchoolId={overrideSchoolId} onSelect={setOverrideSchoolId} />
+          </div>
+        </AppShell>
+      </Protected>
+    );
+  }
+
   if (!driverState.driver && status.startsWith('Loading')) {
     return (
       <Protected allowedRoles={['driver', 'school_admin', 'superadmin']}>
@@ -612,6 +629,7 @@ function DriverPageContent() {
     <Protected allowedRoles={['driver', 'school_admin', 'superadmin']}>
       <AppShell>
         <div className="space-y-4">
+          <SchoolSelectorBanner selectedSchoolId={overrideSchoolId} onSelect={setOverrideSchoolId} />
           <div>
             <h1 className="text-2xl font-semibold text-slate-900">Instructor Dashboard</h1>
             <p className="text-sm text-slate-800">

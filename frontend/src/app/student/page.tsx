@@ -14,6 +14,7 @@ import { createStudentLessonEvent } from '../utils/calendar';
 import { useAuth } from '../auth/AuthProvider';
 import { apiFetch } from '../apiClient';
 import { PageLoading } from '../components/LoadingSpinner';
+import { SchoolSelectorBanner } from '../components/SchoolSelectorBanner';
 
 type StudentProfile = {
   id: number;
@@ -45,7 +46,9 @@ type SuggestedSlot = { startTime: string; driverId: number };
 
 export default function StudentPage() {
   const { token, user } = useAuth();
-  const schoolId = useMemo(() => user?.schoolId, [user?.schoolId]);
+  const isSuperadmin = user?.role === 'superadmin';
+  const [overrideSchoolId, setOverrideSchoolId] = useState<number | null>(null);
+  const schoolId = useMemo(() => overrideSchoolId ?? user?.schoolId, [overrideSchoolId, user?.schoolId]);
 
   const [student, setStudent] = useState<StudentProfile | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -324,6 +327,20 @@ export default function StudentPage() {
     ? `Signed in as ${student.fullName}`
     : status;
 
+  // Superadmin without a school selected — show selector only
+  if (isSuperadmin && !schoolId) {
+    return (
+      <Protected allowedRoles={['student', 'school_admin', 'superadmin']}>
+        <AppShell>
+          <div className="space-y-4">
+            <h1 className="text-2xl font-semibold text-slate-900">Student portal</h1>
+            <SchoolSelectorBanner selectedSchoolId={overrideSchoolId} onSelect={setOverrideSchoolId} />
+          </div>
+        </AppShell>
+      </Protected>
+    );
+  }
+
   if (!student && initialLoading) {
     return (
       <Protected allowedRoles={['student', 'school_admin', 'superadmin']}>
@@ -336,6 +353,7 @@ export default function StudentPage() {
     <Protected allowedRoles={['student', 'school_admin', 'superadmin']}>
       <AppShell>
         <div className="space-y-4">
+          <SchoolSelectorBanner selectedSchoolId={overrideSchoolId} onSelect={setOverrideSchoolId} />
           <div>
             <h1 className="text-2xl font-semibold text-slate-900">Student portal</h1>
             <p className="text-sm text-slate-800">

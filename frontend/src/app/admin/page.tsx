@@ -10,6 +10,7 @@ import { AnalyticsDashboard, AdminTab } from '../components/AnalyticsDashboard';
 import { useAuth } from '../auth/AuthProvider';
 import { apiFetch, ApiError } from '../apiClient';
 import { PageLoading } from '../components/LoadingSpinner';
+import { SchoolSelectorBanner } from '../components/SchoolSelectorBanner';
 
 type SchoolSettings = {
   id: number;
@@ -44,7 +45,9 @@ type PendingInvitation = { id: number; email: string; role: string; fullName: st
 
 export default function AdminPage() {
   const { token, user } = useAuth();
-  const schoolId = useMemo(() => user?.schoolId, [user?.schoolId]);
+  const isSuperadmin = user?.role === 'superadmin';
+  const [overrideSchoolId, setOverrideSchoolId] = useState<number | null>(null);
+  const schoolId = useMemo(() => overrideSchoolId ?? user?.schoolId, [overrideSchoolId, user?.schoolId]);
 
   const [settings, setSettings] = useState<SchoolSettings | null>(null);
   const [drivers, setDrivers] = useState<Driver[]>([]);
@@ -62,7 +65,6 @@ export default function AdminPage() {
   const [isCancellingInvitation, setIsCancellingInvitation] = useState(false);
 
   const [schools, setSchools] = useState<{ id: number; name: string }[]>([]);
-  const isSuperadmin = user?.role === 'superadmin';
 
   const [driverForm, setDriverForm] = useState({ email: '', fullName: '' });
   const [studentForm, setStudentForm] = useState({
@@ -429,6 +431,20 @@ export default function AdminPage() {
     }
   }
 
+  // Superadmin without a school selected — show selector only
+  if (isSuperadmin && !schoolId) {
+    return (
+      <Protected allowedRoles={['superadmin', 'school_admin']}>
+        <AppShell>
+          <div className="space-y-4">
+            <h1 className="text-2xl font-semibold text-slate-900">School Admin workspace</h1>
+            <SchoolSelectorBanner selectedSchoolId={overrideSchoolId} onSelect={setOverrideSchoolId} />
+          </div>
+        </AppShell>
+      </Protected>
+    );
+  }
+
   if ((loadingSettings || loadingRoster) && !settings) {
     return (
       <Protected allowedRoles={['superadmin', 'school_admin']}>
@@ -441,6 +457,7 @@ export default function AdminPage() {
     <Protected allowedRoles={['superadmin', 'school_admin']}>
       <AppShell>
         <div className="space-y-4">
+          <SchoolSelectorBanner selectedSchoolId={overrideSchoolId} onSelect={setOverrideSchoolId} />
           <div>
             <h1 className="text-2xl font-semibold text-slate-900">School Admin workspace</h1>
             <p className="text-sm text-slate-800">
