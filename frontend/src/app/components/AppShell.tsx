@@ -71,7 +71,7 @@ function HealthIndicator() {
   const [health, setHealth] = useState<{ status: string; dbLatencyMs: number | null } | null>(null);
 
   const fetchHealth = useCallback(() => {
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+    const apiBase = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:3001';
     fetch(`${apiBase}/health`)
       .then((r) => r.json())
       .then(setHealth)
