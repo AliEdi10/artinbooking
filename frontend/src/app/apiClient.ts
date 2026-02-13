@@ -116,10 +116,13 @@ const DEFAULT_TIMEOUT_MS = 30000; // 30 seconds
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 1000;
 
+// In-flight GET request deduplication map
+const inflightRequests = new Map<string, Promise<unknown>>();
+
 /**
- * Enhanced API fetch function with timeout, retry logic, and proper error handling
+ * Internal fetch implementation with timeout, retry, and 429 backoff
  */
-export async function apiFetch<T>(
+async function apiFetchInternal<T>(
   path: string,
   token: string,
   options: RequestInit = {},
@@ -165,7 +168,20 @@ export async function apiFetch<T>(
   // Retry on 5xx server errors
   if (response.status >= 500 && retries > 0) {
     await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
-    return apiFetch<T>(path, token, options, retries - 1);
+    return apiFetchInternal<T>(path, token, options, retries - 1);
+  }
+
+  // Retry on 429 with exponential backoff (only for idempotent GETs)
+  if (response.status === 429 && retries > 0) {
+    const method = (options.method || 'GET').toUpperCase();
+    if (method === 'GET' || method === 'HEAD') {
+      const retryAfter = response.headers.get('Retry-After');
+      const waitMs = retryAfter
+        ? (Number(retryAfter) * 1000 || RETRY_DELAY_MS)
+        : RETRY_DELAY_MS * Math.pow(2, MAX_RETRIES - retries);
+      await new Promise(resolve => setTimeout(resolve, waitMs));
+      return apiFetchInternal<T>(path, token, options, retries - 1);
+    }
   }
 
   if (!response.ok) {
@@ -188,6 +204,33 @@ export async function apiFetch<T>(
   }
 
   return response.json() as Promise<T>;
+}
+
+/**
+ * Enhanced API fetch with timeout, retry logic, 429 backoff, and GET deduplication.
+ * GET requests to the same URL are deduplicated to prevent wasteful concurrent fetches.
+ */
+export async function apiFetch<T>(
+  path: string,
+  token: string,
+  options: RequestInit = {},
+  retries = MAX_RETRIES
+): Promise<T> {
+  const method = (options.method || 'GET').toUpperCase();
+
+  // Deduplicate in-flight GET requests
+  if (method === 'GET') {
+    const dedupeKey = `${path}::${token}`;
+    const existing = inflightRequests.get(dedupeKey);
+    if (existing) return existing as Promise<T>;
+
+    const promise = apiFetchInternal<T>(path, token, options, retries)
+      .finally(() => inflightRequests.delete(dedupeKey));
+    inflightRequests.set(dedupeKey, promise);
+    return promise;
+  }
+
+  return apiFetchInternal<T>(path, token, options, retries);
 }
 
 /**

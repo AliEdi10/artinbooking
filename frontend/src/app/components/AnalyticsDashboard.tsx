@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { apiFetch } from '../apiClient';
 import { SummaryCard } from './SummaryCard';
 
@@ -72,29 +72,49 @@ export function AnalyticsDashboard({ schoolId, token, activeTab, onTabChange }: 
         loadAnalytics();
     }, [schoolId, token]);
 
+    // Debounced signups fetch — avoids rapid refetches when changing date range
+    const signupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     useEffect(() => {
         if (!token || !schoolId) return;
-        apiFetch<SignupData>(`/schools/${schoolId}/analytics/signups?days=${signupDays}`, token)
-            .then(setSignupData)
-            .catch(() => {});
+        if (signupTimerRef.current) clearTimeout(signupTimerRef.current);
+        signupTimerRef.current = setTimeout(() => {
+            apiFetch<SignupData>(`/schools/${schoolId}/analytics/signups?days=${signupDays}`, token)
+                .then(setSignupData)
+                .catch(() => { });
+        }, 300);
+        return () => { if (signupTimerRef.current) clearTimeout(signupTimerRef.current); };
     }, [schoolId, token, signupDays]);
+
+    // Lazy-load driver utilization only when driver tab is active
+    useEffect(() => {
+        if (activeTab !== 'drivers' || !token || !schoolId || driverStats.length > 0) return;
+        apiFetch<DriverUtilization[]>(`/schools/${schoolId}/analytics/driver-utilization`, token)
+            .then(setDriverStats)
+            .catch(() => { });
+    }, [activeTab, schoolId, token]);
+
+    // Lazy-load audit logs only when audit tab is active
+    useEffect(() => {
+        if (activeTab !== 'audit' || !token || !schoolId || auditLogs.length > 0) return;
+        apiFetch<{ logs: AuditLog[]; total: number }>(`/schools/${schoolId}/audit-logs?limit=20`, token)
+            .then(data => setAuditLogs(data.logs))
+            .catch(() => { });
+    }, [activeTab, schoolId, token]);
 
     async function loadAnalytics() {
         if (!token || !schoolId) return;
         setLoading(true);
         try {
-            const [summaryData, weekly, drivers, logs, signups, actInact] = await Promise.all([
+            // Only fetch overview data on initial load (4 calls instead of 6)
+            // Driver stats and audit logs are lazy-loaded when their tabs are opened
+            const [summaryData, weekly, signups, actInact] = await Promise.all([
                 apiFetch<AnalyticsSummary>(`/schools/${schoolId}/analytics/summary`, token),
                 apiFetch<WeeklyBooking[]>(`/schools/${schoolId}/analytics/bookings-by-week`, token),
-                apiFetch<DriverUtilization[]>(`/schools/${schoolId}/analytics/driver-utilization`, token),
-                apiFetch<{ logs: AuditLog[]; total: number }>(`/schools/${schoolId}/audit-logs?limit=20`, token),
                 apiFetch<SignupData>(`/schools/${schoolId}/analytics/signups?days=${signupDays}`, token),
                 apiFetch<ActiveInactiveData>(`/schools/${schoolId}/analytics/active-inactive`, token),
             ]);
             setSummary(summaryData);
             setWeeklyData(weekly);
-            setDriverStats(drivers);
-            setAuditLogs(logs.logs);
             setSignupData(signups);
             setActiveInactive(actInact);
         } catch (error) {

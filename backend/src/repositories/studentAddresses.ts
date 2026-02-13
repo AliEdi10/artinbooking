@@ -32,6 +32,20 @@ export async function getAddressById(
   return mapStudentAddress(result.rows[0]);
 }
 
+export async function listAddressesForStudents(
+  studentIds: number[],
+  drivingSchoolId: number,
+): Promise<StudentAddress[]> {
+  if (studentIds.length === 0) return [];
+  const uniqueIds = [...new Set(studentIds)];
+  const placeholders = uniqueIds.map((_, i) => `$${i + 2}`).join(',');
+  const result = await getPool().query<StudentAddressRow>(
+    `SELECT * FROM addresses WHERE student_id IN (${placeholders}) AND driving_school_id = $1 ORDER BY id`,
+    [drivingSchoolId, ...uniqueIds],
+  );
+  return result.rows.map(mapStudentAddress);
+}
+
 export async function getAddressesByIds(
   ids: number[],
   drivingSchoolId: number,

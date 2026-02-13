@@ -231,22 +231,19 @@ function DriverPageContent() {
       // Fetch addresses for students who have bookings with this driver
       const driverBookings = upcomingResults.filter((booking) => booking.driverId === activeDriver.id);
       const studentIdsWithBookings = [...new Set(driverBookings.map(b => b.studentId))];
+      // Fetch all addresses in one batch request instead of N+1
       const addressMap = new Map<number, StudentAddress>();
-
-      // Fetch addresses for each student with a booking
-      await Promise.all(
-        studentIdsWithBookings.map(async (studentId) => {
-          try {
-            const addresses = await apiFetch<StudentAddress[]>(
-              `/schools/${schoolId}/students/${studentId}/addresses`,
-              token
-            );
-            addresses.forEach(addr => addressMap.set(addr.id, addr));
-          } catch {
-            // Ignore address fetch errors
-          }
-        })
-      );
+      if (studentIdsWithBookings.length > 0) {
+        try {
+          const batchAddresses = await apiFetch<StudentAddress[]>(
+            `/schools/${schoolId}/addresses/batch?studentIds=${studentIdsWithBookings.join(',')}`,
+            token
+          );
+          batchAddresses.forEach(addr => addressMap.set(addr.id, addr));
+        } catch {
+          // Ignore address fetch errors
+        }
+      }
 
       setAllAddresses(addressMap);
       setStatus('');

@@ -21,7 +21,7 @@ import {
   listStudentProfiles,
   updateStudentProfile,
 } from './repositories/studentProfiles';
-import { createAddress, getAddressById, getAddressesByIds, listAddressesForStudent, updateAddress } from './repositories/studentAddresses';
+import { createAddress, getAddressById, getAddressesByIds, listAddressesForStudent, listAddressesForStudents, updateAddress } from './repositories/studentAddresses';
 import { cancelBooking, completeBooking, createBooking, createBookingAtomic, getBookingById, listBookings, updateBooking, rescheduleBookingAtomic, countScheduledBookingsForStudentOnDate, getTotalBookedHoursForStudent, checkBookingOverlap } from './repositories/bookings';
 import { createAvailability, deleteAvailability, listAvailability, getDriverHolidaysForSchool } from './repositories/driverAvailability';
 import { getSchoolSettings, upsertSchoolSettings } from './repositories/schoolSettings';
@@ -127,7 +127,7 @@ async function buildDriverDayBookings(
 
 import authRouter from './routes/auth';
 import analyticsRouter from './routes/analytics';
-import { generalLimiter, authLimiter, slotQueryLimiter } from './middleware/rateLimit';
+import { generalLimiter, authLimiter, slotQueryLimiter, mutationLimiter } from './middleware/rateLimit';
 import { httpLogger, logger } from './middleware/logging';
 import { query } from './db';
 
@@ -160,8 +160,10 @@ export function createApp() {
   }));
   app.use(express.json({ limit: '1mb' }));
 
-  // Apply general rate limiting to all routes
+  // Apply general rate limiting to all routes (200 req/min safety net)
   app.use(generalLimiter);
+  // Apply stricter rate limiting to write operations (60 req/min for POST/PUT/PATCH/DELETE)
+  app.use(mutationLimiter);
 
   // Apply stricter rate limiting to auth routes
   app.use('/auth', authLimiter, authRouter);
@@ -1038,6 +1040,36 @@ export function createApp() {
     },
   );
 
+  // Batch endpoint: fetch addresses for multiple students in one request
+  app.get(
+    '/schools/:schoolId/addresses/batch',
+    authenticateRequest,
+    requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN', 'DRIVER']),
+    async (req: AuthenticatedRequest, res, next) => {
+      try {
+        const schoolId = await resolveSchoolContext(req, res);
+        if (!schoolId) return;
+
+        const studentIdsParam = req.query.studentIds as string | undefined;
+        if (!studentIdsParam) {
+          res.status(400).json({ error: 'studentIds query parameter is required' });
+          return;
+        }
+
+        const studentIds = studentIdsParam.split(',').map(Number).filter(n => !Number.isNaN(n));
+        if (studentIds.length === 0) {
+          res.json([]);
+          return;
+        }
+
+        const addresses = await listAddressesForStudents(studentIds, schoolId);
+        res.json(addresses);
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
+
   app.get(
     '/schools/:schoolId/students/:studentId/addresses',
     authenticateRequest,
@@ -1793,7 +1825,7 @@ export function createApp() {
           }
         }
 
-        const patchBody = req.body as { startTime?: string; endTime?: string; force?: boolean; [key: string]: unknown };
+        const patchBody = req.body as { startTime?: string; endTime?: string; force?: boolean;[key: string]: unknown };
 
         if (patchBody.startTime) {
           const newStart = new Date(patchBody.startTime);
