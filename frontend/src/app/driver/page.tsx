@@ -182,7 +182,7 @@ function DriverPageContent() {
   });
 
   async function loadDriverContext() {
-    if (!token || !schoolId) return;
+    if (!token || !schoolId) { setStatus('No school context available.'); return; }
     setStatus('Loading driver roster...');
 
     try {

@@ -96,7 +96,7 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
 
   async function loadSettings() {
-    if (!token || !schoolId) return;
+    if (!token || !schoolId) { setLoadingSettings(false); return; }
     setLoadingSettings(true);
     setError(null);
     try {
@@ -124,7 +124,7 @@ export default function AdminPage() {
   }
 
   async function loadRoster() {
-    if (!token || !schoolId) return;
+    if (!token || !schoolId) { setLoadingRoster(false); return; }
     setLoadingRoster(true);
     setError(null);
     try {

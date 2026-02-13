@@ -43,7 +43,7 @@ export default function SuperadminPage() {
     const [confirmAction, setConfirmAction] = useState<{ schoolId: number; action: 'suspend' | 'activate' | 'delete'; schoolName: string } | null>(null);
 
     async function loadSchools() {
-        if (!token) return;
+        if (!token) { setLoading(false); return; }
         setLoading(true);
         setError(null);
         try {

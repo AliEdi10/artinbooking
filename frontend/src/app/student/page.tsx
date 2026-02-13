@@ -94,7 +94,7 @@ export default function StudentPage() {
   }
 
   async function loadStudentContext() {
-    if (!token || !schoolId) return;
+    if (!token || !schoolId) { setInitialLoading(false); return; }
     try {
       setStatus('Loading student profile and addresses...');
       const studentResults = await apiFetch<StudentProfile[]>(`/schools/${schoolId}/students`, token);
