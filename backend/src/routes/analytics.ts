@@ -12,12 +12,28 @@ const router = express.Router();
  * Helper to resolve school context
  */
 function resolveSchoolContext(req: AuthenticatedRequest, res: express.Response): number | null {
-    const schoolId = req.user?.drivingSchoolId;
-    if (!schoolId) {
+    // Superadmins don't have a drivingSchoolId — use the URL param instead
+    const paramSchoolId = Number(req.params.schoolId);
+    const userSchoolId = req.user?.drivingSchoolId;
+
+    if (req.user?.role === 'SUPERADMIN') {
+        if (!paramSchoolId || Number.isNaN(paramSchoolId)) {
+            res.status(400).json({ error: 'Invalid school id' });
+            return null;
+        }
+        return paramSchoolId;
+    }
+
+    // Non-superadmin: use their tenant school id, verify it matches the URL param
+    if (!userSchoolId) {
         res.status(403).json({ error: 'No school context' });
         return null;
     }
-    return schoolId;
+    if (paramSchoolId && paramSchoolId !== userSchoolId) {
+        res.status(403).json({ error: 'Cross-tenant access not allowed' });
+        return null;
+    }
+    return userSchoolId;
 }
 
 /**
