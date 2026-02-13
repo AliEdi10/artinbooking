@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../auth/AuthProvider';
+import { API_BASE } from '../apiClient';
 
 // Define which roles can see each nav item
 const navItems = [
@@ -71,8 +72,7 @@ function HealthIndicator() {
   const [health, setHealth] = useState<{ status: string; dbLatencyMs: number | null } | null>(null);
 
   const fetchHealth = useCallback(() => {
-    const apiBase = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:3001';
-    fetch(`${apiBase}/health`)
+    fetch(`${API_BASE}/health`)
       .then((r) => r.json())
       .then(setHealth)
       .catch(() => setHealth({ status: 'unreachable', dbLatencyMs: null }));
