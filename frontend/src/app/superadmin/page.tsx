@@ -1,12 +1,23 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Protected } from '../auth/Protected';
 import { AppShell } from '../components/AppShell';
 import { SummaryCard } from '../components/SummaryCard';
 import { useAuth } from '../auth/AuthProvider';
 import { apiFetch } from '../apiClient';
 import { PageLoading } from '../components/LoadingSpinner';
+
+type SystemStatus = {
+    uptime: { ms: number; formatted: string };
+    database: {
+        status: string;
+        latencyMs: number | null;
+        pool: { total: number; idle: number; waiting: number };
+    };
+    memory: { heapUsedMB: number; heapTotalMB: number; rssMB: number };
+    node: string;
+};
 
 type DrivingSchool = {
     id: number;
@@ -41,6 +52,22 @@ export default function SuperadminPage() {
 
     // Confirm action state
     const [confirmAction, setConfirmAction] = useState<{ schoolId: number; action: 'suspend' | 'activate' | 'delete'; schoolName: string } | null>(null);
+
+    // System status
+    const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
+
+    const fetchSystemStatus = useCallback(() => {
+        if (!token) return;
+        apiFetch<SystemStatus>('/system/status', token)
+            .then(setSystemStatus)
+            .catch(() => setSystemStatus(null));
+    }, [token]);
+
+    useEffect(() => {
+        fetchSystemStatus();
+        const interval = setInterval(fetchSystemStatus, 30000);
+        return () => clearInterval(interval);
+    }, [fetchSystemStatus]);
 
     async function loadSchools() {
         if (!token) { setLoading(false); return; }
@@ -391,6 +418,79 @@ export default function SuperadminPage() {
                             </form>
                         </SummaryCard>
                     </div>
+
+                    {/* System Status */}
+                    <SummaryCard
+                        title="System Status"
+                        description="Server health and resource usage (auto-refreshes every 30s)."
+                        footer={systemStatus ? `Node ${systemStatus.node}` : 'Loading...'}
+                    >
+                        {systemStatus ? (
+                            <div className="space-y-4 text-sm">
+                                {/* Database */}
+                                <div>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <span className={`inline-block w-2.5 h-2.5 rounded-full ${
+                                            systemStatus.database.status === 'ok'
+                                                ? (systemStatus.database.latencyMs !== null && systemStatus.database.latencyMs < 200 ? 'bg-green-500' : 'bg-yellow-500')
+                                                : 'bg-red-500'
+                                        }`} />
+                                        <span className="font-medium text-slate-900">Database</span>
+                                        <span className={`text-xs px-1.5 py-0.5 rounded ${
+                                            systemStatus.database.status === 'ok' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                        }`}>
+                                            {systemStatus.database.status}
+                                        </span>
+                                    </div>
+                                    <div className="ml-4.5 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-700 pl-1">
+                                        <span>Latency</span>
+                                        <span className="font-mono">{systemStatus.database.latencyMs !== null ? `${systemStatus.database.latencyMs}ms` : '—'}</span>
+                                        <span>Pool (total / idle / waiting)</span>
+                                        <span className="font-mono">{systemStatus.database.pool.total} / {systemStatus.database.pool.idle} / {systemStatus.database.pool.waiting}</span>
+                                    </div>
+                                </div>
+
+                                {/* Server */}
+                                <div>
+                                    <p className="font-medium text-slate-900 mb-1">Server</p>
+                                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-700 pl-1">
+                                        <span>Uptime</span>
+                                        <span className="font-mono">{systemStatus.uptime.formatted}</span>
+                                        <span>Node.js</span>
+                                        <span className="font-mono">{systemStatus.node}</span>
+                                    </div>
+                                </div>
+
+                                {/* Memory */}
+                                <div>
+                                    <p className="font-medium text-slate-900 mb-1">Memory</p>
+                                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-700 pl-1">
+                                        <span>Heap Used / Total</span>
+                                        <span className="font-mono">{systemStatus.memory.heapUsedMB} MB / {systemStatus.memory.heapTotalMB} MB</span>
+                                        <span>RSS</span>
+                                        <span className="font-mono">{systemStatus.memory.rssMB} MB</span>
+                                    </div>
+                                    {/* Heap usage bar */}
+                                    <div className="mt-1.5 pl-1">
+                                        <div className="w-full bg-slate-200 rounded-full h-2">
+                                            <div
+                                                className={`h-2 rounded-full ${
+                                                    systemStatus.memory.heapUsedMB / systemStatus.memory.heapTotalMB > 0.85 ? 'bg-red-500' :
+                                                    systemStatus.memory.heapUsedMB / systemStatus.memory.heapTotalMB > 0.7 ? 'bg-yellow-500' : 'bg-green-500'
+                                                }`}
+                                                style={{ width: `${Math.round((systemStatus.memory.heapUsedMB / systemStatus.memory.heapTotalMB) * 100)}%` }}
+                                            />
+                                        </div>
+                                        <p className="text-xs text-slate-500 mt-0.5">{Math.round((systemStatus.memory.heapUsedMB / systemStatus.memory.heapTotalMB) * 100)}% heap used</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="text-sm text-slate-500 py-4 text-center">
+                                Unable to reach server
+                            </div>
+                        )}
+                    </SummaryCard>
                 </div>}
             </AppShell>
         </Protected>

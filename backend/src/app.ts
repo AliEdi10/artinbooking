@@ -129,7 +129,21 @@ import authRouter from './routes/auth';
 import analyticsRouter from './routes/analytics';
 import { generalLimiter, authLimiter, slotQueryLimiter, mutationLimiter } from './middleware/rateLimit';
 import { httpLogger, logger } from './middleware/logging';
-import { query } from './db';
+import { query, getPool } from './db';
+
+const serverStartTime = Date.now();
+
+function formatUptime(ms: number): string {
+  const seconds = Math.floor(ms / 1000);
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const parts: string[] = [];
+  if (days > 0) parts.push(`${days}d`);
+  if (hours > 0) parts.push(`${hours}h`);
+  parts.push(`${minutes}m`);
+  return parts.join(' ');
+}
 
 export function createApp() {
   const app = express();
@@ -180,6 +194,46 @@ export function createApp() {
     } catch {
       res.status(503).json({ status: 'degraded', dbLatencyMs: null });
     }
+  });
+
+  app.get('/system/status', authenticateRequest, requireRoles(['SUPERADMIN']), async (_req, res) => {
+    const uptimeMs = Date.now() - serverStartTime;
+    const mem = process.memoryUsage();
+    const pool = getPool();
+
+    // DB latency check
+    let dbStatus = 'degraded';
+    let dbLatencyMs: number | null = null;
+    const start = Date.now();
+    try {
+      await query('SELECT 1');
+      dbLatencyMs = Date.now() - start;
+      dbStatus = 'ok';
+    } catch {
+      // leave degraded
+    }
+
+    res.json({
+      uptime: {
+        ms: uptimeMs,
+        formatted: formatUptime(uptimeMs),
+      },
+      database: {
+        status: dbStatus,
+        latencyMs: dbLatencyMs,
+        pool: {
+          total: pool.totalCount,
+          idle: pool.idleCount,
+          waiting: pool.waitingCount,
+        },
+      },
+      memory: {
+        heapUsedMB: Math.round(mem.heapUsed / 1024 / 1024),
+        heapTotalMB: Math.round(mem.heapTotal / 1024 / 1024),
+        rssMB: Math.round(mem.rss / 1024 / 1024),
+      },
+      node: process.version,
+    });
   });
 
   app.get('/hello', (_req, res) => {
