@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
+import { Suspense, useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../auth/AuthProvider';
 
 // Define which roles can see each nav item
@@ -67,6 +67,42 @@ function NavigationLinks({ role }: { role: string | undefined }) {
   );
 }
 
+function HealthIndicator() {
+  const [health, setHealth] = useState<{ status: string; dbLatencyMs: number | null } | null>(null);
+
+  const fetchHealth = useCallback(() => {
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+    fetch(`${apiBase}/health`)
+      .then((r) => r.json())
+      .then(setHealth)
+      .catch(() => setHealth({ status: 'unreachable', dbLatencyMs: null }));
+  }, []);
+
+  useEffect(() => {
+    fetchHealth();
+    const interval = setInterval(fetchHealth, 30000);
+    return () => clearInterval(interval);
+  }, [fetchHealth]);
+
+  if (!health) return null;
+
+  const color =
+    health.status === 'ok' && health.dbLatencyMs !== null && health.dbLatencyMs < 200
+      ? 'bg-green-500'
+      : health.status === 'ok'
+        ? 'bg-yellow-500'
+        : 'bg-red-500';
+
+  const tooltip =
+    health.status === 'ok' && health.dbLatencyMs !== null
+      ? `DB: ${health.dbLatencyMs}ms`
+      : 'DB: Unreachable';
+
+  return (
+    <span title={tooltip} className={`inline-block w-2.5 h-2.5 rounded-full ${color}`} />
+  );
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, signOut } = useAuth();
 
@@ -93,13 +129,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </p>
               <p className="text-xs text-slate-800 hidden sm:block">{user?.role ?? 'role unknown'}</p>
             </div>
-            <button
-              type="button"
-              onClick={() => signOut()}
-              className="text-xs px-3 py-1.5 min-h-[32px] rounded bg-slate-100 text-slate-800 hover:bg-slate-200 whitespace-nowrap"
-            >
-              Sign out
-            </button>
+            <div className="flex items-center gap-2">
+              {user?.role === 'superadmin' && <HealthIndicator />}
+              <button
+                type="button"
+                onClick={() => signOut()}
+                className="text-xs px-3 py-1.5 min-h-[32px] rounded bg-slate-100 text-slate-800 hover:bg-slate-200 whitespace-nowrap"
+              >
+                Sign out
+              </button>
+            </div>
           </div>
         </div>
         {/* Scrollable navigation on mobile */}

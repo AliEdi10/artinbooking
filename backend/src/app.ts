@@ -129,6 +129,7 @@ import authRouter from './routes/auth';
 import analyticsRouter from './routes/analytics';
 import { generalLimiter, authLimiter, slotQueryLimiter } from './middleware/rateLimit';
 import { httpLogger, logger } from './middleware/logging';
+import { query } from './db';
 
 export function createApp() {
   const app = express();
@@ -168,8 +169,15 @@ export function createApp() {
   // Mount analytics routes
   app.use(analyticsRouter);
 
-  app.get('/health', (_req, res) => {
-    res.send('OK');
+  app.get('/health', async (_req, res) => {
+    const start = Date.now();
+    try {
+      await query('SELECT 1');
+      const dbLatencyMs = Date.now() - start;
+      res.json({ status: 'ok', dbLatencyMs });
+    } catch {
+      res.status(503).json({ status: 'degraded', dbLatencyMs: null });
+    }
   });
 
   app.get('/hello', (_req, res) => {

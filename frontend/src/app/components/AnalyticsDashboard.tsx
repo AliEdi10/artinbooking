@@ -29,6 +29,16 @@ type DriverUtilization = {
     hoursWorked: number;
 };
 
+type SignupData = {
+    count: number;
+    days: number;
+};
+
+type ActiveInactiveData = {
+    drivers: { active: number; inactive: number };
+    students: { active: number; inactive: number };
+};
+
 type AuditLog = {
     id: number;
     actorUserId: number | null;
@@ -53,26 +63,40 @@ export function AnalyticsDashboard({ schoolId, token, activeTab, onTabChange }: 
     const [weeklyData, setWeeklyData] = useState<WeeklyBooking[]>([]);
     const [driverStats, setDriverStats] = useState<DriverUtilization[]>([]);
     const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+    const [signupDays, setSignupDays] = useState(30);
+    const [signupData, setSignupData] = useState<SignupData | null>(null);
+    const [activeInactive, setActiveInactive] = useState<ActiveInactiveData | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         loadAnalytics();
     }, [schoolId, token]);
 
+    useEffect(() => {
+        if (!token || !schoolId) return;
+        apiFetch<SignupData>(`/schools/${schoolId}/analytics/signups?days=${signupDays}`, token)
+            .then(setSignupData)
+            .catch(() => {});
+    }, [schoolId, token, signupDays]);
+
     async function loadAnalytics() {
         if (!token || !schoolId) return;
         setLoading(true);
         try {
-            const [summaryData, weekly, drivers, logs] = await Promise.all([
+            const [summaryData, weekly, drivers, logs, signups, actInact] = await Promise.all([
                 apiFetch<AnalyticsSummary>(`/schools/${schoolId}/analytics/summary`, token),
                 apiFetch<WeeklyBooking[]>(`/schools/${schoolId}/analytics/bookings-by-week`, token),
                 apiFetch<DriverUtilization[]>(`/schools/${schoolId}/analytics/driver-utilization`, token),
                 apiFetch<{ logs: AuditLog[]; total: number }>(`/schools/${schoolId}/audit-logs?limit=20`, token),
+                apiFetch<SignupData>(`/schools/${schoolId}/analytics/signups?days=${signupDays}`, token),
+                apiFetch<ActiveInactiveData>(`/schools/${schoolId}/analytics/active-inactive`, token),
             ]);
             setSummary(summaryData);
             setWeeklyData(weekly);
             setDriverStats(drivers);
             setAuditLogs(logs.logs);
+            setSignupData(signups);
+            setActiveInactive(actInact);
         } catch (error) {
             console.error('Failed to load analytics:', error);
         } finally {
@@ -124,6 +148,75 @@ export function AnalyticsDashboard({ schoolId, token, activeTab, onTabChange }: 
                             icon="❌"
                             color={summary.cancellationRatePercent > 20 ? 'red' : 'green'}
                         />
+                    </div>
+
+                    {/* Signups + Active/Inactive Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* New Signups Card */}
+                        <div className="bg-white rounded-lg p-4 shadow-sm border border-slate-200">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-sm font-medium text-slate-700">New Signups</span>
+                                <select
+                                    value={signupDays}
+                                    onChange={(e) => setSignupDays(Number(e.target.value))}
+                                    className="text-xs border border-slate-200 rounded px-2 py-1 text-slate-800"
+                                >
+                                    <option value={7}>7 days</option>
+                                    <option value={30}>30 days</option>
+                                    <option value={90}>3 months</option>
+                                    <option value={180}>6 months</option>
+                                    <option value={365}>1 year</option>
+                                </select>
+                            </div>
+                            <p className="text-3xl font-bold text-blue-600">{signupData?.count ?? '—'}</p>
+                            <p className="text-xs text-slate-500 mt-1">students in the last {signupDays} days</p>
+                        </div>
+
+                        {/* Active/Inactive Drivers */}
+                        {activeInactive && (
+                            <div className="bg-white rounded-lg p-4 shadow-sm border border-slate-200">
+                                <span className="text-sm font-medium text-slate-700">Instructors</span>
+                                <div className="mt-2 space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs text-slate-600">Active</span>
+                                        <span className="text-lg font-bold text-green-600">{activeInactive.drivers.active}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs text-slate-600">Inactive</span>
+                                        <span className="text-lg font-bold text-slate-400">{activeInactive.drivers.inactive}</span>
+                                    </div>
+                                    <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+                                        <div
+                                            className="h-full bg-green-500 rounded-full"
+                                            style={{ width: `${activeInactive.drivers.active + activeInactive.drivers.inactive > 0 ? (activeInactive.drivers.active / (activeInactive.drivers.active + activeInactive.drivers.inactive)) * 100 : 0}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Active/Inactive Students */}
+                        {activeInactive && (
+                            <div className="bg-white rounded-lg p-4 shadow-sm border border-slate-200">
+                                <span className="text-sm font-medium text-slate-700">Students</span>
+                                <div className="mt-2 space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs text-slate-600">Active</span>
+                                        <span className="text-lg font-bold text-green-600">{activeInactive.students.active}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs text-slate-600">Inactive</span>
+                                        <span className="text-lg font-bold text-slate-400">{activeInactive.students.inactive}</span>
+                                    </div>
+                                    <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+                                        <div
+                                            className="h-full bg-green-500 rounded-full"
+                                            style={{ width: `${activeInactive.students.active + activeInactive.students.inactive > 0 ? (activeInactive.students.active / (activeInactive.students.active + activeInactive.students.inactive)) * 100 : 0}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Weekly Chart */}

@@ -305,6 +305,79 @@ router.get('/schools/:schoolId/drivers/:driverId/earnings/export', authenticateR
 });
 
 /**
+ * GET /schools/:schoolId/analytics/signups
+ * New student signups within a configurable time range
+ */
+router.get('/schools/:schoolId/analytics/signups', authenticateRequest, requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN']), async (req, res) => {
+    const schoolId = resolveSchoolContext(req as AuthenticatedRequest, res);
+    if (!schoolId) return;
+
+    const allowedDays = [7, 30, 90, 180, 365];
+    const days = parseInt(req.query.days as string, 10) || 30;
+    const safeDays = allowedDays.includes(days) ? days : 30;
+
+    try {
+        const result = await query<{ count: string }>(
+            `SELECT COUNT(*) FROM student_profiles sp
+             JOIN users u ON u.id = sp.user_id
+             WHERE sp.driving_school_id = $1
+             AND u.created_at >= NOW() - INTERVAL '1 day' * $2`,
+            [schoolId, safeDays]
+        );
+
+        res.json({
+            count: parseInt(result.rows[0].count, 10),
+            days: safeDays,
+        });
+    } catch (error) {
+        console.error('Signups analytics error:', error);
+        res.status(500).json({ error: 'Failed to fetch signup data' });
+    }
+});
+
+/**
+ * GET /schools/:schoolId/analytics/active-inactive
+ * Active vs inactive breakdown for drivers and students
+ */
+router.get('/schools/:schoolId/analytics/active-inactive', authenticateRequest, requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN']), async (req, res) => {
+    const schoolId = resolveSchoolContext(req as AuthenticatedRequest, res);
+    if (!schoolId) return;
+
+    try {
+        const [driversResult, studentsResult] = await Promise.all([
+            query<{ active: string; inactive: string }>(
+                `SELECT
+                    COUNT(*) FILTER (WHERE active = true) as active,
+                    COUNT(*) FILTER (WHERE active = false) as inactive
+                 FROM driver_profiles WHERE driving_school_id = $1`,
+                [schoolId]
+            ),
+            query<{ active: string; inactive: string }>(
+                `SELECT
+                    COUNT(*) FILTER (WHERE active = true) as active,
+                    COUNT(*) FILTER (WHERE active = false) as inactive
+                 FROM student_profiles WHERE driving_school_id = $1`,
+                [schoolId]
+            ),
+        ]);
+
+        res.json({
+            drivers: {
+                active: parseInt(driversResult.rows[0]?.active || '0', 10),
+                inactive: parseInt(driversResult.rows[0]?.inactive || '0', 10),
+            },
+            students: {
+                active: parseInt(studentsResult.rows[0]?.active || '0', 10),
+                inactive: parseInt(studentsResult.rows[0]?.inactive || '0', 10),
+            },
+        });
+    } catch (error) {
+        console.error('Active/inactive analytics error:', error);
+        res.status(500).json({ error: 'Failed to fetch active/inactive data' });
+    }
+});
+
+/**
  * GET /schools/:schoolId/audit-logs
  * Get audit logs for school
  */
