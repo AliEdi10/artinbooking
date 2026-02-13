@@ -956,11 +956,7 @@ export function createApp() {
         if (!req.user) return;
         if (req.user.role === 'STUDENT') {
           const student = await getStudentProfileByUserId(req.user.id, schoolId);
-          if (!student) {
-            res.status(404).json({ error: 'Student profile not found' });
-            return;
-          }
-          res.json([student]);
+          res.json(student ? [student] : []);
           return;
         }
 
