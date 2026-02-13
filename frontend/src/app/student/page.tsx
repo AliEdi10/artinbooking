@@ -291,9 +291,9 @@ export default function StudentPage() {
         }),
       });
       await loadStudentContext();
-      toast.success('Licence info updated!', { id: toastId });
+      toast.success('Licence info saved! It is now pending admin review.', { id: toastId, duration: 5000 });
     } catch (error) {
-      toast.error('Unable to update licence.', { id: toastId });
+      toast.error(getErrorMessage(error), { id: toastId });
     }
   }
 
@@ -321,7 +321,7 @@ export default function StudentPage() {
             body: JSON.stringify({ licenceImageUrl: base64 }),
           });
           await loadStudentContext();
-          toast.success('Licence image uploaded!', { id: toastId });
+          toast.success('Licence image uploaded! It is now pending admin review.', { id: toastId, duration: 5000 });
         } catch (err) {
           toast.error('Failed to save licence image.', { id: toastId });
         }
