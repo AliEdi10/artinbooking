@@ -850,11 +850,7 @@ export function createApp() {
         if (!req.user) return;
         if (req.user.role === 'DRIVER') {
           const driver = await getDriverProfileByUserId(req.user.id, schoolId);
-          if (!driver) {
-            res.status(404).json({ error: 'Driver profile not found' });
-            return;
-          }
-          res.json([driver]);
+          res.json(driver ? [driver] : []);
           return;
         }
 
@@ -1532,10 +1528,17 @@ export function createApp() {
         if (statusFilter) {
           filters.status = statusFilter;
         }
+
+        // Allow admins/drivers to filter by studentId query param
+        const studentIdParam = Number(req.query.studentId);
+        if (!Number.isNaN(studentIdParam) && studentIdParam > 0 && ['SUPERADMIN', 'SCHOOL_ADMIN', 'DRIVER'].includes(req.user?.role ?? '')) {
+          filters.studentId = studentIdParam;
+        }
+
         if (req.user?.role === 'DRIVER') {
           const driver = await getDriverProfileByUserId(req.user.id, schoolId);
           if (!driver) {
-            res.status(403).json({ error: 'Driver profile required' });
+            res.json([]);
             return;
           }
           filters.driverId = driver.id;
@@ -1544,7 +1547,7 @@ export function createApp() {
         if (req.user?.role === 'STUDENT') {
           const student = await getStudentProfileByUserId(req.user.id, schoolId);
           if (!student) {
-            res.status(403).json({ error: 'Student profile required' });
+            res.json([]);
             return;
           }
           filters.studentId = student.id;

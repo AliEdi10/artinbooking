@@ -8,7 +8,7 @@ import { SummaryCard } from '../components/SummaryCard';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { AnalyticsDashboard, AdminTab } from '../components/AnalyticsDashboard';
 import { useAuth } from '../auth/AuthProvider';
-import { apiFetch, ApiError } from '../apiClient';
+import { apiFetch, ApiError, getErrorMessage } from '../apiClient';
 import { PageLoading } from '../components/LoadingSpinner';
 import { SchoolSelectorBanner } from '../components/SchoolSelectorBanner';
 
@@ -212,7 +212,7 @@ export default function AdminPage() {
       await loadPendingInvitations();
       toast.success('Invitation resent!', { id: toastId });
     } catch (err) {
-      toast.error('Unable to resend invitation.', { id: toastId });
+      toast.error(getErrorMessage(err), { id: toastId });
     }
   }
 
@@ -228,7 +228,7 @@ export default function AdminPage() {
       await loadPendingInvitations();
       toast.success('Invitation cancelled.', { id: toastId });
     } catch (err) {
-      toast.error('Unable to cancel invitation.', { id: toastId });
+      toast.error(getErrorMessage(err), { id: toastId });
     } finally {
       setIsCancellingInvitation(false);
       setConfirmCancelInvitation(null);
@@ -356,7 +356,7 @@ export default function AdminPage() {
       await loadSettings();
       toast.success('Settings saved!', { id: toastId });
     } catch (err) {
-      toast.error('Unable to save settings.', { id: toastId });
+      toast.error(getErrorMessage(err), { id: toastId });
     }
   }
 
@@ -389,7 +389,7 @@ export default function AdminPage() {
         }
         return;
       }
-      toast.error('Unable to update booking.', { id: toastId });
+      toast.error(getErrorMessage(err), { id: toastId });
     }
   }
 
@@ -407,7 +407,7 @@ export default function AdminPage() {
       await loadBookings();
       toast.success('Booking cancelled.', { id: toastId });
     } catch (err) {
-      toast.error('Unable to cancel booking.', { id: toastId });
+      toast.error(getErrorMessage(err), { id: toastId });
     }
   }
 
@@ -428,7 +428,7 @@ export default function AdminPage() {
       setRejectionNote('');
       toast.success(`Licence ${newStatus}!`, { id: toastId });
     } catch (err) {
-      toast.error('Unable to update licence status.', { id: toastId });
+      toast.error(getErrorMessage(err), { id: toastId });
     }
   }
 

@@ -12,7 +12,7 @@ import { MapViewer } from '../components/MapViewer';
 import { AddToCalendarButton } from '../components/AddToCalendarButton';
 import { createStudentLessonEvent } from '../utils/calendar';
 import { useAuth } from '../auth/AuthProvider';
-import { apiFetch } from '../apiClient';
+import { apiFetch, getErrorMessage } from '../apiClient';
 import { PageLoading } from '../components/LoadingSpinner';
 import { SchoolSelectorBanner } from '../components/SchoolSelectorBanner';
 
@@ -238,7 +238,7 @@ export default function StudentPage() {
       await loadStudentContext();
       toast.success('Booking created!', { id: toastId });
     } catch (error) {
-      toast.error('Unable to create booking.', { id: toastId });
+      toast.error(getErrorMessage(error), { id: toastId });
     }
   }
 
@@ -255,7 +255,7 @@ export default function StudentPage() {
       await loadStudentContext();
       toast.success('Booking rescheduled!', { id: toastId });
     } catch (error) {
-      toast.error('Unable to reschedule.', { id: toastId });
+      toast.error(getErrorMessage(error), { id: toastId });
     }
   }
 
@@ -272,7 +272,7 @@ export default function StudentPage() {
       await loadStudentContext();
       toast.success('Booking cancelled.', { id: toastId });
     } catch (error) {
-      toast.error('Unable to cancel.', { id: toastId });
+      toast.error(getErrorMessage(error), { id: toastId });
     }
   }
 
