@@ -90,7 +90,8 @@ router.post('/register', async (req, res, next) => {
             name: fullName,
         });
 
-        res.status(201).json({ token, user });
+        const { passwordHash: _ph, ...safeUser } = user;
+        res.status(201).json({ token, user: safeUser });
 
     } catch (err) {
         next(err);
@@ -144,7 +145,8 @@ router.post('/login', async (req, res, next) => {
             name: displayName,
         });
 
-        res.json({ token, user });
+        const { passwordHash: _ph2, ...safeUser } = user;
+        res.json({ token, user: safeUser });
 
     } catch (err) {
         next(err);

@@ -286,7 +286,7 @@ export async function cancelBooking(
          cancellation_reason_code = $2,
          cancelled_at = NOW(),
          updated_at = NOW()
-     WHERE id = $3 AND driving_school_id = $4
+     WHERE id = $3 AND driving_school_id = $4 AND status = 'scheduled'
      RETURNING *`,
     [status, reasonCode ?? null, id, drivingSchoolId],
   );

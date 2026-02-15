@@ -312,6 +312,10 @@ export default function StudentPage() {
     try {
       // Convert file to base64 for simple storage (in production, use Cloud Storage)
       const reader = new FileReader();
+      reader.onerror = () => {
+        toast.error('Failed to read licence image file.', { id: toastId });
+        setUploadingLicence(false);
+      };
       reader.onloadend = async () => {
         const base64 = reader.result as string;
         try {
@@ -388,7 +392,7 @@ export default function StudentPage() {
                     <div className="w-full bg-blue-200 rounded-full h-2 mt-1">
                       <div
                         className="bg-blue-600 h-2 rounded-full transition-all"
-                        style={{ width: `${Math.min(100, (usedHours / (student.allowedHours ?? 1)) * 100)}%` }}
+                        style={{ width: `${Math.min(100, (usedHours / (student.allowedHours || 1)) * 100)}%` }}
                       ></div>
                     </div>
                     <p className="text-xs text-slate-800 mt-1">

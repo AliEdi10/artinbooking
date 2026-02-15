@@ -116,7 +116,8 @@ async function buildDriverDayBookings(
     const pickupLocation = addressToLocation(pickupAddress);
     const dropoffLocation = addressToLocation(dropoffAddress);
     if (!pickupLocation || !dropoffLocation) {
-      throw new Error('Existing booking is missing location data');
+      // Skip bookings with missing location data instead of crashing
+      continue;
     }
 
     enriched.push({ ...booking, pickupLocation, dropoffLocation });
@@ -790,7 +791,8 @@ export function createApp() {
 
         const updatedInvitation = await markInvitationAccepted(invitation.id);
 
-        res.json({ user, invitation: updatedInvitation });
+        const { passwordHash: _ph, ...safeUser } = user!;
+        res.json({ user: safeUser, invitation: updatedInvitation });
       } catch (error) {
         next(error);
       }
@@ -2173,7 +2175,7 @@ export function createApp() {
   app.put(
     '/schools/:schoolId/settings',
     authenticateRequest,
-    requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN', 'DRIVER']),
+    requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN']),
     async (req: AuthenticatedRequest, res, next) => {
       try {
         const schoolId = await resolveSchoolContext(req, res);

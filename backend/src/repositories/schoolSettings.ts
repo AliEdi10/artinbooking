@@ -15,6 +15,24 @@ export async function upsertSchoolSettings(
   drivingSchoolId: number,
   settings: Partial<Omit<SchoolSettings, 'id' | 'drivingSchoolId' | 'createdAt' | 'updatedAt'>>,
 ): Promise<SchoolSettings> {
+  // Load existing settings first to merge, preventing null-wipe on partial updates
+  const existing = await getSchoolSettings(drivingSchoolId);
+
+  const merged = {
+    minBookingLeadTimeHours: settings.minBookingLeadTimeHours !== undefined ? settings.minBookingLeadTimeHours : (existing?.minBookingLeadTimeHours ?? null),
+    cancellationCutoffHours: settings.cancellationCutoffHours !== undefined ? settings.cancellationCutoffHours : (existing?.cancellationCutoffHours ?? null),
+    defaultLessonDurationMinutes: settings.defaultLessonDurationMinutes !== undefined ? settings.defaultLessonDurationMinutes : (existing?.defaultLessonDurationMinutes ?? null),
+    defaultBufferMinutesBetweenLessons: settings.defaultBufferMinutesBetweenLessons !== undefined ? settings.defaultBufferMinutesBetweenLessons : (existing?.defaultBufferMinutesBetweenLessons ?? null),
+    defaultServiceRadiusKm: settings.defaultServiceRadiusKm !== undefined ? settings.defaultServiceRadiusKm : (existing?.defaultServiceRadiusKm ?? null),
+    defaultMaxSegmentTravelTimeMin: settings.defaultMaxSegmentTravelTimeMin !== undefined ? settings.defaultMaxSegmentTravelTimeMin : (existing?.defaultMaxSegmentTravelTimeMin ?? null),
+    defaultMaxSegmentTravelDistanceKm: settings.defaultMaxSegmentTravelDistanceKm !== undefined ? settings.defaultMaxSegmentTravelDistanceKm : (existing?.defaultMaxSegmentTravelDistanceKm ?? null),
+    defaultDailyMaxTravelTimeMin: settings.defaultDailyMaxTravelTimeMin !== undefined ? settings.defaultDailyMaxTravelTimeMin : (existing?.defaultDailyMaxTravelTimeMin ?? null),
+    defaultDailyMaxTravelDistanceKm: settings.defaultDailyMaxTravelDistanceKm !== undefined ? settings.defaultDailyMaxTravelDistanceKm : (existing?.defaultDailyMaxTravelDistanceKm ?? null),
+    dailyBookingCapPerDriver: settings.dailyBookingCapPerDriver !== undefined ? settings.dailyBookingCapPerDriver : (existing?.dailyBookingCapPerDriver ?? null),
+    allowStudentToPickDriver: settings.allowStudentToPickDriver !== undefined ? settings.allowStudentToPickDriver : (existing?.allowStudentToPickDriver ?? true),
+    allowDriverSelfAvailabilityEdit: settings.allowDriverSelfAvailabilityEdit !== undefined ? settings.allowDriverSelfAvailabilityEdit : (existing?.allowDriverSelfAvailabilityEdit ?? true),
+  };
+
   const result = await getPool().query<SchoolSettingsRow>(
     `INSERT INTO school_settings (
       driving_school_id,
@@ -49,18 +67,18 @@ export async function upsertSchoolSettings(
     RETURNING *`,
     [
       drivingSchoolId,
-      settings.minBookingLeadTimeHours ?? null,
-      settings.cancellationCutoffHours ?? null,
-      settings.defaultLessonDurationMinutes ?? null,
-      settings.defaultBufferMinutesBetweenLessons ?? null,
-      settings.defaultServiceRadiusKm ?? null,
-      settings.defaultMaxSegmentTravelTimeMin ?? null,
-      settings.defaultMaxSegmentTravelDistanceKm ?? null,
-      settings.defaultDailyMaxTravelTimeMin ?? null,
-      settings.defaultDailyMaxTravelDistanceKm ?? null,
-      settings.dailyBookingCapPerDriver ?? null,
-      settings.allowStudentToPickDriver ?? true,
-      settings.allowDriverSelfAvailabilityEdit ?? true,
+      merged.minBookingLeadTimeHours,
+      merged.cancellationCutoffHours,
+      merged.defaultLessonDurationMinutes,
+      merged.defaultBufferMinutesBetweenLessons,
+      merged.defaultServiceRadiusKm,
+      merged.defaultMaxSegmentTravelTimeMin,
+      merged.defaultMaxSegmentTravelDistanceKm,
+      merged.defaultDailyMaxTravelTimeMin,
+      merged.defaultDailyMaxTravelDistanceKm,
+      merged.dailyBookingCapPerDriver,
+      merged.allowStudentToPickDriver,
+      merged.allowDriverSelfAvailabilityEdit,
     ],
   );
 

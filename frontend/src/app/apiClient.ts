@@ -165,10 +165,13 @@ async function apiFetchInternal<T>(
     clearTimeout(timeoutId);
   }
 
-  // Retry on 5xx server errors
+  // Retry on 5xx server errors (only idempotent GET/HEAD to prevent duplicate mutations)
   if (response.status >= 500 && retries > 0) {
-    await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
-    return apiFetchInternal<T>(path, token, options, retries - 1);
+    const method = (options.method || 'GET').toUpperCase();
+    if (method === 'GET' || method === 'HEAD') {
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+      return apiFetchInternal<T>(path, token, options, retries - 1);
+    }
   }
 
   // Retry on 429 with exponential backoff (only for idempotent GETs)
