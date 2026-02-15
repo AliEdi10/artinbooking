@@ -526,6 +526,24 @@ export function createApp() {
     },
   );
 
+  // Compatibility alias used by dashboard widgets
+  app.get(
+    '/schools/:schoolId/invitations',
+    authenticateRequest,
+    requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN']),
+    async (req: AuthenticatedRequest, res, next) => {
+      try {
+        const schoolId = await resolveSchoolContext(req, res);
+        if (!schoolId) return;
+
+        const invitations = await getPendingInvitations(schoolId);
+        res.json(invitations);
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
+
   // Phase 3: Get pending (unaccepted) invitations for a school
   app.get(
     '/schools/:schoolId/invitations/pending',
@@ -2172,49 +2190,58 @@ export function createApp() {
     },
   );
 
+  const updateSchoolSettingsHandler = async (req: AuthenticatedRequest, res: express.Response, next: express.NextFunction) => {
+    try {
+      const schoolId = await resolveSchoolContext(req, res);
+      if (!schoolId) return;
+
+      const settingsFields = ['minBookingLeadTimeHours', 'cancellationCutoffHours',
+        'defaultLessonDurationMinutes', 'defaultBufferMinutesBetweenLessons',
+        'defaultServiceRadiusKm', 'defaultMaxSegmentTravelTimeMin', 'defaultMaxSegmentTravelDistanceKm',
+        'defaultDailyMaxTravelTimeMin', 'defaultDailyMaxTravelDistanceKm',
+        'dailyBookingCapPerDriver', 'allowStudentToPickDriver', 'allowDriverSelfAvailabilityEdit'];
+      const body = pick(req.body, settingsFields);
+      const numericFields: Array<{ key: string; min: number; max: number }> = [
+        { key: 'minBookingLeadTimeHours', min: 0, max: 720 },
+        { key: 'cancellationCutoffHours', min: 0, max: 720 },
+        { key: 'defaultLessonDurationMinutes', min: 15, max: 480 },
+        { key: 'defaultBufferMinutesBetweenLessons', min: 0, max: 120 },
+        { key: 'defaultServiceRadiusKm', min: 0, max: 500 },
+        { key: 'defaultMaxSegmentTravelTimeMin', min: 0, max: 480 },
+        { key: 'defaultMaxSegmentTravelDistanceKm', min: 0, max: 500 },
+        { key: 'defaultDailyMaxTravelTimeMin', min: 0, max: 720 },
+        { key: 'defaultDailyMaxTravelDistanceKm', min: 0, max: 1000 },
+        { key: 'dailyBookingCapPerDriver', min: 1, max: 50 },
+      ];
+      for (const { key, min, max } of numericFields) {
+        if (body[key] !== undefined && body[key] !== null) {
+          const val = Number(body[key]);
+          if (!Number.isFinite(val) || val < min || val > max) {
+            res.status(400).json({ error: `${key} must be a number between ${min} and ${max}` });
+            return;
+          }
+        }
+      }
+
+      const settings = await upsertSchoolSettings(schoolId, body);
+      res.json(settings);
+    } catch (error) {
+      next(error);
+    }
+  };
+
   app.put(
     '/schools/:schoolId/settings',
     authenticateRequest,
     requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN']),
-    async (req: AuthenticatedRequest, res, next) => {
-      try {
-        const schoolId = await resolveSchoolContext(req, res);
-        if (!schoolId) return;
+    updateSchoolSettingsHandler,
+  );
 
-        const settingsFields = ['minBookingLeadTimeHours', 'cancellationCutoffHours',
-          'defaultLessonDurationMinutes', 'defaultBufferMinutesBetweenLessons',
-          'defaultServiceRadiusKm', 'defaultMaxSegmentTravelTimeMin', 'defaultMaxSegmentTravelDistanceKm',
-          'defaultDailyMaxTravelTimeMin', 'defaultDailyMaxTravelDistanceKm',
-          'dailyBookingCapPerDriver', 'allowStudentToPickDriver', 'allowDriverSelfAvailabilityEdit'];
-        const body = pick(req.body, settingsFields);
-        const numericFields: Array<{ key: string; min: number; max: number }> = [
-          { key: 'minBookingLeadTimeHours', min: 0, max: 720 },
-          { key: 'cancellationCutoffHours', min: 0, max: 720 },
-          { key: 'defaultLessonDurationMinutes', min: 15, max: 480 },
-          { key: 'defaultBufferMinutesBetweenLessons', min: 0, max: 120 },
-          { key: 'defaultServiceRadiusKm', min: 0, max: 500 },
-          { key: 'defaultMaxSegmentTravelTimeMin', min: 0, max: 480 },
-          { key: 'defaultMaxSegmentTravelDistanceKm', min: 0, max: 500 },
-          { key: 'defaultDailyMaxTravelTimeMin', min: 0, max: 720 },
-          { key: 'defaultDailyMaxTravelDistanceKm', min: 0, max: 1000 },
-          { key: 'dailyBookingCapPerDriver', min: 1, max: 50 },
-        ];
-        for (const { key, min, max } of numericFields) {
-          if (body[key] !== undefined && body[key] !== null) {
-            const val = Number(body[key]);
-            if (!Number.isFinite(val) || val < min || val > max) {
-              res.status(400).json({ error: `${key} must be a number between ${min} and ${max}` });
-              return;
-            }
-          }
-        }
-
-        const settings = await upsertSchoolSettings(schoolId, body);
-        res.json(settings);
-      } catch (error) {
-        next(error);
-      }
-    },
+  app.patch(
+    '/schools/:schoolId/settings',
+    authenticateRequest,
+    requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN']),
+    updateSchoolSettingsHandler,
   );
 
   app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
