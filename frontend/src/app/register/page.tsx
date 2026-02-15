@@ -263,7 +263,7 @@ function RegisterContent() {
                                             onChange={() => setForm({ ...form, isMinor: false })}
                                             className="w-4 h-4 text-blue-600"
                                         />
-                                        <span className="text-sm">Yes, I&apos;m 18+</span>
+                                        <span className="text-sm text-slate-900">Yes, I&apos;m 18+</span>
                                     </label>
                                     <label className="flex items-center gap-2 cursor-pointer">
                                         <input
@@ -273,7 +273,7 @@ function RegisterContent() {
                                             onChange={() => setForm({ ...form, isMinor: true })}
                                             className="w-4 h-4 text-blue-600"
                                         />
-                                        <span className="text-sm">No, I&apos;m under 18</span>
+                                        <span className="text-sm text-slate-900">No, I&apos;m under 18</span>
                                     </label>
                                 </div>
                             </div>

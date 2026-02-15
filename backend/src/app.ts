@@ -714,12 +714,21 @@ export function createApp() {
         if (password) {
           // Password flow
           const passwordHash = await hashPassword(password);
-          user = await createUserWithPassword({
-            drivingSchoolId: invitation.drivingSchoolId,
-            email: invitation.email,
-            passwordHash,
-            role: invitation.role,
-          });
+          try {
+            user = await createUserWithPassword({
+              drivingSchoolId: invitation.drivingSchoolId,
+              email: invitation.email,
+              passwordHash,
+              role: invitation.role,
+            });
+          } catch (dbError: unknown) {
+            const msg = dbError instanceof Error ? dbError.message : '';
+            if (msg.includes('duplicate key') || msg.includes('unique constraint')) {
+              res.status(409).json({ error: 'An account with this email already exists. Please log in instead.' });
+              return;
+            }
+            throw dbError;
+          }
         } else {
           // Identity flow (Google etc)
           const authHeader = req.get('authorization');
