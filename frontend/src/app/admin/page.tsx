@@ -343,14 +343,23 @@ export default function AdminPage() {
           defaultMaxSegmentTravelTimeMin: settingsForm.defaultMaxSegmentTravelTimeMin
             ? Number(settingsForm.defaultMaxSegmentTravelTimeMin)
             : null,
-          defaultMaxSegmentTravelDistanceKm: settingsForm.defaultMaxSegmentTravelDistanceKm || null,
+          defaultMaxSegmentTravelDistanceKm: settingsForm.defaultMaxSegmentTravelDistanceKm
+            ? Number(settingsForm.defaultMaxSegmentTravelDistanceKm)
+            : null,
           defaultDailyMaxTravelTimeMin: settingsForm.defaultDailyMaxTravelTimeMin
             ? Number(settingsForm.defaultDailyMaxTravelTimeMin)
             : null,
-          defaultDailyMaxTravelDistanceKm: settingsForm.defaultDailyMaxTravelDistanceKm || null,
+          defaultDailyMaxTravelDistanceKm: settingsForm.defaultDailyMaxTravelDistanceKm
+            ? Number(settingsForm.defaultDailyMaxTravelDistanceKm)
+            : null,
           dailyBookingCapPerDriver: settingsForm.dailyBookingCapPerDriver
             ? Number(settingsForm.dailyBookingCapPerDriver)
             : null,
+          defaultServiceRadiusKm: settingsForm.defaultServiceRadiusKm
+            ? Number(settingsForm.defaultServiceRadiusKm)
+            : null,
+          allowStudentToPickDriver: settingsForm.allowStudentToPickDriver,
+          allowDriverSelfAvailabilityEdit: settingsForm.allowDriverSelfAvailabilityEdit,
         }),
       });
       await loadSettings();

@@ -343,8 +343,8 @@ function DriverPageContent() {
       });
       await loadSchoolSettings();
       toast.success('Settings saved!', { id: toastId });
-    } catch {
-      toast.error('Unable to save settings.', { id: toastId });
+    } catch (err) {
+      toast.error(getErrorMessage(err), { id: toastId });
     } finally {
       setIsSavingSchoolSettings(false);
     }
