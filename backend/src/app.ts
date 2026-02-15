@@ -764,9 +764,16 @@ export function createApp() {
             return;
           }
 
+          // Ensure the identity email matches the invitation email to prevent account takeover
+          const identityEmail = verification.email ?? invitation.email;
+          if (verification.email && verification.email.toLowerCase() !== invitation.email.toLowerCase()) {
+            res.status(403).json({ error: 'Identity email does not match invitation email' });
+            return;
+          }
+
           user = await createUserWithIdentity({
             drivingSchoolId: invitation.drivingSchoolId,
-            email: verification.email ?? invitation.email,
+            email: identityEmail,
             identityProvider: verification.provider ?? process.env.AUTH_PROVIDER ?? 'google',
             identitySubject,
             role: invitation.role,

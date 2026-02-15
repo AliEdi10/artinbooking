@@ -714,7 +714,7 @@ export default function StudentPage() {
                     <li key={`${slot.driverId}-${slot.startTime}`} className="flex items-center justify-between p-2 bg-slate-50 rounded border">
                       <div>
                         <span className="text-sm font-medium text-slate-800">{new Date(slot.startTime).toLocaleString()}</span>
-                        <span className="text-xs text-slate-800 ml-2">with {drivers.find(d => d.id === slot.driverId)?.fullName}</span>
+                        <span className="text-xs text-slate-800 ml-2">with {drivers.find(d => d.id === slot.driverId)?.fullName ?? 'Instructor'}</span>
                       </div>
                       <button
                         className="px-4 py-2 rounded bg-slate-900 text-white hover:bg-slate-800 text-sm font-medium"
