@@ -86,8 +86,8 @@ export default function BookingsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <SummaryCard
               title="Available slots"
-              description="Pulled from /available-slots with travel-aware checks for the selected driver and addresses."
-              footer="Connect to student address + licence inputs to filter results."
+              description="Travel-aware availability for the selected driver and addresses."
+              footer=""
             >
               <ul className="space-y-1 text-sm text-slate-800">
                 {slots.map((slot) => {
@@ -107,7 +107,7 @@ export default function BookingsPage() {
             <SummaryCard
               title="Bookings"
               description="Create, cancel, and review bookings. This view shows current commitments."
-              footer="Data comes directly from /schools/:id/bookings"
+              footer=""
             >
               <ul className="space-y-1 text-sm text-slate-800">
                 {bookings.map((booking) => {
@@ -127,16 +127,6 @@ export default function BookingsPage() {
               </ul>
             </SummaryCard>
           </div>
-          <SummaryCard
-            title="Next steps"
-            description="Let users choose drivers/addresses and perform create/cancel actions from the UI."
-          >
-            <ol className="list-decimal list-inside text-sm text-slate-800 space-y-1">
-              <li>Expose address and driver selectors before querying /available-slots.</li>
-              <li>POST new bookings using the selected slot, then refresh the booking feed.</li>
-              <li>Add cancel/reschedule buttons that call booking APIs with policy enforcement.</li>
-            </ol>
-          </SummaryCard>
         </div>
       </AppShell>
     </Protected>
