@@ -158,7 +158,7 @@ function DriverPageContent() {
   const activeTab = tabFromUrl || 'overview';
 
   const availabilitySummary = driverState.availability.map((slot) => ({
-    day: formatDate(slot.date + 'T00:00:00'),
+    day: formatDate(slot.date),
     window: `${slot.startTime}–${slot.endTime}`,
   }));
 
@@ -1400,7 +1400,7 @@ function DriverPageContent() {
                       .map((slot) => (
                         <li key={slot.id} className="flex justify-between items-center border rounded p-2 bg-green-50">
                           <div>
-                            <span className="font-medium text-slate-800">{formatDate(slot.date + 'T00:00:00')}</span>
+                            <span className="font-medium text-slate-800">{formatDate(slot.date)}</span>
                             <span className="text-xs text-slate-800 ml-2">
                               {slot.startTime} - {slot.endTime}
                             </span>
@@ -1408,7 +1408,7 @@ function DriverPageContent() {
                           </div>
                           <button
                             className="text-xs px-2 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200"
-                            onClick={() => setConfirmDeleteSlot({ id: slot.id, date: formatDate(slot.date + 'T00:00:00') })}
+                            onClick={() => setConfirmDeleteSlot({ id: slot.id, date: formatDate(slot.date) })}
                           >
                             🗑️ Remove
                           </button>
@@ -1465,12 +1465,12 @@ function DriverPageContent() {
                     .map((holiday) => (
                       <li key={holiday.id} className="flex justify-between items-center border rounded p-2 bg-red-50">
                         <div>
-                          <span className="font-medium text-slate-800">{formatDate(holiday.date + 'T00:00:00')}</span>
+                          <span className="font-medium text-slate-800">{formatDate(holiday.date)}</span>
                           <span className="text-xs text-red-700 font-medium ml-2">⛔ Unavailable</span>
                         </div>
                         <button
                           className="text-xs px-2 py-1 rounded bg-red-600 text-white hover:bg-red-700"
-                          onClick={() => setConfirmDeleteBlock({ id: holiday.id, date: formatDate(holiday.date + 'T00:00:00') })}
+                          onClick={() => setConfirmDeleteBlock({ id: holiday.id, date: formatDate(holiday.date) })}
                         >
                           Remove
                         </button>

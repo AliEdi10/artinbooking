@@ -547,7 +547,7 @@ export default function AdminPage() {
                       <div>
                         <p className="font-medium">{holiday.driverName}</p>
                         <p className="text-xs text-slate-800">
-                          {formatDate(holiday.date + 'T00:00:00')}
+                          {formatDate(holiday.date)}
                         </p>
                       </div>
                       <span className="text-xs text-red-600 bg-red-100 px-2 py-1 rounded">⛔ Off</span>
