@@ -310,7 +310,7 @@ function StudentOverview({ token, schoolId }: { token: string; schoolId: number 
           <div className="space-y-3">
             {allowedHours !== null ? (
               <>
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-sm text-slate-900">
                   <span>Used</span>
                   <span className="font-bold">{usedHours.toFixed(1)} hrs</span>
                 </div>
@@ -320,7 +320,7 @@ function StudentOverview({ token, schoolId }: { token: string; schoolId: number 
                     style={{ width: `${hoursPercent}%` }}
                   ></div>
                 </div>
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-sm text-slate-900">
                   <span>Remaining</span>
                   <span className="font-bold text-green-600">{remainingHours?.toFixed(1)} hrs</span>
                 </div>

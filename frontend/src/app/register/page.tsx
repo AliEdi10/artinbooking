@@ -25,7 +25,9 @@ function RegisterContent() {
 
     const [form, setForm] = useState({
         email: '',
-        fullName: '',
+        firstName: '',
+        middleName: '',
+        lastName: '',
         phone: '',
         isMinor: false,
         guardianPhone: '',
@@ -51,7 +53,16 @@ function RegisterContent() {
                 }
                 const data = await response.json();
                 setInvitationInfo(data);
-                setForm((prev) => ({ ...prev, fullName: data.fullName || '' }));
+                if (data.fullName) {
+                    const nameParts = data.fullName.trim().split(/\s+/);
+                    if (nameParts.length >= 3) {
+                        setForm((prev) => ({ ...prev, firstName: nameParts[0], middleName: nameParts.slice(1, -1).join(' '), lastName: nameParts[nameParts.length - 1] }));
+                    } else if (nameParts.length === 2) {
+                        setForm((prev) => ({ ...prev, firstName: nameParts[0], lastName: nameParts[1] }));
+                    } else {
+                        setForm((prev) => ({ ...prev, firstName: nameParts[0] || '' }));
+                    }
+                }
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to validate invitation');
             } finally {
@@ -87,7 +98,7 @@ function RegisterContent() {
 
             const body = {
                 token,
-                fullName: form.fullName,
+                fullName: [form.firstName, form.middleName, form.lastName].filter(Boolean).join(' '),
                 password: form.password,
                 phone: form.phone,
                 isMinor: form.isMinor,
@@ -223,15 +234,37 @@ function RegisterContent() {
                         </div>
                     )}
 
-                    <div>
-                        <label className="block text-sm font-medium text-slate-800 mb-1">Full Name</label>
-                        <input
-                            type="text"
-                            className="w-full border rounded-lg px-4 py-2"
-                            value={form.fullName}
-                            onChange={(e) => setForm({ ...form, fullName: e.target.value })}
-                            required
-                        />
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-800 mb-1">First Name *</label>
+                            <input
+                                type="text"
+                                className="w-full border rounded-lg px-4 py-2"
+                                value={form.firstName}
+                                onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-800 mb-1">Middle Name</label>
+                            <input
+                                type="text"
+                                className="w-full border rounded-lg px-4 py-2"
+                                placeholder="(if applicable)"
+                                value={form.middleName}
+                                onChange={(e) => setForm({ ...form, middleName: e.target.value })}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-800 mb-1">Last Name *</label>
+                            <input
+                                type="text"
+                                className="w-full border rounded-lg px-4 py-2"
+                                value={form.lastName}
+                                onChange={(e) => setForm({ ...form, lastName: e.target.value })}
+                                required
+                            />
+                        </div>
                     </div>
 
                     {/* Phone Number - Only for STUDENT role */}

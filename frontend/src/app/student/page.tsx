@@ -165,7 +165,7 @@ export default function StudentPage() {
         await fetchSlots(driver.id, pickup.id, dropoff.id, dateParam);
         setStatus('');
       } else {
-        setStatus('Add a driver and pickup/dropoff addresses to query live availability.');
+        setStatus('');
       }
       setInitialLoading(false);
     } catch (error) {
@@ -385,7 +385,7 @@ export default function StudentPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 {student.allowedHours !== null && (
                   <div>
-                    <p className="text-slate-800">Hours Used</p>
+                    <p className="text-slate-900">Hours Used</p>
                     <p className="text-xl font-bold text-blue-700">
                       {usedHours.toFixed(1)} / {student.allowedHours}
                     </p>
@@ -535,7 +535,9 @@ export default function StudentPage() {
             <SummaryCard
               title="Licence & documents"
               description="Upload your licence to enable booking. Status updates after admin review."
-              footer={student?.licenceStatus === 'approved' ? '✓ Verified - You can book lessons' : 'Pending admin verification'}
+              footer={student?.licenceStatus === 'approved'
+                ? <span className="text-green-700 font-medium">✓ Verified — You can book lessons</span>
+                : <span className="text-amber-700 font-semibold">⏳ Pending admin verification</span>}
             >
               <div className="space-y-3">
                 {/* Status Display */}
@@ -553,10 +555,14 @@ export default function StudentPage() {
                       {student?.licenceStatus === 'approved' ? '✓' : student?.licenceStatus === 'rejected' ? '✗' : '⏳'}
                     </span>
                     <div>
-                      <p className="font-medium text-sm">
-                        Status: {student?.licenceStatus ?? 'pending_review'}
+                      <p className={`font-semibold text-sm ${student?.licenceStatus === 'approved' ? 'text-green-800' : student?.licenceStatus === 'rejected' ? 'text-red-800' : 'text-yellow-800'}`}>
+                        {student?.licenceStatus === 'approved'
+                          ? 'Approved'
+                          : student?.licenceStatus === 'rejected'
+                            ? 'Rejected'
+                            : 'Pending Review'}
                       </p>
-                      <p className="text-xs text-slate-800">
+                      <p className="text-xs text-slate-700">
                         {student?.licenceStatus === 'approved'
                           ? 'Your licence is verified. You can book lessons.'
                           : student?.licenceStatus === 'rejected'
@@ -691,7 +697,7 @@ export default function StudentPage() {
                   </select>
                 </div>
                 <button
-                  className="w-full bg-slate-900 text-white rounded px-3 py-2 hover:bg-slate-800"
+                  className="w-full bg-blue-600 text-white font-medium rounded px-3 py-2 hover:bg-blue-700 disabled:bg-slate-300 disabled:text-slate-500"
                   type="button"
                   onClick={() =>
                     slotQuery.driverId &&
@@ -726,8 +732,8 @@ export default function StudentPage() {
                     </li>
                   ))}
                   {suggestedSlots.length === 0 && !status ? (
-                    <li className="text-sm text-slate-800 text-center py-4">
-                      Select options above and click &quot;Find Available Slots&quot; to see booking times.
+                    <li className="text-sm text-slate-700 text-center py-4">
+                      No availability for the selected day.
                     </li>
                   ) : null}
                 </ul>
