@@ -381,22 +381,30 @@ function DriverPageContent() {
     event.preventDefault();
     if (!token || !schoolId || !driverState.driver) return;
 
-    const startDate = new Date(availabilityForm.dateStart);
-    const endDate = new Date(availabilityForm.dateEnd || availabilityForm.dateStart);
+    const startDateStr = availabilityForm.dateStart;
+    const endDateStr = availabilityForm.dateEnd || availabilityForm.dateStart;
 
-    if (endDate < startDate) {
+    if (endDateStr < startDateStr) {
       toast.error('End date must be after start date.');
       return;
     }
 
-    const dayCount = Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    const toastId = toast.loading(`Publishing availability for ${dayCount} day(s)...`);
+    // Build list of date strings directly to avoid timezone shifts
+    const dates: string[] = [];
+    const cur = new Date(startDateStr + 'T00:00:00');
+    const end = new Date(endDateStr + 'T00:00:00');
+    while (cur <= end) {
+      const y = cur.getFullYear();
+      const m = String(cur.getMonth() + 1).padStart(2, '0');
+      const d = String(cur.getDate()).padStart(2, '0');
+      dates.push(`${y}-${m}-${d}`);
+      cur.setDate(cur.getDate() + 1);
+    }
+
+    const toastId = toast.loading(`Publishing availability for ${dates.length} day(s)...`);
 
     try {
-      // Create entries for each day in the range
-      const currentDate = new Date(startDate);
-      while (currentDate <= endDate) {
-        const dateStr = currentDate.toISOString().slice(0, 10);
+      for (const dateStr of dates) {
         await apiFetch(`/schools/${schoolId}/drivers/${driverState.driver.id}/availability`, token, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -407,11 +415,10 @@ function DriverPageContent() {
             type: 'working_hours',
           }),
         });
-        currentDate.setDate(currentDate.getDate() + 1);
       }
       setAvailabilityForm({ dateStart: '', dateEnd: '', startTime: '', endTime: '' });
       await loadDriverContext();
-      toast.success(`Availability published for ${dayCount} day(s)!`, { id: toastId });
+      toast.success(`Availability published for ${dates.length} day(s)!`, { id: toastId });
     } catch (err) {
       toast.error(getErrorMessage(err), { id: toastId });
     }
@@ -421,41 +428,43 @@ function DriverPageContent() {
     event.preventDefault();
     if (!token || !schoolId || !driverState.driver || !holidayRange.start) return;
 
-    const startDate = new Date(holidayRange.start);
-    const endDate = new Date(holidayRange.end || holidayRange.start);
+    const startDateStr = holidayRange.start;
+    const endDateStr = holidayRange.end || holidayRange.start;
 
-    if (endDate < startDate) {
+    if (endDateStr < startDateStr) {
       toast.error('End date must be after start date.');
       return;
+    }
+
+    // Build date strings without timezone shifts
+    const holidayDates: string[] = [];
+    const hCur = new Date(startDateStr + 'T00:00:00');
+    const hEnd = new Date(endDateStr + 'T00:00:00');
+    while (hCur <= hEnd) {
+      const y = hCur.getFullYear();
+      const m = String(hCur.getMonth() + 1).padStart(2, '0');
+      const d = String(hCur.getDate()).padStart(2, '0');
+      holidayDates.push(`${y}-${m}-${d}`);
+      hCur.setDate(hCur.getDate() + 1);
     }
 
     // Check for conflicts
     const conflictDates: string[] = [];
     const alreadyBlockedDates: string[] = [];
-    const checkDate = new Date(startDate);
-    while (checkDate <= endDate) {
-      const dateStr = checkDate.toISOString().slice(0, 10);
-
-      // Check if already blocked
+    for (const dateStr of holidayDates) {
       if (driverState.availability.some(a => a.date === dateStr && a.type === 'override_closed')) {
-        alreadyBlockedDates.push(new Date(dateStr).toLocaleDateString());
+        alreadyBlockedDates.push(new Date(dateStr + 'T00:00:00').toLocaleDateString());
       }
-
-      // Check if has open slots
       if (driverState.availability.some(a => a.date === dateStr && a.type === 'working_hours')) {
-        conflictDates.push(new Date(dateStr).toLocaleDateString());
+        conflictDates.push(new Date(dateStr + 'T00:00:00').toLocaleDateString());
       }
-
-      checkDate.setDate(checkDate.getDate() + 1);
     }
 
     // Error if all dates are already blocked
-    if (alreadyBlockedDates.length === Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1) {
+    if (alreadyBlockedDates.length === holidayDates.length) {
       toast.error(`All selected dates are already blocked: ${alreadyBlockedDates.join(', ')}`);
       return;
     }
-
-    const dayCount = Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
     // ERROR if any dates have published availability - user must delete availability first
     if (conflictDates.length > 0) {
@@ -463,13 +472,10 @@ function DriverPageContent() {
       return;
     }
 
-    const toastId = toast.loading(`Adding time off for ${dayCount} day(s)...`);
+    const toastId = toast.loading(`Adding time off for ${holidayDates.length} day(s)...`);
 
     try {
-      const currentDate = new Date(startDate);
-      while (currentDate <= endDate) {
-        const dateStr = currentDate.toISOString().slice(0, 10);
-
+      for (const dateStr of holidayDates) {
         // Skip if already blocked
         if (!driverState.availability.some(a => a.date === dateStr && a.type === 'override_closed')) {
           await apiFetch(`/schools/${schoolId}/drivers/${driverState.driver.id}/availability`, token, {
@@ -483,11 +489,10 @@ function DriverPageContent() {
             }),
           });
         }
-        currentDate.setDate(currentDate.getDate() + 1);
       }
       setHolidayRange({ start: '', end: '' });
       await loadDriverContext();
-      toast.success(`Time off added for ${dayCount} day(s)!`, { id: toastId });
+      toast.success(`Time off added for ${holidayDates.length} day(s)!`, { id: toastId });
     } catch (err) {
       toast.error(getErrorMessage(err), { id: toastId });
     }
