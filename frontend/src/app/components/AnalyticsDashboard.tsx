@@ -280,7 +280,7 @@ export function AnalyticsDashboard({ schoolId, token, activeTab, onTabChange }: 
                                     );
                                 })
                             )}
-                            <div className="flex gap-4 justify-center text-xs mt-2">
+                            <div className="flex gap-4 justify-center text-xs text-slate-900 mt-2">
                                 <span className="flex items-center gap-1"><span className="w-3 h-3 bg-green-500 rounded"></span> Completed</span>
                                 <span className="flex items-center gap-1"><span className="w-3 h-3 bg-blue-500 rounded"></span> Scheduled</span>
                                 <span className="flex items-center gap-1"><span className="w-3 h-3 bg-red-400 rounded"></span> Cancelled</span>

@@ -642,7 +642,7 @@ export default function StudentPage() {
             <SummaryCard
               title="Book a lesson"
               description="Find available lesson times."
-              footer={status || 'Loaded from /drivers/:id/available-slots'}
+              footer={status || ''}
             >
               <div className="space-y-2 text-sm">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -737,7 +737,7 @@ export default function StudentPage() {
           <SummaryCard
             title="Upcoming bookings"
             description="View and manage your scheduled lessons."
-            footer={status || 'Loaded from /schools/:id/bookings'}
+            footer={status || ''}
           >
             <ul className="space-y-2 text-sm text-slate-800">
               {bookings.map((booking) => (

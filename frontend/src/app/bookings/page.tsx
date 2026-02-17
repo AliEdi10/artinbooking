@@ -79,9 +79,9 @@ export default function BookingsPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-semibold text-slate-900">Booking & availability</h1>
-              <p className="text-sm text-slate-800">Lead times, service radius, and policy enforcement happen on the API.</p>
+              <p className="text-sm text-slate-800">Manage bookings and view available slots.</p>
             </div>
-            <p className="text-xs text-slate-800">{status || 'Loaded from live APIs'}</p>
+            {status && <p className="text-xs text-slate-800">{status}</p>}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <SummaryCard

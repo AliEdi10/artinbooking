@@ -913,7 +913,7 @@ function DriverPageContent() {
                 <SummaryCard
                   title="Availability grid"
                   description="Snapshot of 15-minute grid availability derived from your working hours."
-                  footer={status || 'Loaded from /drivers/:id/availability'}
+                  footer={status || ''}
                 >
                   <ul className="space-y-1 text-sm text-slate-800">
                     {availabilitySummary.map((slot) => (
@@ -929,8 +929,8 @@ function DriverPageContent() {
                 </SummaryCard>
                 <SummaryCard
                   title="Upcoming lessons"
-                  description="Displays bookings already screened for buffers, travel caps, and service radius."
-                  footer={status || 'Loaded from /schools/:id/bookings'}
+                  description="Your upcoming scheduled lessons."
+                  footer={status || ''}
                 >
                   <ul className="space-y-1 text-sm text-slate-800">
                     {upcomingLessons.map((lesson) => (

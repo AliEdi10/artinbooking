@@ -471,7 +471,7 @@ export default function AdminPage() {
           <div>
             <h1 className="text-2xl font-semibold text-slate-900">School Admin workspace</h1>
             <p className="text-sm text-slate-800">
-              Manage your school roster, policies, and bookings. Backend calls are scoped using your JWT school ID.
+              Manage your school roster, policies, and bookings.
             </p>
             {actionMessage ? <p className="text-xs text-slate-800 mt-1">{actionMessage}</p> : null}
             {error ? <p className="text-xs text-red-600 mt-1">{error}</p> : null}
@@ -488,7 +488,7 @@ export default function AdminPage() {
               <SummaryCard
                 title="Drivers"
                 description="Onboard instructors and monitor their status."
-                footer={loadingRoster ? 'Loading drivers…' : error ?? 'Data comes from /schools/:id/drivers'}
+                footer={loadingRoster ? 'Loading drivers…' : error ?? ''}
               >
                 <ul className="space-y-1 text-sm text-slate-800">
                   {drivers.map((driver) => (
@@ -617,7 +617,7 @@ export default function AdminPage() {
                 <SummaryCard
                   title="Students & Licence Review"
                   description="Click a student to review their licence and approve/reject."
-                  footer={loadingRoster ? 'Loading students…' : error ?? 'Data comes from /schools/:id/students'}
+                  footer={loadingRoster ? 'Loading students…' : error ?? ''}
                 >
                   <ul className="space-y-2 text-sm">
                     {students.map((student) => (
@@ -838,8 +838,8 @@ export default function AdminPage() {
                 </SummaryCard>
                 <SummaryCard
                   title="School settings"
-                  description="Lead times, cancellation windows, and caps pulled from the backend."
-                  footer={loadingSettings ? 'Loading settings...' : error ?? 'Data comes from /schools/:id/settings'}
+                  description="Lead times, cancellation windows, and caps."
+                  footer={loadingSettings ? 'Loading settings...' : error ?? ''}
                 >
                   <form className="space-y-2 text-sm" onSubmit={handleUpdateSettings}>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -899,17 +899,13 @@ export default function AdminPage() {
                     >
                       Save settings
                     </button>
-                    <p className="text-[11px] text-slate-800">
-                      Current values: lead time {settings?.minBookingLeadTimeHours ?? '—'} hrs, cancellation cutoff{' '}
-                      {settings?.cancellationCutoffHours ?? '—'} hrs.
-                    </p>
                   </form>
                 </SummaryCard>
               </div>
               <SummaryCard
                 title="Bookings overview"
-                description="Slots and policies are enforced server-side; this view surfaces current states."
-                footer={loadingBookings ? 'Loading bookings…' : error ?? 'Data comes from /schools/:id/bookings'}
+                description="Create, cancel, and review bookings."
+                footer={loadingBookings ? 'Loading bookings…' : error ?? ''}
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                   {bookings.map((booking) => {

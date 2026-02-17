@@ -129,7 +129,7 @@ function AdminOverview({ token, schoolId }: { token: string; schoolId: number })
         </SummaryCard>
 
         <SummaryCard title="👥 Team" description="Active members" footer="">
-          <div className="text-sm space-y-1">
+          <div className="text-sm space-y-1 text-slate-900">
             <p><strong>{students.length}</strong> students</p>
             <p><strong>{drivers.filter(d => d.active).length}</strong> drivers</p>
           </div>
