@@ -1832,10 +1832,10 @@ export function createApp() {
             const driverUser = await getUserById(driver.userId);
 
             const lessonDate = normalizedStart.toLocaleDateString('en-US', {
-              weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+              timeZone: 'America/Halifax', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
             });
             const lessonTime = normalizedStart.toLocaleTimeString('en-US', {
-              hour: '2-digit', minute: '2-digit'
+              timeZone: 'America/Halifax', hour: '2-digit', minute: '2-digit'
             });
 
             const pickupAddr = `${pickupAddress.line1}, ${pickupAddress.city}`;
@@ -2091,10 +2091,10 @@ export function createApp() {
             const studentUser = student ? await getUserById(student.userId) : null;
 
             const lessonDate = booking.startTime.toLocaleDateString('en-US', {
-              weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+              timeZone: 'America/Halifax', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
             });
             const lessonTime = booking.startTime.toLocaleTimeString('en-US', {
-              hour: '2-digit', minute: '2-digit'
+              timeZone: 'America/Halifax', hour: '2-digit', minute: '2-digit'
             });
 
             // Resolve addresses for email (using ID from booking)

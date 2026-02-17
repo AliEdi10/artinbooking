@@ -28,6 +28,7 @@ let schedulerInterval: NodeJS.Timeout | null = null;
  */
 function formatDate(date: Date): string {
     return date.toLocaleDateString('en-US', {
+        timeZone: 'America/Halifax',
         weekday: 'long',
         year: 'numeric',
         month: 'long',
@@ -40,6 +41,7 @@ function formatDate(date: Date): string {
  */
 function formatTime(date: Date): string {
     return date.toLocaleTimeString('en-US', {
+        timeZone: 'America/Halifax',
         hour: 'numeric',
         minute: '2-digit',
         hour12: true,

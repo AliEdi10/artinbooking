@@ -1,3 +1,6 @@
+// Set process timezone to America/Halifax (AST/ADT with automatic DST)
+process.env.TZ = 'America/Halifax';
+
 import { createApp } from './app';
 import { getPool } from './db';
 import { startReminderScheduler } from './services/reminderScheduler';

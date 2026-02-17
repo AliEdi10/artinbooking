@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { apiFetch } from '../apiClient';
 import { SummaryCard } from './SummaryCard';
+import { formatDateCustom } from '../utils/timezone';
 
 type WeeklyEarning = {
     weekStart: string;
@@ -95,7 +96,7 @@ export function EarningsCard({ schoolId, driverId, token }: EarningsCardProps) {
                                 {earnings.weeklyData.map((week) => (
                                     <tr key={week.weekStart} className="border-b border-slate-100">
                                         <td className="py-1 text-slate-700">
-                                            {new Date(week.weekStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                            {formatDateCustom(week.weekStart, { month: 'short', day: 'numeric' })}
                                         </td>
                                         <td className="py-1 text-center">{week.lessons}</td>
                                         <td className="py-1 text-center">{week.hours}</td>

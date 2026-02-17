@@ -7,6 +7,7 @@ import { AppShell } from './components/AppShell';
 import { SummaryCard } from './components/SummaryCard';
 import { useAuth } from './auth/AuthProvider';
 import { apiFetch } from './apiClient';
+import { formatDateTime, formatDate, formatTime } from './utils/timezone';
 
 type DrivingSchool = { id: number; name: string; status: 'active' | 'suspended' | 'deleted' };
 type Booking = { id: number; startTime: string; status: string; studentId?: number; driverId?: number };
@@ -97,8 +98,7 @@ function AdminOverview({ token, schoolId }: { token: string; schoolId: number })
   }, [token, schoolId]);
 
   const todayBookings = bookings.filter(b => {
-    const bookingDate = new Date(b.startTime).toDateString();
-    return bookingDate === new Date().toDateString();
+    return formatDate(b.startTime) === formatDate(new Date());
   });
 
   const pendingLicences = students.filter(s => s.licenceStatus === 'pending_review');
@@ -174,11 +174,10 @@ function DriverOverview({ token, schoolId }: { token: string; schoolId: number }
   }, [token, schoolId]);
 
   const [renderTime] = useState(() => Date.now());
-  const todayStr = new Date(renderTime).toDateString();
+  const todayStr = formatDate(new Date(renderTime));
 
   const todayBookings = bookings.filter(b => {
-    const bookingDate = new Date(b.startTime).toDateString();
-    return bookingDate === todayStr;
+    return formatDate(b.startTime) === todayStr;
   }).sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
 
   const nextLesson = todayBookings[0];
@@ -198,7 +197,7 @@ function DriverOverview({ token, schoolId }: { token: string; schoolId: number }
           <div className="text-4xl font-bold text-blue-600">{todayBookings.length}</div>
           {nextLesson && (
             <p className="text-sm text-slate-800">
-              Next: {new Date(nextLesson.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              Next: {formatTime(nextLesson.startTime)}
             </p>
           )}
         </SummaryCard>
@@ -228,7 +227,7 @@ function DriverOverview({ token, schoolId }: { token: string; schoolId: number }
                   <li key={b.id} className="flex items-center justify-between bg-white border border-amber-200 rounded p-2">
                     <div>
                       <p className="text-sm font-medium text-slate-800">{student?.fullName || 'Student'}</p>
-                      <p className="text-xs text-slate-800">{new Date(b.startTime).toLocaleString()}</p>
+                      <p className="text-xs text-slate-800">{formatDateTime(b.startTime)}</p>
                     </div>
                     <Link href="/driver" className="px-3 py-1 rounded bg-amber-600 text-white text-xs hover:bg-amber-500">
                       Review
@@ -248,7 +247,7 @@ function DriverOverview({ token, schoolId }: { token: string; schoolId: number }
               return (
                 <li key={booking.id} className="flex justify-between items-center p-3 bg-slate-50 rounded border">
                   <div>
-                    <p className="font-medium text-slate-800">{new Date(booking.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                    <p className="font-medium text-slate-800">{formatTime(booking.startTime)}</p>
                     <p className="text-sm text-slate-800">{student?.fullName || 'Student'}</p>
                   </div>
                   <span className="px-2 py-1 text-xs rounded bg-blue-100 text-blue-800">{booking.status}</span>
@@ -340,9 +339,9 @@ function StudentOverview({ token, schoolId }: { token: string; schoolId: number 
         <SummaryCard title="📅 Next Lesson" description="Your upcoming lesson" footer="">
           {nextLesson ? (
             <div className="text-center py-2">
-              <p className="text-lg font-bold">{new Date(nextLesson.startTime).toLocaleDateString()}</p>
+              <p className="text-lg font-bold">{formatDate(nextLesson.startTime)}</p>
               <p className="text-2xl font-bold text-blue-600">
-                {new Date(nextLesson.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {formatTime(nextLesson.startTime)}
               </p>
               <p className="text-sm text-slate-800 mt-1">{bookings.length} total upcoming</p>
             </div>

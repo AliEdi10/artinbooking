@@ -302,9 +302,9 @@ router.get('/schools/:schoolId/drivers/:driverId/earnings/export', authenticateR
             const duration = (new Date(row.end_time).getTime() - new Date(row.start_time).getTime()) / (1000 * 60 * 60);
             const studentName = row.student_name.replace(/"/g, '""');
             csvRows.push([
-                new Date(row.start_time).toLocaleDateString(),
-                new Date(row.start_time).toLocaleTimeString(),
-                new Date(row.end_time).toLocaleTimeString(),
+                new Date(row.start_time).toLocaleDateString('en-US', { timeZone: 'America/Halifax' }),
+                new Date(row.start_time).toLocaleTimeString('en-US', { timeZone: 'America/Halifax' }),
+                new Date(row.end_time).toLocaleTimeString('en-US', { timeZone: 'America/Halifax' }),
                 `"${studentName}"`,
                 duration.toFixed(2),
             ].join(','));

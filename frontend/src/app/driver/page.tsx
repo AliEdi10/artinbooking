@@ -18,6 +18,7 @@ import { createDriverLessonEvent } from '../utils/calendar';
 import { useAuth } from '../auth/AuthProvider';
 import { apiFetch, ApiError, getErrorMessage } from '../apiClient';
 import { PageLoading } from '../components/LoadingSpinner';
+import { formatDateTime, formatDate, formatTime, todayDateString } from '../utils/timezone';
 import { SchoolSelectorBanner } from '../components/SchoolSelectorBanner';
 
 type DriverProfile = {
@@ -157,7 +158,7 @@ function DriverPageContent() {
   const activeTab = tabFromUrl || 'overview';
 
   const availabilitySummary = driverState.availability.map((slot) => ({
-    day: new Date(slot.date).toLocaleDateString(),
+    day: formatDate(slot.date + 'T00:00:00'),
     window: `${slot.startTime}–${slot.endTime}`,
   }));
 
@@ -174,7 +175,7 @@ function DriverPageContent() {
     };
 
     return {
-      time: new Date(booking.startTime).toLocaleString(),
+      time: formatDateTime(booking.startTime),
       rawStartTime: booking.startTime,
       status: booking.status,
       id: booking.id,
@@ -453,10 +454,10 @@ function DriverPageContent() {
     const alreadyBlockedDates: string[] = [];
     for (const dateStr of holidayDates) {
       if (driverState.availability.some(a => a.date === dateStr && a.type === 'override_closed')) {
-        alreadyBlockedDates.push(new Date(dateStr + 'T00:00:00').toLocaleDateString());
+        alreadyBlockedDates.push(formatDate(dateStr + 'T00:00:00'));
       }
       if (driverState.availability.some(a => a.date === dateStr && a.type === 'working_hours')) {
-        conflictDates.push(new Date(dateStr + 'T00:00:00').toLocaleDateString());
+        conflictDates.push(formatDate(dateStr + 'T00:00:00'));
       }
     }
 
@@ -659,7 +660,7 @@ function DriverPageContent() {
                       <li key={b.id} className="flex items-center justify-between bg-white border border-amber-200 rounded p-2">
                         <div>
                           <p className="text-sm font-medium text-slate-800">{studentName}</p>
-                          <p className="text-xs text-slate-800">{new Date(b.startTime).toLocaleString()}</p>
+                          <p className="text-xs text-slate-800">{formatDateTime(b.startTime)}</p>
                         </div>
                         <div className="flex gap-2">
                           <button
@@ -710,7 +711,7 @@ function DriverPageContent() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-lg font-semibold text-slate-900">
-                              {new Date(lesson.rawStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {formatTime(lesson.rawStartTime)}
                             </span>
                             <span className={`px-2 py-0.5 rounded text-xs font-medium ${lesson.status === 'scheduled' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-800'
                               }`}>
@@ -1103,7 +1104,7 @@ function DriverPageContent() {
                               <span className="text-slate-800 block">Date of Birth</span>
                               <p className="font-semibold text-slate-900">
                                 {selectedStudent.dateOfBirth
-                                  ? new Date(selectedStudent.dateOfBirth).toLocaleDateString()
+                                  ? formatDate(selectedStudent.dateOfBirth)
                                   : 'Not provided'}
                               </p>
                             </div>
@@ -1188,7 +1189,7 @@ function DriverPageContent() {
                                 : 'text-slate-900'
                                 }`}>
                                 {selectedStudent.licenceExpiryDate
-                                  ? new Date(selectedStudent.licenceExpiryDate).toLocaleDateString()
+                                  ? formatDate(selectedStudent.licenceExpiryDate)
                                   : 'Not provided'}
                                 {selectedStudent.licenceExpiryDate && new Date(selectedStudent.licenceExpiryDate) < new Date() && (
                                   <span className="ml-1 text-red-600">(Expired!)</span>
@@ -1292,9 +1293,9 @@ function DriverPageContent() {
                                 <li key={booking.id} className="border rounded p-2 bg-slate-50 text-xs">
                                   <div className="flex justify-between items-center">
                                     <div>
-                                      <p className="font-medium text-slate-900">{new Date(booking.startTime).toLocaleDateString()}</p>
+                                      <p className="font-medium text-slate-900">{formatDate(booking.startTime)}</p>
                                       <p className="text-slate-800">
-                                        {new Date(booking.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        {formatTime(booking.startTime)}
                                       </p>
                                     </div>
                                     <span className={`px-2 py-1 rounded text-xs font-medium ${booking.status === 'completed' ? 'bg-green-100 text-green-800'
@@ -1399,7 +1400,7 @@ function DriverPageContent() {
                       .map((slot) => (
                         <li key={slot.id} className="flex justify-between items-center border rounded p-2 bg-green-50">
                           <div>
-                            <span className="font-medium text-slate-800">{new Date(slot.date).toLocaleDateString()}</span>
+                            <span className="font-medium text-slate-800">{formatDate(slot.date + 'T00:00:00')}</span>
                             <span className="text-xs text-slate-800 ml-2">
                               {slot.startTime} - {slot.endTime}
                             </span>
@@ -1407,7 +1408,7 @@ function DriverPageContent() {
                           </div>
                           <button
                             className="text-xs px-2 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200"
-                            onClick={() => setConfirmDeleteSlot({ id: slot.id, date: new Date(slot.date).toLocaleDateString() })}
+                            onClick={() => setConfirmDeleteSlot({ id: slot.id, date: formatDate(slot.date + 'T00:00:00') })}
                           >
                             🗑️ Remove
                           </button>
@@ -1436,7 +1437,7 @@ function DriverPageContent() {
                         value={holidayRange.start}
                         onChange={(e) => setHolidayRange({ ...holidayRange, start: e.target.value })}
                         required
-                        min={new Date().toISOString().slice(0, 10)}
+                        min={todayDateString()}
                       />
                     </div>
                     <div>
@@ -1446,7 +1447,7 @@ function DriverPageContent() {
                         type="date"
                         value={holidayRange.end}
                         onChange={(e) => setHolidayRange({ ...holidayRange, end: e.target.value })}
-                        min={holidayRange.start || new Date().toISOString().slice(0, 10)}
+                        min={holidayRange.start || todayDateString()}
                       />
                     </div>
                   </div>
@@ -1464,12 +1465,12 @@ function DriverPageContent() {
                     .map((holiday) => (
                       <li key={holiday.id} className="flex justify-between items-center border rounded p-2 bg-red-50">
                         <div>
-                          <span className="font-medium text-slate-800">{new Date(holiday.date).toLocaleDateString()}</span>
+                          <span className="font-medium text-slate-800">{formatDate(holiday.date + 'T00:00:00')}</span>
                           <span className="text-xs text-red-700 font-medium ml-2">⛔ Unavailable</span>
                         </div>
                         <button
                           className="text-xs px-2 py-1 rounded bg-red-600 text-white hover:bg-red-700"
-                          onClick={() => setConfirmDeleteBlock({ id: holiday.id, date: new Date(holiday.date).toLocaleDateString() })}
+                          onClick={() => setConfirmDeleteBlock({ id: holiday.id, date: formatDate(holiday.date + 'T00:00:00') })}
                         >
                           Remove
                         </button>
@@ -1490,9 +1491,9 @@ function DriverPageContent() {
                     <li key={booking.id} className="border rounded p-3 bg-slate-50">
                       <div className="flex justify-between items-center">
                         <div>
-                          <p className="font-medium">{new Date(booking.startTime).toLocaleDateString()}</p>
+                          <p className="font-medium">{formatDate(booking.startTime)}</p>
                           <p className="text-xs text-slate-800">
-                            {new Date(booking.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {formatTime(booking.startTime)}
                             {' - '}
                             {driverState.students.find((s) => s.id === booking.studentId)?.fullName ?? 'Unknown Student'}
                           </p>

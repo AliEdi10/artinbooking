@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
+import { APP_TIMEZONE } from '../utils/timezone';
 
 type Availability = { id: number; date: string; startTime: string; endTime: string; type?: string };
 type Booking = { id: number; driverId: number; studentId: number; startTime: string; status: string };
@@ -109,7 +110,7 @@ export function WeeklyCalendar({ availability, bookings, students }: WeeklyCalen
     const weekLabel = useMemo(() => {
         const start = weekDates[0];
         const end = weekDates[6];
-        return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+        return `${start.toLocaleDateString('en-US', { timeZone: APP_TIMEZONE, month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('en-US', { timeZone: APP_TIMEZONE, month: 'short', day: 'numeric', year: 'numeric' })}`;
     }, [weekDates]);
 
     return (

@@ -6,6 +6,7 @@ import { AppShell } from '../components/AppShell';
 import { SummaryCard } from '../components/SummaryCard';
 import { apiFetch } from '../apiClient';
 import { useAuth } from '../auth/AuthProvider';
+import { formatDateTime, todayDateString } from '../utils/timezone';
 
 type AvailableSlot = { startTime: string; driverId: number };
 type Booking = { id: number; status: string; startTime: string; driverId: number; studentId: number };
@@ -51,7 +52,7 @@ export default function BookingsPage() {
           const dropoff = addresses.find((entry) => entry.isDefaultDropoff) ?? (addresses.length > 1 ? addresses[1] : pickup);
 
           if (pickup && dropoff) {
-            const dateParam = new Date().toISOString().slice(0, 10);
+            const dateParam = todayDateString();
             const slotResults = await apiFetch<string[]>(
               `/schools/${schoolId}/drivers/${driver.id}/available-slots?date=${dateParam}&pickupAddressId=${pickup.id}&dropoffAddressId=${dropoff.id}`,
               token!,
@@ -94,7 +95,7 @@ export default function BookingsPage() {
                   const driverName = drivers.find((driver) => driver.id === slot.driverId)?.fullName ?? 'Driver';
                   return (
                     <li key={`${slot.startTime}-${slot.driverId}`} className="border rounded p-2 bg-slate-50">
-                      <p className="font-medium">{new Date(slot.startTime).toLocaleString()}</p>
+                      <p className="font-medium">{formatDateTime(slot.startTime)}</p>
                       <p className="text-xs text-slate-800">Driver: {driverName}</p>
                     </li>
                   );
@@ -115,7 +116,7 @@ export default function BookingsPage() {
                   const studentName = students.find((student) => student.id === booking.studentId)?.fullName ?? 'Student';
                   return (
                     <li key={booking.id} className="border rounded p-2 bg-slate-50">
-                      <p className="font-medium">{new Date(booking.startTime).toLocaleString()}</p>
+                      <p className="font-medium">{formatDateTime(booking.startTime)}</p>
                       <p className="text-xs text-slate-800">{studentName} with {driverName}</p>
                       <p className="text-xs text-slate-800">Status: {booking.status}</p>
                     </li>

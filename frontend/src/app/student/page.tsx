@@ -15,6 +15,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { apiFetch, getErrorMessage } from '../apiClient';
 import { PageLoading } from '../components/LoadingSpinner';
 import { SchoolSelectorBanner } from '../components/SchoolSelectorBanner';
+import { formatDateTime, formatDate, formatTime, todayDateString } from '../utils/timezone';
 
 type StudentProfile = {
   id: number;
@@ -144,8 +145,7 @@ export default function StudentPage() {
       const driver = driverResults.find((entry) => entry.active) ?? driverResults[0];
       const pickup = addressResults.find((address) => address.isDefaultPickup) ?? (addressResults.length > 0 ? addressResults[0] : undefined);
       const dropoff = addressResults.find((address) => address.isDefaultDropoff) ?? (addressResults.length > 1 ? addressResults[1] : pickup);
-      const today = new Date();
-      const dateParam = today.toISOString().slice(0, 10);
+      const dateParam = todayDateString();
 
       setSlotQuery({
         driverId: driver?.id ? String(driver.id) : '',
@@ -713,7 +713,7 @@ export default function StudentPage() {
                   {suggestedSlots.map((slot) => (
                     <li key={`${slot.driverId}-${slot.startTime}`} className="flex items-center justify-between p-2 bg-slate-50 rounded border">
                       <div>
-                        <span className="text-sm font-medium text-slate-800">{new Date(slot.startTime).toLocaleString()}</span>
+                        <span className="text-sm font-medium text-slate-800">{formatDateTime(slot.startTime)}</span>
                         <span className="text-xs text-slate-800 ml-2">with {drivers.find(d => d.id === slot.driverId)?.fullName ?? 'Instructor'}</span>
                       </div>
                       <button
@@ -744,7 +744,7 @@ export default function StudentPage() {
                 <li key={booking.id} className="border rounded p-3 bg-slate-50 space-y-2">
                   <div className="flex justify-between items-center">
                     <div>
-                      <p className="font-medium text-slate-800">{new Date(booking.startTime).toLocaleString()}</p>
+                      <p className="font-medium text-slate-800">{formatDateTime(booking.startTime)}</p>
                       <p className="text-xs text-slate-800">Status: {booking.status}</p>
                     </div>
                     <p className="text-xs text-slate-800">
@@ -806,9 +806,9 @@ export default function StudentPage() {
                 <li key={booking.id} className="border rounded p-3 bg-slate-50">
                   <div className="flex justify-between items-center">
                     <div>
-                      <p className="font-medium text-slate-800">{new Date(booking.startTime).toLocaleDateString()}</p>
+                      <p className="font-medium text-slate-800">{formatDate(booking.startTime)}</p>
                       <p className="text-xs text-slate-800">
-                        {new Date(booking.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {formatTime(booking.startTime)}
                         {' with '}
                         {drivers.find((d) => d.id === booking.driverId)?.fullName ?? 'Unknown'}
                       </p>

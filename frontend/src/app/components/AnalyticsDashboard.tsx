@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { apiFetch } from '../apiClient';
 import { SummaryCard } from './SummaryCard';
+import { formatDateCustom, formatDateTime } from '../utils/timezone';
 
 type AnalyticsSummary = {
     totalDrivers: number;
@@ -250,7 +251,7 @@ export function AnalyticsDashboard({ schoolId, token, activeTab, onTabChange }: 
                                     return (
                                         <div key={week.weekStart} className="flex items-center gap-3">
                                             <span className="text-xs text-slate-800 w-24">
-                                                {new Date(week.weekStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                                {formatDateCustom(week.weekStart, { month: 'short', day: 'numeric' })}
                                             </span>
                                             <div className="flex-1 flex h-6 rounded overflow-hidden bg-slate-100">
                                                 {week.completed > 0 && (
@@ -334,7 +335,7 @@ export function AnalyticsDashboard({ schoolId, token, activeTab, onTabChange }: 
                             {auditLogs.map((log) => (
                                 <li key={log.id} className="flex items-start gap-3 text-sm border-b border-slate-100 pb-2">
                                     <span className="text-slate-400 text-xs whitespace-nowrap">
-                                        {new Date(log.createdAt).toLocaleString()}
+                                        {formatDateTime(log.createdAt)}
                                     </span>
                                     <span className="text-slate-800">
                                         <strong className="text-slate-800">{log.action}</strong>

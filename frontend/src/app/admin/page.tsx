@@ -11,6 +11,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { apiFetch, ApiError, getErrorMessage } from '../apiClient';
 import { PageLoading } from '../components/LoadingSpinner';
 import { SchoolSelectorBanner } from '../components/SchoolSelectorBanner';
+import { formatDateTime, formatDate } from '../utils/timezone';
 
 type SchoolSettings = {
   id: number;
@@ -546,7 +547,7 @@ export default function AdminPage() {
                       <div>
                         <p className="font-medium">{holiday.driverName}</p>
                         <p className="text-xs text-slate-800">
-                          {new Date(holiday.date).toLocaleDateString()}
+                          {formatDate(holiday.date + 'T00:00:00')}
                         </p>
                       </div>
                       <span className="text-xs text-red-600 bg-red-100 px-2 py-1 rounded">⛔ Off</span>
@@ -582,7 +583,7 @@ export default function AdminPage() {
                             {invite.fullName || 'No name'} • {invite.role}
                           </p>
                           <p className="text-xs text-slate-800">
-                            Expires: {new Date(invite.expiresAt).toLocaleDateString()}
+                            Expires: {formatDate(invite.expiresAt)}
                           </p>
                         </div>
                         <div className="flex gap-2">
@@ -690,7 +691,7 @@ export default function AdminPage() {
                                 <p className="text-slate-800">Expiry Date</p>
                                 <p className="font-medium">
                                   {selectedStudent.licenceExpiryDate
-                                    ? new Date(selectedStudent.licenceExpiryDate).toLocaleDateString()
+                                    ? formatDate(selectedStudent.licenceExpiryDate)
                                     : 'Not provided'}
                                 </p>
                               </div>
@@ -918,7 +919,7 @@ export default function AdminPage() {
                           {studentName} with {driverName}
                         </p>
                         <p className="text-xs text-slate-800">{booking.status}</p>
-                        <p className="text-xs text-slate-800">Starts at {new Date(booking.startTime).toLocaleString()}</p>
+                        <p className="text-xs text-slate-800">Starts at {formatDateTime(booking.startTime)}</p>
                       </div>
                     );
                   })}
@@ -938,7 +939,7 @@ export default function AdminPage() {
                       >
                         {bookings.map((booking) => (
                           <option key={booking.id} value={booking.id}>
-                            #{booking.id} · {new Date(booking.startTime).toLocaleString()}
+                            #{booking.id} · {formatDateTime(booking.startTime)}
                           </option>
                         ))}
                       </select>
@@ -978,7 +979,7 @@ export default function AdminPage() {
                       >
                         {bookings.map((booking) => (
                           <option key={booking.id} value={booking.id}>
-                            #{booking.id} · {new Date(booking.startTime).toLocaleString()}
+                            #{booking.id} · {formatDateTime(booking.startTime)}
                           </option>
                         ))}
                       </select>
