@@ -22,7 +22,7 @@ import {
   updateStudentProfile,
 } from './repositories/studentProfiles';
 import { createAddress, getAddressById, getAddressesByIds, listAddressesForStudent, listAddressesForStudents, updateAddress } from './repositories/studentAddresses';
-import { cancelBooking, completeBooking, createBooking, createBookingAtomic, getBookingById, listBookings, updateBooking, rescheduleBookingAtomic, countScheduledBookingsForStudentOnDate, getTotalBookedHoursForStudent, checkBookingOverlap } from './repositories/bookings';
+import { cancelBooking, completeBooking, createBooking, createBookingAtomic, getBookingById, listBookings, updateBooking, rescheduleBookingAtomic, countScheduledBookingsForStudentOnDate, getTotalBookedHoursForStudent } from './repositories/bookings';
 import { createAvailability, deleteAvailability, listAvailability, getDriverHolidaysForSchool } from './repositories/driverAvailability';
 import { getSchoolSettings, upsertSchoolSettings } from './repositories/schoolSettings';
 import { UserRole } from './models';
@@ -32,7 +32,7 @@ import { buildGoogleMapsTravelCalculatorFromEnv } from './services/travelProvide
 import { issueLocalJwt } from './services/jwtIssuer';
 import { verifyJwtFromRequest } from './services/jwtVerifier';
 import { hashPassword } from './services/password';
-import { sendInvitationEmail, sendBookingConfirmationEmail, sendBookingCancellationEmail, sendDriverBookingNotification, sendBookingRescheduleEmail } from './services/email';
+import { sendInvitationEmail, sendBookingConfirmationEmail, sendBookingCancellationEmail, sendDriverBookingNotification, sendDriverCancellationNotification, sendBookingRescheduleEmail } from './services/email';
 
 async function resolveSchoolContext(req: AuthenticatedRequest, res: express.Response): Promise<number | null> {
   const requestedSchoolId = Number(req.params.schoolId);
@@ -2179,6 +2179,22 @@ export function createApp() {
                 pickupAddress: pickupAddr,
                 dropoffAddress: dropoffAddr,
               });
+            }
+
+            // Notify the driver about the cancellation
+            const driverProfile = await getDriverProfileById(booking.driverId, schoolId);
+            const driverUser = driverProfile ? await getUserById(driverProfile.userId) : null;
+            if (driverUser?.email && driverProfile && student) {
+              await sendDriverCancellationNotification(
+                driverUser.email,
+                driverProfile.fullName,
+                student.fullName,
+                lessonDate,
+                lessonTime,
+                pickupAddr,
+                dropoffAddr,
+                school?.name || 'Driving School',
+              );
             }
           } catch (emailError) {
             console.error('Failed to send cancellation email:', emailError);

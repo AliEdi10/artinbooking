@@ -251,6 +251,60 @@ export async function sendBookingCancellationEmail(params: Omit<BookingEmailPara
   }
 }
 
+export async function sendDriverCancellationNotification(
+  to: string,
+  rawDriverName: string,
+  rawStudentName: string,
+  rawLessonDate: string,
+  rawLessonTime: string,
+  rawPickupAddress: string,
+  rawDropoffAddress: string,
+  rawSchoolName: string,
+): Promise<void> {
+  const driverName = escapeHtml(rawDriverName);
+  const studentName = escapeHtml(rawStudentName);
+  const lessonDate = escapeHtml(rawLessonDate);
+  const lessonTime = escapeHtml(rawLessonTime);
+  const pickupAddress = escapeHtml(rawPickupAddress);
+  const dropoffAddress = escapeHtml(rawDropoffAddress);
+  const schoolName = escapeHtml(rawSchoolName);
+
+  if (!process.env.RESEND_API_KEY) {
+    console.error('RESEND_API_KEY is not set! Driver cancellation notification will not be sent.');
+    return;
+  }
+
+  try {
+    await getResend().emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject: `❌ Lesson Cancelled - ${lessonDate} at ${lessonTime}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #dc2626;">❌ Lesson Cancelled</h2>
+          <p>Hi ${driverName},</p>
+          <p>A lesson has been cancelled.</p>
+
+          <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin: 20px 0;">
+            <p style="margin: 4px 0;"><strong>Student:</strong> ${studentName}</p>
+            <p style="margin: 4px 0;"><strong>Date:</strong> ${lessonDate}</p>
+            <p style="margin: 4px 0;"><strong>Time:</strong> ${lessonTime}</p>
+            <p style="margin: 4px 0;"><strong>Pickup:</strong> ${pickupAddress}</p>
+            <p style="margin: 4px 0;"><strong>Drop-off:</strong> ${dropoffAddress}</p>
+          </div>
+
+          <p style="color: #6b7280; font-size: 12px; margin-top: 32px;">
+            - ${schoolName}
+          </p>
+        </div>
+      `,
+    });
+    console.log(`Driver cancellation notification sent to ${to}`);
+  } catch (error) {
+    console.error('Failed to send driver cancellation notification:', error);
+  }
+}
+
 export async function sendDriverBookingNotification(
   to: string,
   rawDriverName: string,
