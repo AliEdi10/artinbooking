@@ -129,6 +129,7 @@ function DriverPageContent() {
   // Phase 4: Confirmation dialog state
   const [confirmCancel, setConfirmCancel] = useState<{ bookingId: number; studentName: string } | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [markingCompleted, setMarkingCompleted] = useState(false);
   const [confirmDeleteSlot, setConfirmDeleteSlot] = useState<{ id: number; date: string } | null>(null);
   const [confirmDeleteBlock, setConfirmDeleteBlock] = useState<{ id: number; date: string } | null>(null);
 
@@ -591,7 +592,8 @@ function DriverPageContent() {
   }
 
   async function markCompleted(bookingId: number) {
-    if (!token || !schoolId) return;
+    if (!token || !schoolId || markingCompleted) return;
+    setMarkingCompleted(true);
     const toastId = toast.loading('Marking lesson as completed...');
     try {
       await apiFetch(`/schools/${schoolId}/bookings/${bookingId}/complete`, token, {
@@ -601,6 +603,8 @@ function DriverPageContent() {
       toast.success('Lesson marked as completed!', { id: toastId });
     } catch (err) {
       toast.error(getErrorMessage(err), { id: toastId });
+    } finally {
+      setMarkingCompleted(false);
     }
   }
 
@@ -664,10 +668,11 @@ function DriverPageContent() {
                         </div>
                         <div className="flex gap-2">
                           <button
-                            className="px-3 py-1 rounded bg-green-600 text-white text-xs hover:bg-green-500"
+                            className="px-3 py-1 rounded bg-green-600 text-white text-xs hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={markingCompleted}
                             onClick={() => markCompleted(b.id)}
                           >
-                            Mark Completed
+                            {markingCompleted ? 'Completing...' : 'Mark Completed'}
                           </button>
                           <button
                             className="px-3 py-1 rounded bg-red-600 text-white text-xs hover:bg-red-500"
@@ -994,11 +999,12 @@ function DriverPageContent() {
                             Cancel
                           </button>
                           <button
-                            className="px-3 py-1 rounded bg-green-600 text-white hover:bg-green-500 min-h-[32px]"
+                            className="px-3 py-1 rounded bg-green-600 text-white hover:bg-green-500 min-h-[32px] disabled:opacity-50 disabled:cursor-not-allowed"
                             type="button"
+                            disabled={markingCompleted}
                             onClick={() => markCompleted(lesson.id)}
                           >
-                            ✓ Completed
+                            {markingCompleted ? 'Completing...' : '✓ Completed'}
                           </button>
                         </div>
                       </li>

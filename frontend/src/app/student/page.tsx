@@ -84,6 +84,7 @@ export default function StudentPage() {
   const [confirmCancelBooking, setConfirmCancelBooking] = useState<number | null>(null);
   const [isCancellingBooking, setIsCancellingBooking] = useState(false);
   const [bookingInProgress, setBookingInProgress] = useState(false);
+  const [isRescheduling, setIsRescheduling] = useState(false);
 
   async function fetchSlots(driverId: number, pickupId: number, dropoffId: number, date: string) {
     if (!token || !schoolId) return;
@@ -252,7 +253,8 @@ export default function StudentPage() {
   }
 
   async function rescheduleBooking(bookingId: number) {
-    if (!token || !schoolId || !reschedule[bookingId]) return;
+    if (!token || !schoolId || !reschedule[bookingId] || isRescheduling) return;
+    setIsRescheduling(true);
     const toastId = toast.loading('Rescheduling...');
     try {
       await apiFetch(`/schools/${schoolId}/bookings/${bookingId}`, token, {
@@ -265,6 +267,8 @@ export default function StudentPage() {
       toast.success('Booking rescheduled!', { id: toastId });
     } catch (error) {
       toast.error(getErrorMessage(error), { id: toastId });
+    } finally {
+      setIsRescheduling(false);
     }
   }
 
@@ -822,12 +826,12 @@ export default function StudentPage() {
                       min={new Date().toISOString().slice(0, 16)}
                     />
                     <button
-                      className="px-3 py-1 rounded bg-white border border-slate-300 hover:bg-slate-100 min-h-[32px]"
+                      className="px-3 py-1 rounded bg-white border border-slate-300 hover:bg-slate-100 min-h-[32px] disabled:opacity-50 disabled:cursor-not-allowed"
                       type="button"
-                      disabled={!reschedule[booking.id]}
+                      disabled={!reschedule[booking.id] || isRescheduling}
                       onClick={() => rescheduleBooking(booking.id)}
                     >
-                      Reschedule
+                      {isRescheduling ? 'Rescheduling...' : 'Reschedule'}
                     </button>
                     <input
                       className="border rounded px-2 py-1"
