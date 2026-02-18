@@ -1431,8 +1431,8 @@ export function createApp() {
           return;
         }
 
-        // Parse date as UTC to avoid timezone issues
-        const date = new Date(dateParam + 'T00:00:00Z');
+        // Parse date as local time (America/Halifax) so availability windows are correct
+        const date = new Date(dateParam + 'T00:00:00');
         const driver = await getDriverProfileById(driverId, schoolId);
         if (!driver || !driver.active) {
           res.status(404).json({ error: 'Active driver not found for this school' });
