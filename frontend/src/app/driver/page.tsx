@@ -18,7 +18,7 @@ import { createDriverLessonEvent } from '../utils/calendar';
 import { useAuth } from '../auth/AuthProvider';
 import { apiFetch, ApiError, getErrorMessage } from '../apiClient';
 import { PageLoading } from '../components/LoadingSpinner';
-import { formatDateTime, formatDate, formatTime, todayDateString } from '../utils/timezone';
+import { formatDateTime, formatDate, formatTime, todayDateString, toDateStringHalifax } from '../utils/timezone';
 import { SchoolSelectorBanner } from '../components/SchoolSelectorBanner';
 
 type DriverProfile = {
@@ -691,8 +691,8 @@ function DriverPageContent() {
                 🚗 Today&apos;s Schedule
                 <span className="text-xs font-normal bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
                   {upcomingLessons.filter(l => {
-                    const lessonDate = new Date(l.rawStartTime).toDateString();
-                    const today = new Date().toDateString();
+                    const lessonDate = toDateStringHalifax(l.rawStartTime);
+                    const today = todayDateString();
                     return lessonDate === today;
                   }).length} lesson(s) today
                 </span>
@@ -700,8 +700,8 @@ function DriverPageContent() {
               <div className="space-y-3">
                 {upcomingLessons
                   .filter(l => {
-                    const lessonDate = new Date(l.rawStartTime).toDateString();
-                    const today = new Date().toDateString();
+                    const lessonDate = toDateStringHalifax(l.rawStartTime);
+                    const today = todayDateString();
                     return lessonDate === today;
                   })
                   .sort((a, b) => new Date(a.rawStartTime).getTime() - new Date(b.rawStartTime).getTime())
@@ -743,8 +743,8 @@ function DriverPageContent() {
                     </div>
                   ))}
                 {upcomingLessons.filter(l => {
-                  const lessonDate = new Date(l.rawStartTime).toDateString();
-                  const today = new Date().toDateString();
+                  const lessonDate = toDateStringHalifax(l.rawStartTime);
+                  const today = todayDateString();
                   return lessonDate === today;
                 }).length === 0 && (
                     <p className="text-sm text-slate-800 text-center py-2">No lessons scheduled for today.</p>

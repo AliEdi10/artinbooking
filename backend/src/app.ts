@@ -32,7 +32,7 @@ import { buildGoogleMapsTravelCalculatorFromEnv } from './services/travelProvide
 import { issueLocalJwt } from './services/jwtIssuer';
 import { verifyJwtFromRequest } from './services/jwtVerifier';
 import { hashPassword } from './services/password';
-import { sendInvitationEmail, sendBookingConfirmationEmail, sendBookingCancellationEmail, sendDriverBookingNotification } from './services/email';
+import { sendInvitationEmail, sendBookingConfirmationEmail, sendBookingCancellationEmail, sendDriverBookingNotification, sendBookingRescheduleEmail } from './services/email';
 
 async function resolveSchoolContext(req: AuthenticatedRequest, res: express.Response): Promise<number | null> {
   const requestedSchoolId = Number(req.params.schoolId);
@@ -1782,7 +1782,7 @@ export function createApp() {
           pickupLocation,
           dropoffLocation,
           schoolSettings: settings,
-          availabilities: driverAvailabilities.filter((entry) => entry.date.toDateString() === startTime.toDateString()),
+          availabilities: driverAvailabilities.filter((entry) => entry.date.toISOString().slice(0, 10) === startTime.toISOString().slice(0, 10)),
         };
 
         let availableSlots = await computeAvailableSlots(availabilityRequest, travelCalculator);
@@ -1988,10 +1988,13 @@ export function createApp() {
           }
 
           // Atomic reschedule: overlap check + update in one transaction
+          const rescheduleBuffer =
+            driver.bufferMinutesBetweenLessons ?? settings?.defaultBufferMinutesBetweenLessons ?? 0;
           try {
             const rescheduled = await rescheduleBookingAtomic(
               bookingId, schoolId, driverId,
               newStart.toISOString(), newEnd.toISOString(),
+              rescheduleBuffer,
             );
             if (!rescheduled) {
               res.status(404).json({ error: 'Booking not found or not in scheduled status' });
@@ -2008,6 +2011,55 @@ export function createApp() {
             } else {
               res.json(rescheduled);
             }
+
+            // Send reschedule notification emails (non-blocking)
+            (async () => {
+              try {
+                const school = await getDrivingSchoolById(schoolId);
+                const studentProfile = await getStudentProfileById(existing.studentId, schoolId);
+                const driverProfile = await getDriverProfileById(driverId, schoolId);
+                const studentUser = studentProfile ? await getUserById(studentProfile.userId) : null;
+                const driverUser = driverProfile ? await getUserById(driverProfile.userId) : null;
+
+                const lessonDate = newStart.toLocaleDateString('en-US', {
+                  timeZone: 'America/Halifax', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+                });
+                const lessonTime = newStart.toLocaleTimeString('en-US', {
+                  timeZone: 'America/Halifax', hour: '2-digit', minute: '2-digit'
+                });
+
+                const pickAddr = pickupAddress ? `${pickupAddress.line1}, ${pickupAddress.city}` : 'N/A';
+                const dropAddr = dropoffAddress ? `${dropoffAddress.line1}, ${dropoffAddress.city}` : 'N/A';
+
+                if (studentUser?.email && studentProfile && driverProfile) {
+                  await sendBookingRescheduleEmail({
+                    to: studentUser.email,
+                    studentName: studentProfile.fullName,
+                    driverName: driverProfile.fullName,
+                    schoolName: school?.name || 'Driving School',
+                    lessonDate,
+                    lessonTime,
+                    pickupAddress: pickAddr,
+                    dropoffAddress: dropAddr,
+                  });
+                }
+
+                if (driverUser?.email && driverProfile && studentProfile) {
+                  await sendDriverBookingNotification(
+                    driverUser.email,
+                    driverProfile.fullName,
+                    studentProfile.fullName,
+                    lessonDate,
+                    lessonTime,
+                    pickAddr,
+                    dropAddr,
+                    school?.name || 'Driving School',
+                  );
+                }
+              } catch (emailError) {
+                console.error('Failed to send reschedule notification emails:', emailError);
+              }
+            })();
           } catch (err) {
             if (err instanceof Error && err.message === 'BOOKING_OVERLAP') {
               res.status(409).json({ error: 'Rescheduled time conflicts with an existing booking' });

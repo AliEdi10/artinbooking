@@ -28,11 +28,14 @@ export function formatDateCustom(date: Date | string, options: Intl.DateTimeForm
   return new Date(date).toLocaleDateString('en-US', { timeZone: APP_TIMEZONE, ...options });
 }
 
+/** Get any date as YYYY-MM-DD string in Halifax timezone */
+export function toDateStringHalifax(date: Date | string): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: APP_TIMEZONE, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(date));
+}
+
 /** Get today's date as YYYY-MM-DD string in Halifax timezone */
 export function todayDateString(): string {
-  const now = new Date();
-  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: APP_TIMEZONE, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
-  return parts; // en-CA formats as YYYY-MM-DD
+  return toDateStringHalifax(new Date());
 }
 
 /** Format time with custom options */

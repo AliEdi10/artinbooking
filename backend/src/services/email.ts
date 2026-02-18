@@ -305,6 +305,70 @@ export async function sendDriverBookingNotification(
   }
 }
 
+export async function sendBookingRescheduleEmail(params: BookingEmailParams): Promise<void> {
+  const { to } = params;
+  const studentName = escapeHtml(params.studentName);
+  const driverName = escapeHtml(params.driverName);
+  const schoolName = escapeHtml(params.schoolName);
+  const lessonDate = escapeHtml(params.lessonDate);
+  const lessonTime = escapeHtml(params.lessonTime);
+  const pickupAddress = escapeHtml(params.pickupAddress);
+  const dropoffAddress = escapeHtml(params.dropoffAddress);
+
+  if (!process.env.RESEND_API_KEY) {
+    console.error('RESEND_API_KEY is not set! Reschedule email will not be sent.');
+    return;
+  }
+
+  try {
+    await getResend().emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject: `🔄 Lesson Rescheduled - ${lessonDate} at ${lessonTime}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #d97706;">🔄 Your Lesson Has Been Rescheduled</h2>
+          <p>Hi ${studentName},</p>
+          <p>Your driving lesson with <strong>${schoolName}</strong> has been rescheduled to a new time.</p>
+
+          <div style="background-color: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 16px; margin: 20px 0;">
+            <h3 style="margin: 0 0 12px 0; color: #92400e;">📅 New Lesson Details</h3>
+            <p style="margin: 4px 0;"><strong>Date:</strong> ${lessonDate}</p>
+            <p style="margin: 4px 0;"><strong>Time:</strong> ${lessonTime}</p>
+            <p style="margin: 4px 0;"><strong>Instructor:</strong> ${driverName}</p>
+            <p style="margin: 4px 0;"><strong>Pickup:</strong> ${pickupAddress}</p>
+            <p style="margin: 4px 0;"><strong>Drop-off:</strong> ${dropoffAddress}</p>
+          </div>
+
+          <div style="background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 16px; margin: 20px 0;">
+            <h3 style="margin: 0 0 8px 0; color: #dc2626;">⚠️ IMPORTANT - Please Read!</h3>
+            <p style="margin: 0; font-weight: bold; color: #991b1b;">
+              You MUST bring your PHYSICAL driver's license (learner's permit) to your lesson.
+            </p>
+            <p style="margin: 8px 0 0 0; color: #991b1b;">
+              A digital copy, photo, or screenshot is <strong>NOT acceptable</strong>.
+              Without your physical license, your lesson will be cancelled and you may be charged.
+            </p>
+          </div>
+
+          <p style="color: #6b7280; font-size: 14px;">
+            Need to cancel? Log in to your account at
+            <a href="${FRONTEND_URL}">${FRONTEND_URL}</a>
+          </p>
+
+          <p style="color: #6b7280; font-size: 12px; margin-top: 32px;">
+            See you on the road! 🚗<br>
+            - ${schoolName}
+          </p>
+        </div>
+      `,
+    });
+    console.log(`Reschedule email sent to ${to}`);
+  } catch (error) {
+    console.error('Failed to send reschedule email:', error);
+  }
+}
+
 // Lesson reminder email types
 export interface LessonReminderEmailParams {
   to: string;

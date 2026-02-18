@@ -83,6 +83,7 @@ export default function StudentPage() {
   const [uploadingLicence, setUploadingLicence] = useState(false);
   const [confirmCancelBooking, setConfirmCancelBooking] = useState<number | null>(null);
   const [isCancellingBooking, setIsCancellingBooking] = useState(false);
+  const [bookingInProgress, setBookingInProgress] = useState(false);
 
   async function fetchSlots(driverId: number, pickupId: number, dropoffId: number, date: string) {
     if (!token || !schoolId) return;
@@ -214,7 +215,7 @@ export default function StudentPage() {
   }
 
   async function createBooking(startTime: string) {
-    if (!token || !schoolId || !student) return;
+    if (!token || !schoolId || !student || bookingInProgress) return;
     const driverId = Number(bookingForm.driverId || suggestedSlots[0]?.driverId);
     const pickupId = Number(bookingForm.pickupId);
     const dropoffId = Number(bookingForm.dropoffId);
@@ -222,6 +223,7 @@ export default function StudentPage() {
       toast.error('Please select a driver, pickup address, and dropoff address before booking.');
       return;
     }
+    setBookingInProgress(true);
     const toastId = toast.loading('Creating booking...');
     try {
       await apiFetch(`/schools/${schoolId}/bookings`, token, {
@@ -244,6 +246,8 @@ export default function StudentPage() {
       if (driverId && pickupId && dropoffId && slotQuery.date) {
         fetchSlots(driverId, pickupId, dropoffId, slotQuery.date);
       }
+    } finally {
+      setBookingInProgress(false);
     }
   }
 
@@ -765,11 +769,12 @@ export default function StudentPage() {
                         <span className="text-xs text-slate-800 ml-2">with {drivers.find(d => d.id === slot.driverId)?.fullName ?? 'Instructor'}</span>
                       </div>
                       <button
-                        className="px-4 py-2 rounded bg-slate-900 text-white hover:bg-slate-800 text-sm font-medium"
+                        className="px-4 py-2 rounded bg-slate-900 text-white hover:bg-slate-800 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                         type="button"
+                        disabled={bookingInProgress}
                         onClick={() => createBooking(slot.startTime)}
                       >
-                        Book This Slot
+                        {bookingInProgress ? 'Booking...' : 'Book This Slot'}
                       </button>
                     </li>
                   ))}

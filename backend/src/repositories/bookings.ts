@@ -319,21 +319,23 @@ export async function rescheduleBookingAtomic(
   driverId: number,
   newStartTime: string,
   newEndTime: string,
+  bufferMinutes = 0,
 ): Promise<Booking | null> {
   return withTransaction(async (client) => {
-    const overlapResult = await client.query<{ count: string }>(
-      `SELECT COUNT(*) AS count FROM bookings
+    // Check for overlap including buffer time, matching createBookingAtomic logic.
+    const overlapResult = await client.query<{ id: number }>(
+      `SELECT id FROM bookings
        WHERE driving_school_id = $1
          AND driver_id = $2
          AND status = 'scheduled'
          AND id != $3
-         AND start_time < $5
-         AND end_time > $4
+         AND start_time < $5::timestamptz + ($6::integer || ' minutes')::interval
+         AND end_time + ($6::integer || ' minutes')::interval > $4::timestamptz
        FOR UPDATE`,
-      [drivingSchoolId, driverId, id, newStartTime, newEndTime],
+      [drivingSchoolId, driverId, id, newStartTime, newEndTime, bufferMinutes],
     );
 
-    if (Number(overlapResult.rows[0].count) > 0) {
+    if (overlapResult.rowCount && overlapResult.rowCount > 0) {
       throw new Error('BOOKING_OVERLAP');
     }
 
