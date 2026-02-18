@@ -66,9 +66,12 @@ function bookingWithLocations(
 }
 
 describe('computeAvailableSlots', () => {
+  // All times use local (Halifax) timezone — no Z suffix — to match the
+  // production TZ=America/Halifax setting configured in backend/src/index.ts.
+
   it('returns 15-minute grid slots for an empty day', async () => {
     const driver = driverProfile();
-    const date = new Date('2024-05-01T00:00:00Z');
+    const date = new Date('2024-05-01T00:00:00');
     const slots = await computeAvailableSlots(
       {
         date,
@@ -80,8 +83,8 @@ describe('computeAvailableSlots', () => {
       travelZero,
     );
 
-    const firstSlot = new Date('2024-05-01T09:00:00Z').getTime();
-    const lastSlot = new Date('2024-05-01T16:00:00Z').getTime();
+    const firstSlot = new Date('2024-05-01T09:00:00').getTime();
+    const lastSlot = new Date('2024-05-01T16:00:00').getTime();
     expect(slots[0].getTime()).toBe(firstSlot);
     expect(slots[slots.length - 1].getTime()).toBe(lastSlot);
     // 9am to 4pm inclusive on 15 minute grid is 29 slots
@@ -90,11 +93,11 @@ describe('computeAvailableSlots', () => {
 
   it('skips times that overlap existing bookings', async () => {
     const driver = driverProfile({ workDayEnd: '12:00' });
-    const date = new Date('2024-05-02T00:00:00Z');
+    const date = new Date('2024-05-02T00:00:00');
     const bookings = [
       bookingWithLocations(
-        '2024-05-02T10:00:00Z',
-        '2024-05-02T11:00:00Z',
+        '2024-05-02T10:00:00',
+        '2024-05-02T11:00:00',
         baseLocation,
         baseLocation,
       ),
@@ -105,20 +108,38 @@ describe('computeAvailableSlots', () => {
       travelZero,
     );
 
-    expect(slots.find((slot) => slot.toISOString() === '2024-05-02T10:00:00.000Z')).toBeUndefined();
-    expect(slots.some((slot) => slot.toISOString() === '2024-05-02T11:00:00.000Z')).toBe(true);
+    const occupiedTime = new Date('2024-05-02T10:00:00').toISOString();
+    const freeTime = new Date('2024-05-02T11:00:00').toISOString();
+    expect(slots.find((slot) => slot.toISOString() === occupiedTime)).toBeUndefined();
+    expect(slots.some((slot) => slot.toISOString() === freeTime)).toBe(true);
   });
 
   it('filters out slots that violate travel constraints', async () => {
     const driver = driverProfile({ maxSegmentTravelTimeMin: 10 });
-    const date = new Date('2024-05-03T00:00:00Z');
+    const date = new Date('2024-05-03T00:00:00');
+    // Place bookings at day boundaries so the candidate gap is between bookings
+    // (not at day start/end where travel time is intentionally skipped).
+    const bookings = [
+      bookingWithLocations(
+        '2024-05-03T09:00:00',
+        '2024-05-03T10:00:00',
+        baseLocation,
+        baseLocation,
+      ),
+      bookingWithLocations(
+        '2024-05-03T16:00:00',
+        '2024-05-03T17:00:00',
+        baseLocation,
+        baseLocation,
+      ),
+    ];
     const slowTravel: TravelCalculator = {
       distanceBetween: () => 5,
       travel: () => ({ timeMinutes: 30, distanceKm: 5 }),
     };
 
     const slots = await computeAvailableSlots(
-      { date, driverProfile: driver, bookings: [], pickupLocation: baseLocation, dropoffLocation: baseLocation },
+      { date, driverProfile: driver, bookings, pickupLocation: baseLocation, dropoffLocation: baseLocation },
       slowTravel,
     );
 
