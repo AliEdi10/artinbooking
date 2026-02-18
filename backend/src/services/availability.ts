@@ -261,9 +261,17 @@ export async function computeAvailableSlots(
     return [];
   }
 
+  // Detect window boundaries: driver is expected to be at the location by
+  // window start and doesn't need to return to service center before window end.
+  // Travel time only applies between bookings, not at day boundaries.
+  const windowStartTimes = new Set(openWindows.map((w) => w.start.getTime()));
+  const windowEndTimes = new Set(openWindows.map((w) => w.end.getTime()));
+
   // eslint-disable-next-line no-restricted-syntax
   for (const gap of gaps) {
     if (gap.gapEndTime <= gap.gapStartTime) continue;
+    const isFirstInWindow = windowStartTimes.has(gap.gapStartTime.getTime());
+    const isLastInWindow = windowEndTimes.has(gap.gapEndTime.getTime());
     let candidate = roundUpToGrid(addMinutes(gap.gapStartTime, bufferMinutes));
 
     while (candidate < gap.gapEndTime) {
@@ -279,22 +287,26 @@ export async function computeAvailableSlots(
       // eslint-disable-next-line no-await-in-loop
       const travelNext = await travel.travel(dropoffLocation, gap.endLocation, candidateEnd);
 
+      // At day boundaries, skip travel time — the driver handles commute on their own time.
+      // Between bookings, travel time is enforced so slots don't overlap.
+      const effectivePrevTime = isFirstInWindow ? 0 : travelPrev.timeMinutes;
+      const effectiveNextTime = isLastInWindow ? 0 : travelNext.timeMinutes;
+
       const startsAfterGap =
         candidate.getTime() >=
-        addMinutes(gap.gapStartTime, bufferMinutes + travelPrev.timeMinutes).getTime();
+        addMinutes(gap.gapStartTime, bufferMinutes + effectivePrevTime).getTime();
       const endsBeforeNext =
-        addMinutes(candidateEnd, bufferMinutes + travelNext.timeMinutes).getTime() <= gap.gapEndTime.getTime();
+        addMinutes(candidateEnd, bufferMinutes + effectiveNextTime).getTime() <= gap.gapEndTime.getTime();
 
       const segmentLimitsSatisfied =
-        travelPrev.timeMinutes <= maxSegmentTime &&
-        travelPrev.distanceKm <= maxSegmentDistance &&
-        travelNext.timeMinutes <= maxSegmentTime &&
-        travelNext.distanceKm <= maxSegmentDistance;
+        (isFirstInWindow || (travelPrev.timeMinutes <= maxSegmentTime && travelPrev.distanceKm <= maxSegmentDistance)) &&
+        (isLastInWindow || (travelNext.timeMinutes <= maxSegmentTime && travelNext.distanceKm <= maxSegmentDistance));
 
       const adjustedTotals = {
-        time: baselineTotals.time - gap.baselineTravelTime + travelPrev.timeMinutes + travelNext.timeMinutes,
+        time: baselineTotals.time - gap.baselineTravelTime + effectivePrevTime + effectiveNextTime,
         distance:
-          baselineTotals.distance - gap.baselineTravelDistance + travelPrev.distanceKm + travelNext.distanceKm,
+          baselineTotals.distance - gap.baselineTravelDistance +
+          (isFirstInWindow ? 0 : travelPrev.distanceKm) + (isLastInWindow ? 0 : travelNext.distanceKm),
       };
 
       const dailyCapsSatisfied =
