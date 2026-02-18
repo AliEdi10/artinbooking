@@ -272,11 +272,15 @@ export async function computeAvailableSlots(
     if (gap.gapEndTime <= gap.gapStartTime) continue;
     const isFirstInWindow = windowStartTimes.has(gap.gapStartTime.getTime());
     const isLastInWindow = windowEndTimes.has(gap.gapEndTime.getTime());
-    let candidate = roundUpToGrid(addMinutes(gap.gapStartTime, bufferMinutes));
+
+    // Buffer only applies between consecutive lessons, not at day boundaries.
+    const startBuffer = isFirstInWindow ? 0 : bufferMinutes;
+    const endBuffer = isLastInWindow ? 0 : bufferMinutes;
+    let candidate = roundUpToGrid(addMinutes(gap.gapStartTime, startBuffer));
 
     while (candidate < gap.gapEndTime) {
       const candidateEnd = addMinutes(candidate, lessonDuration);
-      if (candidateEnd.getTime() + bufferMinutes * 60 * 1000 > gap.gapEndTime.getTime()) {
+      if (candidateEnd.getTime() + endBuffer * 60 * 1000 > gap.gapEndTime.getTime()) {
         break;
       }
 
@@ -294,9 +298,9 @@ export async function computeAvailableSlots(
 
       const startsAfterGap =
         candidate.getTime() >=
-        addMinutes(gap.gapStartTime, bufferMinutes + effectivePrevTime).getTime();
+        addMinutes(gap.gapStartTime, startBuffer + effectivePrevTime).getTime();
       const endsBeforeNext =
-        addMinutes(candidateEnd, bufferMinutes + effectiveNextTime).getTime() <= gap.gapEndTime.getTime();
+        addMinutes(candidateEnd, endBuffer + effectiveNextTime).getTime() <= gap.gapEndTime.getTime();
 
       const segmentLimitsSatisfied =
         (isFirstInWindow || (travelPrev.timeMinutes <= maxSegmentTime && travelPrev.distanceKm <= maxSegmentDistance)) &&
