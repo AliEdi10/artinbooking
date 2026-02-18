@@ -192,8 +192,8 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking>
 export async function createBookingAtomic(input: CreateBookingInput): Promise<Booking> {
   return withTransaction(async (client) => {
     // Check for overlap within the transaction (with row-level lock)
-    const overlapResult = await client.query<{ count: string }>(
-      `SELECT COUNT(*) AS count FROM bookings
+    const overlapResult = await client.query<{ id: number }>(
+      `SELECT id FROM bookings
        WHERE driving_school_id = $1
          AND driver_id = $2
          AND status = 'scheduled'
@@ -203,7 +203,7 @@ export async function createBookingAtomic(input: CreateBookingInput): Promise<Bo
       [input.drivingSchoolId, input.driverId, input.startTime, input.endTime],
     );
 
-    if (Number(overlapResult.rows[0].count) > 0) {
+    if (overlapResult.rowCount && overlapResult.rowCount > 0) {
       throw new Error('BOOKING_OVERLAP');
     }
 
