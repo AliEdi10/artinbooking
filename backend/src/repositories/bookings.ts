@@ -189,18 +189,19 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking>
   return mapBooking(result.rows[0]);
 }
 
-export async function createBookingAtomic(input: CreateBookingInput): Promise<Booking> {
+export async function createBookingAtomic(input: CreateBookingInput, bufferMinutes = 0): Promise<Booking> {
   return withTransaction(async (client) => {
-    // Check for overlap within the transaction (with row-level lock)
+    // Check for overlap within the transaction (with row-level lock).
+    // Buffer time is enforced so back-to-back bookings respect the gap.
     const overlapResult = await client.query<{ id: number }>(
       `SELECT id FROM bookings
        WHERE driving_school_id = $1
          AND driver_id = $2
          AND status = 'scheduled'
-         AND start_time < $4
-         AND end_time > $3
+         AND start_time < $4::timestamptz + ($5::integer || ' minutes')::interval
+         AND end_time + ($5::integer || ' minutes')::interval > $3::timestamptz
        FOR UPDATE`,
-      [input.drivingSchoolId, input.driverId, input.startTime, input.endTime],
+      [input.drivingSchoolId, input.driverId, input.startTime, input.endTime, bufferMinutes],
     );
 
     if (overlapResult.rowCount && overlapResult.rowCount > 0) {

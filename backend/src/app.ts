@@ -1804,6 +1804,9 @@ export function createApp() {
           return;
         }
 
+        const bufferMinutes =
+          driver.bufferMinutesBetweenLessons ?? settings?.defaultBufferMinutesBetweenLessons ?? 0;
+
         let booking;
         try {
           booking = await createBookingAtomic({
@@ -1815,7 +1818,7 @@ export function createApp() {
             startTime: normalizedStart.toISOString(),
             endTime: endTime.toISOString(),
             notes: req.body.notes ?? null,
-          });
+          }, bufferMinutes);
         } catch (err: unknown) {
           if (err instanceof Error && err.message === 'BOOKING_OVERLAP') {
             res.status(409).json({ error: 'This time slot was just booked by someone else. Please choose another slot.' });

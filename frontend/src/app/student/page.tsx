@@ -236,9 +236,14 @@ export default function StudentPage() {
         }),
       });
       await loadStudentContext();
+      setSuggestedSlots([]);
       toast.success('Booking created!', { id: toastId });
     } catch (error) {
       toast.error(getErrorMessage(error), { id: toastId });
+      // Re-fetch slots so stale/booked times are removed
+      if (driverId && pickupId && dropoffId && slotQuery.date) {
+        fetchSlots(driverId, pickupId, dropoffId, slotQuery.date);
+      }
     }
   }
 
