@@ -47,10 +47,10 @@ function addMinutes(date: Date, minutes: number): Date {
 
 function parseTimeForDate(date: Date, timeStr?: string | null): Date {
   const base = new Date(date);
-  base.setUTCHours(0, 0, 0, 0);
+  base.setHours(0, 0, 0, 0);
   if (!timeStr) return base;
   const [hours, minutes] = timeStr.split(':').map((part) => Number(part));
-  base.setUTCHours(hours || 0, minutes || 0, 0, 0);
+  base.setHours(hours || 0, minutes || 0, 0, 0);
   return base;
 }
 
