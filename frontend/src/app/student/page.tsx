@@ -650,6 +650,43 @@ export default function StudentPage() {
               description="Find available lesson times."
               footer={status || ''}
             >
+              {student?.licenceStatus !== 'approved' ? (
+                <div className="text-center py-6">
+                  {!student?.licenceImageUrl && !student?.licenceNumber ? (
+                    <div className="space-y-3">
+                      <div className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center mx-auto">
+                        <span className="text-2xl">&#128196;</span>
+                      </div>
+                      <p className="text-slate-900 font-semibold">Licence required</p>
+                      <p className="text-sm text-slate-600">
+                        Please upload your licence in the Licence & documents section to start booking lessons.
+                      </p>
+                    </div>
+                  ) : student?.licenceStatus === 'rejected' ? (
+                    <div className="space-y-3">
+                      <div className="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mx-auto">
+                        <span className="text-2xl text-red-500">&#10007;</span>
+                      </div>
+                      <p className="text-red-700 font-semibold">Licence rejected</p>
+                      <p className="text-sm text-slate-600">
+                        {student?.licenceRejectionNote
+                          ? `Reason: ${student.licenceRejectionNote}`
+                          : 'Please upload a valid licence image and try again.'}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="w-14 h-14 bg-amber-50 rounded-full flex items-center justify-center mx-auto">
+                        <span className="text-2xl">&#9203;</span>
+                      </div>
+                      <p className="text-amber-700 font-semibold">Licence waiting for approval</p>
+                      <p className="text-sm text-slate-600">
+                        Your licence has been submitted and is being reviewed. You&apos;ll be able to book lessons once an admin approves it.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : (
               <div className="space-y-2 text-sm">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <select
@@ -738,6 +775,7 @@ export default function StudentPage() {
                   ) : null}
                 </ul>
               </div>
+              )}
             </SummaryCard>
           </div>
           <SummaryCard
