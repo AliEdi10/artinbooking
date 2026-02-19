@@ -171,7 +171,8 @@ export default function SuperadminPage() {
     }
 
     async function handleStatusChange(schoolId: number, status: 'active' | 'suspended' | 'deleted') {
-        if (!token) return;
+        if (!token || isSubmitting) return;
+        setIsSubmitting(true);
         const label = status === 'deleted' ? 'Deleting' : status === 'suspended' ? 'Suspending' : 'Activating';
         setActionMessage(`${label} school...`);
         setConfirmAction(null);
@@ -186,6 +187,8 @@ export default function SuperadminPage() {
             setActionMessage(`School ${doneLabel} successfully!`);
         } catch (err) {
             setActionMessage('Unable to update school status.');
+        } finally {
+            setIsSubmitting(false);
         }
     }
 

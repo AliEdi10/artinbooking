@@ -66,6 +66,7 @@ export default function AdminPage() {
   const [isCancellingInvitation, setIsCancellingInvitation] = useState(false);
   const [isSendingInvite, setIsSendingInvite] = useState(false);
   const [isResending, setIsResending] = useState(false);
+  const [isAdminAction, setIsAdminAction] = useState(false);
 
   const [schools, setSchools] = useState<{ id: number; name: string }[]>([]);
 
@@ -333,7 +334,8 @@ export default function AdminPage() {
 
   async function handleUpdateSettings(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!token || !schoolId) return;
+    if (!token || !schoolId || isAdminAction) return;
+    setIsAdminAction(true);
     const toastId = toast.loading('Saving settings...');
     try {
       await apiFetch(`/schools/${schoolId}/settings`, token, {
@@ -378,12 +380,15 @@ export default function AdminPage() {
       toast.success('Settings saved!', { id: toastId });
     } catch (err) {
       toast.error(getErrorMessage(err), { id: toastId });
+    } finally {
+      setIsAdminAction(false);
     }
   }
 
   async function handleReschedule(event: React.FormEvent<HTMLFormElement>, force = false) {
     event.preventDefault();
-    if (!token || !schoolId || !selectedBookingId) return;
+    if (!token || !schoolId || !selectedBookingId || isAdminAction) return;
+    setIsAdminAction(true);
     const toastId = toast.loading('Updating booking...');
     try {
       const patch: Record<string, string | number | boolean> = {};
@@ -411,12 +416,15 @@ export default function AdminPage() {
         return;
       }
       toast.error(getErrorMessage(err), { id: toastId });
+    } finally {
+      setIsAdminAction(false);
     }
   }
 
   async function handleCancel(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!token || !schoolId || !selectedBookingId) return;
+    if (!token || !schoolId || !selectedBookingId || isAdminAction) return;
+    setIsAdminAction(true);
     const toastId = toast.loading('Cancelling booking...');
     try {
       await apiFetch(`/schools/${schoolId}/bookings/${selectedBookingId}/cancel`, token, {
@@ -429,11 +437,14 @@ export default function AdminPage() {
       toast.success('Booking cancelled.', { id: toastId });
     } catch (err) {
       toast.error(getErrorMessage(err), { id: toastId });
+    } finally {
+      setIsAdminAction(false);
     }
   }
 
   async function updateLicenceStatus(studentId: number, newStatus: 'approved' | 'rejected' | 'pending_review', note?: string) {
-    if (!token || !schoolId) return;
+    if (!token || !schoolId || isAdminAction) return;
+    setIsAdminAction(true);
     const toastId = toast.loading(`Updating licence status...`);
     try {
       await apiFetch(`/schools/${schoolId}/students/${studentId}`, token, {
@@ -450,6 +461,8 @@ export default function AdminPage() {
       toast.success(`Licence ${newStatus}!`, { id: toastId });
     } catch (err) {
       toast.error(getErrorMessage(err), { id: toastId });
+    } finally {
+      setIsAdminAction(false);
     }
   }
 
@@ -752,19 +765,22 @@ export default function AdminPage() {
                             <div className="flex flex-col sm:flex-row gap-2 pt-2">
                               <button
                                 onClick={() => updateLicenceStatus(selectedStudent.id, 'approved')}
-                                className="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-lg px-4 py-2 text-sm font-medium"
+                                disabled={isAdminAction}
+                                className="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 ✓ Approve
                               </button>
                               <button
                                 onClick={() => updateLicenceStatus(selectedStudent.id, 'rejected', rejectionNote)}
-                                className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-lg px-4 py-2 text-sm font-medium"
+                                disabled={isAdminAction}
+                                className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 ✗ Reject
                               </button>
                               <button
                                 onClick={() => updateLicenceStatus(selectedStudent.id, 'pending_review')}
-                                className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg px-4 py-2 text-sm font-medium"
+                                disabled={isAdminAction}
+                                className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 ⏳ Pending
                               </button>
@@ -910,9 +926,10 @@ export default function AdminPage() {
                     </div>
                     <button
                       type="submit"
-                      className="w-full bg-slate-900 text-white rounded px-3 py-2 text-sm hover:bg-slate-800"
+                      disabled={isAdminAction}
+                      className="w-full bg-slate-900 text-white rounded px-3 py-2 text-sm hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Save settings
+                      {isAdminAction ? 'Saving...' : 'Save settings'}
                     </button>
                   </form>
                 </SummaryCard>
@@ -979,9 +996,10 @@ export default function AdminPage() {
                       </select>
                       <button
                         type="submit"
-                        className="w-full bg-slate-900 text-white rounded px-3 py-2 hover:bg-slate-800"
+                        disabled={isAdminAction}
+                        className="w-full bg-slate-900 text-white rounded px-3 py-2 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Save new time
+                        {isAdminAction ? 'Saving...' : 'Save new time'}
                       </button>
                     </form>
                     <form className="space-y-2" onSubmit={handleCancel}>
@@ -1005,9 +1023,10 @@ export default function AdminPage() {
                       />
                       <button
                         type="submit"
-                        className="w-full bg-red-600 text-white rounded px-3 py-2 hover:bg-red-500"
+                        disabled={isAdminAction}
+                        className="w-full bg-red-600 text-white rounded px-3 py-2 hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Cancel booking
+                        {isAdminAction ? 'Cancelling...' : 'Cancel booking'}
                       </button>
                     </form>
                   </div>

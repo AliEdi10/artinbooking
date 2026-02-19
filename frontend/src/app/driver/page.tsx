@@ -130,6 +130,7 @@ function DriverPageContent() {
   const [confirmCancel, setConfirmCancel] = useState<{ bookingId: number; studentName: string } | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
   const [markingCompleted, setMarkingCompleted] = useState(false);
+  const [isUpdatingBooking, setIsUpdatingBooking] = useState(false);
   const [confirmDeleteSlot, setConfirmDeleteSlot] = useState<{ id: number; date: string } | null>(null);
   const [confirmDeleteBlock, setConfirmDeleteBlock] = useState<{ id: number; date: string } | null>(null);
 
@@ -543,7 +544,8 @@ function DriverPageContent() {
   }
 
   async function updateBooking(bookingId: number, newStart: string, force = false) {
-    if (!token || !schoolId || !newStart) return;
+    if (!token || !schoolId || !newStart || isUpdatingBooking) return;
+    setIsUpdatingBooking(true);
     const toastId = toast.loading('Rescheduling...');
     try {
       const body: Record<string, string | boolean> = { startTime: new Date(newStart).toISOString() };
@@ -568,6 +570,8 @@ function DriverPageContent() {
         return;
       }
       toast.error(getErrorMessage(err), { id: toastId });
+    } finally {
+      setIsUpdatingBooking(false);
     }
   }
 
@@ -978,12 +982,12 @@ function DriverPageContent() {
                             min={new Date().toISOString().slice(0, 16)}
                           />
                           <button
-                            className="px-3 py-1 rounded bg-white border border-slate-300 hover:bg-slate-100 min-h-[32px]"
+                            className="px-3 py-1 rounded bg-white border border-slate-300 hover:bg-slate-100 min-h-[32px] disabled:opacity-50 disabled:cursor-not-allowed"
                             onClick={() => updateBooking(lesson.id, reschedule[lesson.id])}
                             type="button"
-                            disabled={!reschedule[lesson.id]}
+                            disabled={!reschedule[lesson.id] || isUpdatingBooking}
                           >
-                            Reschedule
+                            {isUpdatingBooking ? 'Rescheduling...' : 'Reschedule'}
                           </button>
                           <input
                             className="border rounded px-2 py-1"

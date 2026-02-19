@@ -176,7 +176,11 @@ router.post('/forgot-password', async (req, res, next) => {
         // Only send email if user exists and has a password (local auth)
         if (user && user.passwordHash) {
             const token = await createPasswordResetToken(user.id);
-            await sendPasswordResetEmail(email, token);
+            try {
+                await sendPasswordResetEmail(email, token);
+            } catch (emailErr) {
+                console.error('Failed to send password reset email:', emailErr);
+            }
         }
 
         // Always return success to prevent user enumeration
