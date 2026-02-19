@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { APP_TIMEZONE } from '../utils/timezone';
+import { APP_TIMEZONE, toDateStringHalifax } from '../utils/timezone';
 
 type Availability = { id: number; date: string; startTime: string; endTime: string; type?: string };
 type Booking = { id: number; driverId: number; studentId: number; startTime: string; status: string };
@@ -16,27 +16,42 @@ interface WeeklyCalendarProps {
 const HOURS = Array.from({ length: 12 }, (_, i) => i + 7); // 7 AM to 6 PM
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-function getWeekDates(baseDate: Date): Date[] {
-    const monday = new Date(baseDate);
+function getWeekDates(baseDate: Date): string[] {
+    // Build week dates as YYYY-MM-DD strings in Halifax timezone
+    const baseDateStr = toDateStringHalifax(baseDate);
+    const [y, m, d] = baseDateStr.split('-').map(Number);
+    const monday = new Date(y, m - 1, d);
     const day = monday.getDay();
-    const diff = monday.getDate() - day + (day === 0 ? -6 : 1);
-    monday.setDate(diff);
-    monday.setHours(0, 0, 0, 0);
+    const diff = day === 0 ? -6 : 1 - day;
+    monday.setDate(monday.getDate() + diff);
 
     return Array.from({ length: 7 }, (_, i) => {
         const date = new Date(monday);
         date.setDate(monday.getDate() + i);
-        return date;
+        const yy = date.getFullYear();
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        const dd = String(date.getDate()).padStart(2, '0');
+        return `${yy}-${mm}-${dd}`;
     });
-}
-
-function formatDate(date: Date): string {
-    return date.toISOString().split('T')[0];
 }
 
 function parseTime(timeStr: string): number {
     const [hours, minutes] = timeStr.split(':').map(Number);
     return hours + minutes / 60;
+}
+
+/** Extract hour + fraction in Halifax timezone from an ISO datetime string */
+function getHalifaxHour(isoStr: string): number {
+    const d = new Date(isoStr);
+    const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: APP_TIMEZONE,
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: false,
+    }).formatToParts(d);
+    const hour = Number(parts.find(p => p.type === 'hour')?.value ?? 0);
+    const minute = Number(parts.find(p => p.type === 'minute')?.value ?? 0);
+    return hour + minute / 60;
 }
 
 export function WeeklyCalendar({ availability, bookings, students }: WeeklyCalendarProps) {
@@ -57,7 +72,7 @@ export function WeeklyCalendar({ availability, bookings, students }: WeeklyCalen
 
         availability.forEach((slot) => {
             const slotDate = slot.date.split('T')[0];
-            const dayIndex = weekDates.findIndex(d => formatDate(d) === slotDate);
+            const dayIndex = weekDates.indexOf(slotDate);
             if (dayIndex === -1) return;
 
             const startHour = parseTime(slot.startTime);
@@ -85,12 +100,11 @@ export function WeeklyCalendar({ availability, bookings, students }: WeeklyCalen
         const blocks: { dayIndex: number; startHour: number; endHour: number; studentName: string; status: string }[] = [];
 
         bookings.forEach((booking) => {
-            const bookingDate = new Date(booking.startTime);
-            const slotDate = formatDate(bookingDate);
-            const dayIndex = weekDates.findIndex(d => formatDate(d) === slotDate);
+            const bookingDateStr = toDateStringHalifax(booking.startTime);
+            const dayIndex = weekDates.indexOf(bookingDateStr);
             if (dayIndex === -1) return;
 
-            const startHour = bookingDate.getHours() + bookingDate.getMinutes() / 60;
+            const startHour = getHalifaxHour(booking.startTime);
             const endHour = startHour + 1; // Assume 1 hour lessons
 
             const student = students.find(s => s.id === booking.studentId);
@@ -108,9 +122,9 @@ export function WeeklyCalendar({ availability, bookings, students }: WeeklyCalen
     }, [bookings, weekDates, students]);
 
     const weekLabel = useMemo(() => {
-        const start = weekDates[0];
-        const end = weekDates[6];
-        return `${start.toLocaleDateString('en-US', { timeZone: APP_TIMEZONE, month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('en-US', { timeZone: APP_TIMEZONE, month: 'short', day: 'numeric', year: 'numeric' })}`;
+        const startDate = new Date(weekDates[0] + 'T12:00:00');
+        const endDate = new Date(weekDates[6] + 'T12:00:00');
+        return `${startDate.toLocaleDateString('en-US', { timeZone: APP_TIMEZONE, month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { timeZone: APP_TIMEZONE, month: 'short', day: 'numeric', year: 'numeric' })}`;
     }, [weekDates]);
 
     return (
@@ -154,10 +168,10 @@ export function WeeklyCalendar({ availability, bookings, students }: WeeklyCalen
                     {/* Header */}
                     <div className="grid grid-cols-8 gap-px bg-slate-200 rounded-t">
                         <div className="bg-white p-2 text-xs font-medium text-slate-800">Time</div>
-                        {weekDates.map((date, i) => (
+                        {weekDates.map((dateStr, i) => (
                             <div key={i} className="bg-white p-2 text-center">
                                 <div className="text-xs font-medium">{DAYS[i]}</div>
-                                <div className="text-xs text-slate-800">{date.getDate()}</div>
+                                <div className="text-xs text-slate-800">{parseInt(dateStr.split('-')[2], 10)}</div>
                             </div>
                         ))}
                     </div>

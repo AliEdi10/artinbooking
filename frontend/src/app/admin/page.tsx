@@ -64,6 +64,8 @@ export default function AdminPage() {
   const [actionMessage, setActionMessage] = useState('');
   const [confirmCancelInvitation, setConfirmCancelInvitation] = useState<number | null>(null);
   const [isCancellingInvitation, setIsCancellingInvitation] = useState(false);
+  const [isSendingInvite, setIsSendingInvite] = useState(false);
+  const [isResending, setIsResending] = useState(false);
 
   const [schools, setSchools] = useState<{ id: number; name: string }[]>([]);
 
@@ -204,7 +206,8 @@ export default function AdminPage() {
 
   // Phase 3: Resend invitation
   async function handleResendInvitation(invitationId: number) {
-    if (!token || !schoolId) return;
+    if (!token || !schoolId || isResending) return;
+    setIsResending(true);
     const toastId = toast.loading('Resending invitation...');
     try {
       await apiFetch(`/schools/${schoolId}/invitations/${invitationId}/resend`, token, {
@@ -214,6 +217,8 @@ export default function AdminPage() {
       toast.success('Invitation resent!', { id: toastId });
     } catch (err) {
       toast.error(getErrorMessage(err), { id: toastId });
+    } finally {
+      setIsResending(false);
     }
   }
 
@@ -250,7 +255,7 @@ export default function AdminPage() {
 
   async function handleCreateDriver(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!token || !schoolId) return;
+    if (!token || !schoolId || isSendingInvite) return;
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -260,6 +265,7 @@ export default function AdminPage() {
     }
     setFormErrors({ ...formErrors, driverEmail: '' });
 
+    setIsSendingInvite(true);
     const toastId = toast.loading('Sending invitation...');
     try {
       await apiFetch(`/schools/${schoolId}/invitations`, token, {
@@ -280,13 +286,15 @@ export default function AdminPage() {
         setFormErrors({ ...formErrors, driverEmail: 'This email already has an account or pending invitation' });
       }
       toast.error(message, { id: toastId });
+    } finally {
+      setIsSendingInvite(false);
     }
   }
 
   async function handleCreateStudent(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const targetSchoolId = isSuperadmin ? Number(studentForm.schoolId) : schoolId;
-    if (!token || !targetSchoolId) return;
+    if (!token || !targetSchoolId || isSendingInvite) return;
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -296,6 +304,7 @@ export default function AdminPage() {
     }
     setFormErrors({ ...formErrors, studentEmail: '' });
 
+    setIsSendingInvite(true);
     const toastId = toast.loading('Sending invitation...');
     try {
       await apiFetch(`/schools/${targetSchoolId}/invitations`, token, {
@@ -317,6 +326,8 @@ export default function AdminPage() {
         setFormErrors({ ...formErrors, studentEmail: 'This email already has an account or pending invitation' });
       }
       toast.error(message, { id: toastId });
+    } finally {
+      setIsSendingInvite(false);
     }
   }
 
@@ -528,9 +539,10 @@ export default function AdminPage() {
                   />
                   <button
                     type="submit"
-                    className="w-full bg-blue-600 text-white rounded px-3 py-2 text-sm hover:bg-blue-700 flex items-center justify-center gap-2"
+                    disabled={isSendingInvite}
+                    className="w-full bg-blue-600 text-white rounded px-3 py-2 text-sm hover:bg-blue-700 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    📧 Send Invitation
+                    {isSendingInvite ? 'Sending...' : '📧 Send Invitation'}
                   </button>
                 </form>
               </SummaryCard>
@@ -589,9 +601,10 @@ export default function AdminPage() {
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleResendInvitation(invite.id)}
-                            className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                            disabled={isResending}
+                            className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            Resend
+                            {isResending ? 'Sending...' : 'Resend'}
                           </button>
                           <button
                             onClick={() => setConfirmCancelInvitation(invite.id)}
@@ -831,9 +844,10 @@ export default function AdminPage() {
                     </div>
                     <button
                       type="submit"
-                      className="w-full bg-blue-600 text-white rounded px-3 py-2 text-sm hover:bg-blue-700 flex items-center justify-center gap-2"
+                      disabled={isSendingInvite}
+                      className="w-full bg-blue-600 text-white rounded px-3 py-2 text-sm hover:bg-blue-700 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      📧 Send Invitation
+                      {isSendingInvite ? 'Sending...' : '📧 Send Invitation'}
                     </button>
                   </form>
                 </SummaryCard>

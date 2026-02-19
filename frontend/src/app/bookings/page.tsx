@@ -74,7 +74,7 @@ export default function BookingsPage() {
   }, [schoolId, token]);
 
   return (
-    <Protected>
+    <Protected allowedRoles={['school_admin', 'superadmin']}>
       <AppShell>
         <div className="space-y-4">
           <div className="flex items-center justify-between">

@@ -55,6 +55,7 @@ export default function SuperadminPage() {
 
     // System status
     const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const fetchSystemStatus = useCallback(() => {
         if (!token) return;
@@ -100,7 +101,8 @@ export default function SuperadminPage() {
 
     async function handleCreateSchool(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
-        if (!token) return;
+        if (!token || isSubmitting) return;
+        setIsSubmitting(true);
         setActionMessage('Creating school...');
         try {
             await apiFetch('/schools', token, {
@@ -116,12 +118,15 @@ export default function SuperadminPage() {
             setActionMessage('School created successfully!');
         } catch (err) {
             setActionMessage('Unable to create school.');
+        } finally {
+            setIsSubmitting(false);
         }
     }
 
     async function handleInviteAdmin(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
-        if (!token || !adminForm.schoolId) return;
+        if (!token || !adminForm.schoolId || isSubmitting) return;
+        setIsSubmitting(true);
         setActionMessage('Sending invitation...');
         try {
             await apiFetch(`/schools/${adminForm.schoolId}/invitations`, token, {
@@ -137,11 +142,14 @@ export default function SuperadminPage() {
             setActionMessage('Invitation sent! Admin will receive an email to complete registration.');
         } catch (err) {
             setActionMessage('Unable to send invitation.');
+        } finally {
+            setIsSubmitting(false);
         }
     }
 
     async function handleEditSchool() {
-        if (!token || !editingSchool) return;
+        if (!token || !editingSchool || isSubmitting) return;
+        setIsSubmitting(true);
         setActionMessage('Updating school...');
         try {
             await apiFetch(`/schools/${editingSchool.id}`, token, {
@@ -157,6 +165,8 @@ export default function SuperadminPage() {
             setActionMessage('School updated successfully!');
         } catch (err) {
             setActionMessage('Unable to update school.');
+        } finally {
+            setIsSubmitting(false);
         }
     }
 
@@ -224,9 +234,10 @@ export default function SuperadminPage() {
                                     <div className="flex gap-2 pt-2">
                                         <button
                                             onClick={handleEditSchool}
-                                            className="flex-1 bg-slate-900 text-white rounded px-3 py-2 text-sm hover:bg-slate-800"
+                                            disabled={isSubmitting}
+                                            className="flex-1 bg-slate-900 text-white rounded px-3 py-2 text-sm hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
-                                            Save Changes
+                                            {isSubmitting ? 'Saving...' : 'Save Changes'}
                                         </button>
                                         <button
                                             onClick={() => setEditingSchool(null)}
@@ -352,9 +363,10 @@ export default function SuperadminPage() {
                                 />
                                 <button
                                     type="submit"
-                                    className="w-full bg-slate-900 text-white rounded px-3 py-2 text-sm hover:bg-slate-800"
+                                    disabled={isSubmitting}
+                                    className="w-full bg-slate-900 text-white rounded px-3 py-2 text-sm hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    Create School
+                                    {isSubmitting ? 'Creating...' : 'Create School'}
                                 </button>
                             </form>
                         </SummaryCard>
@@ -411,9 +423,10 @@ export default function SuperadminPage() {
                                 />
                                 <button
                                     type="submit"
-                                    className="w-full bg-blue-600 text-white rounded px-3 py-2 text-sm hover:bg-blue-700"
+                                    disabled={isSubmitting}
+                                    className="w-full bg-blue-600 text-white rounded px-3 py-2 text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    Send Invitation
+                                    {isSubmitting ? 'Sending...' : 'Send Invitation'}
                                 </button>
                             </form>
                         </SummaryCard>

@@ -2002,7 +2002,10 @@ export function createApp() {
             }
 
             // If there are other fields to update besides time, apply them
-            const bookingExtraFields = ['notes', 'pickupAddressId', 'dropoffAddressId', 'driverId'];
+            // Students may only update notes and addresses — not reassign the driver
+            const bookingExtraFields = req.user?.role === 'STUDENT'
+              ? ['notes', 'pickupAddressId', 'dropoffAddressId']
+              : ['notes', 'pickupAddressId', 'dropoffAddressId', 'driverId'];
             const extraUpdates = pick(patchBody, bookingExtraFields) as Record<string, unknown>;
             if (extraUpdates.driverId) extraUpdates.driverId = Number(extraUpdates.driverId);
             if (Object.keys(extraUpdates).length > 0) {
