@@ -565,7 +565,7 @@ function DriverPageContent() {
           `${err.message}\n\nDo you want to proceed anyway?`
         );
         if (confirmed) {
-          updateBooking(bookingId, newStart, true);
+          await updateBooking(bookingId, newStart, true);
         }
         return;
       }

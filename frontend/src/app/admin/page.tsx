@@ -411,7 +411,7 @@ export default function AdminPage() {
           `${err.message}\n\nDo you want to proceed anyway?`
         );
         if (confirmed) {
-          handleReschedule(event, true);
+          await handleReschedule(event, true);
         }
         return;
       }

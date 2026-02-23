@@ -22,6 +22,7 @@ import {
 const SCHEDULER_INTERVAL_MS = 15 * 60 * 1000;
 
 let schedulerInterval: NodeJS.Timeout | null = null;
+let isRunning = false;
 
 /**
  * Format a Date object to a readable date string
@@ -143,6 +144,11 @@ async function processBookingReminder(bookingRow: Awaited<ReturnType<typeof getB
  * Main scheduler job - finds bookings needing reminders and sends them
  */
 export async function runReminderJob(): Promise<void> {
+    if (isRunning) {
+        console.log(`[${new Date().toISOString()}] Reminder job already running, skipping.`);
+        return;
+    }
+    isRunning = true;
     console.log(`[${new Date().toISOString()}] Running lesson reminder job...`);
 
     try {
@@ -163,6 +169,8 @@ export async function runReminderJob(): Promise<void> {
         console.log('Reminder job completed.');
     } catch (error) {
         console.error('Reminder job failed:', error);
+    } finally {
+        isRunning = false;
     }
 }
 
