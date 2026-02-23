@@ -402,8 +402,8 @@ router.get('/schools/:schoolId/audit-logs', authenticateRequest, requireRoles(['
     if (!schoolId) return;
 
     try {
-        const limit = parseInt(req.query.limit as string, 10) || 50;
-        const offset = parseInt(req.query.offset as string, 10) || 0;
+        const limit = Math.min(Math.max(parseInt(req.query.limit as string, 10) || 50, 1), 200);
+        const offset = Math.max(parseInt(req.query.offset as string, 10) || 0, 0);
         const entityType = req.query.entityType as string | undefined;
 
         const result = await listAuditLogs(schoolId, { limit, offset, entityType });

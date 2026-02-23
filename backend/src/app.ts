@@ -1140,7 +1140,7 @@ export function createApp() {
           return;
         }
 
-        const studentIds = studentIdsParam.split(',').map(Number).filter(n => !Number.isNaN(n));
+        const studentIds = studentIdsParam.split(',').map(Number).filter(n => !Number.isNaN(n)).slice(0, 200);
         if (studentIds.length === 0) {
           res.json([]);
           return;
@@ -1321,6 +1321,11 @@ export function createApp() {
             res.status(403).json({ error: 'Drivers may only manage their own availability' });
             return;
           }
+          const settings = await getSchoolSettings(schoolId);
+          if (settings && settings.allowDriverSelfAvailabilityEdit === false) {
+            res.status(403).json({ error: 'Your school does not allow drivers to edit availability directly. Contact your admin.' });
+            return;
+          }
         }
 
         const { date, startTime, endTime, type } = req.body as {
@@ -1385,6 +1390,11 @@ export function createApp() {
           const driver = await getDriverProfileByUserId(req.user.id, schoolId);
           if (!driver || driver.id !== driverId) {
             res.status(403).json({ error: 'Drivers may only manage their own availability' });
+            return;
+          }
+          const settings = await getSchoolSettings(schoolId);
+          if (settings && settings.allowDriverSelfAvailabilityEdit === false) {
+            res.status(403).json({ error: 'Your school does not allow drivers to edit availability directly. Contact your admin.' });
             return;
           }
         }
@@ -2002,8 +2012,8 @@ export function createApp() {
             }
 
             // If there are other fields to update besides time, apply them
-            // Students may only update notes and addresses — not reassign the driver
-            const bookingExtraFields = req.user?.role === 'STUDENT'
+            // Students and drivers may only update notes and addresses — not reassign the driver
+            const bookingExtraFields = (req.user?.role === 'STUDENT' || req.user?.role === 'DRIVER')
               ? ['notes', 'pickupAddressId', 'dropoffAddressId']
               : ['notes', 'pickupAddressId', 'dropoffAddressId', 'driverId'];
             const extraUpdates = pick(patchBody, bookingExtraFields) as Record<string, unknown>;
@@ -2119,15 +2129,17 @@ export function createApp() {
           }
         }
 
-        const settings = await getSchoolSettings(schoolId);
-        // Only enforce cutoff for future bookings (allow cancelling past bookings for cleanup)
-        const bookingTime = booking.startTime.getTime();
-        const now = Date.now();
-        if (settings?.cancellationCutoffHours && bookingTime > now) {
-          const cutoff = bookingTime - settings.cancellationCutoffHours * 60 * 60 * 1000;
-          if (now > cutoff) {
-            res.status(400).json({ error: 'Booking can no longer be cancelled per policy' });
-            return;
+        // Enforce cancellation cutoff for students/drivers only (admins can always cancel)
+        if (req.user?.role !== 'SUPERADMIN' && req.user?.role !== 'SCHOOL_ADMIN') {
+          const settings = await getSchoolSettings(schoolId);
+          const bookingTime = booking.startTime.getTime();
+          const now = Date.now();
+          if (settings?.cancellationCutoffHours && bookingTime > now) {
+            const cutoff = bookingTime - settings.cancellationCutoffHours * 60 * 60 * 1000;
+            if (now > cutoff) {
+              res.status(400).json({ error: 'Booking can no longer be cancelled per policy' });
+              return;
+            }
           }
         }
 
