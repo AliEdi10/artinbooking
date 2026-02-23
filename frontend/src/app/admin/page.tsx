@@ -587,7 +587,7 @@ export default function AdminPage() {
               {/* Phase 3: Pending Invitations Card */}
               <SummaryCard
                 title="✉️ Pending Invitations"
-                description="Invitations awaiting acceptance. Auto-refreshes every 30s."
+                description="Invitations awaiting acceptance. Auto-refreshes every 60s."
                 footer={`${pendingInvitations.length} pending invite(s)`}
               >
                 <div className="flex justify-end mb-2">

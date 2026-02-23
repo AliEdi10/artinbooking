@@ -743,7 +743,7 @@ function DriverPageContent() {
                           event={createDriverLessonEvent(
                             lesson.student,
                             new Date(lesson.rawStartTime),
-                            new Date(new Date(lesson.rawStartTime).getTime() + 90 * 60 * 1000),
+                            new Date(new Date(lesson.rawStartTime).getTime() + (schoolSettings?.defaultLessonDurationMinutes ?? 90) * 60 * 1000),
                             lesson.pickupAddress,
                             lesson.dropoffAddress,
                           )}
@@ -968,7 +968,7 @@ function DriverPageContent() {
                             event={createDriverLessonEvent(
                               lesson.student,
                               new Date(lesson.rawStartTime),
-                              new Date(new Date(lesson.rawStartTime).getTime() + 90 * 60 * 1000), // 90 min lesson
+                              new Date(new Date(lesson.rawStartTime).getTime() + (schoolSettings?.defaultLessonDurationMinutes ?? 90) * 60 * 1000),
                               lesson.pickupAddress,
                               lesson.dropoffAddress,
                             )}
@@ -1043,6 +1043,7 @@ function DriverPageContent() {
                   availability={driverState.availability}
                   bookings={driverState.bookings}
                   students={driverState.students}
+                  lessonDurationMinutes={schoolSettings?.defaultLessonDurationMinutes ?? 90}
                 />
               </SummaryCard>
             </>

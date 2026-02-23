@@ -11,6 +11,7 @@ interface WeeklyCalendarProps {
     availability: Availability[];
     bookings: Booking[];
     students: StudentProfile[];
+    lessonDurationMinutes?: number;
 }
 
 const HOURS = Array.from({ length: 12 }, (_, i) => i + 7); // 7 AM to 6 PM
@@ -54,7 +55,7 @@ function getHalifaxHour(isoStr: string): number {
     return hour + minute / 60;
 }
 
-export function WeeklyCalendar({ availability, bookings, students }: WeeklyCalendarProps) {
+export function WeeklyCalendar({ availability, bookings, students, lessonDurationMinutes = 90 }: WeeklyCalendarProps) {
     const [weekOffset, setWeekOffset] = useState(0);
 
     const baseDate = useMemo(() => {
@@ -105,7 +106,7 @@ export function WeeklyCalendar({ availability, bookings, students }: WeeklyCalen
             if (dayIndex === -1) return;
 
             const startHour = getHalifaxHour(booking.startTime);
-            const endHour = startHour + 1; // Assume 1 hour lessons
+            const endHour = startHour + lessonDurationMinutes / 60;
 
             const student = students.find(s => s.id === booking.studentId);
 

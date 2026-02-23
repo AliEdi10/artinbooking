@@ -85,6 +85,7 @@ export default function StudentPage() {
   const [isCancellingBooking, setIsCancellingBooking] = useState(false);
   const [bookingInProgress, setBookingInProgress] = useState(false);
   const [isRescheduling, setIsRescheduling] = useState(false);
+  const [lessonDurationMinutes, setLessonDurationMinutes] = useState(90);
 
   async function fetchSlots(driverId: number, pickupId: number, dropoffId: number, date: string) {
     if (!token || !schoolId) return;
@@ -169,6 +170,14 @@ export default function StudentPage() {
       } else {
         setStatus('');
       }
+      // Load lesson duration from school settings
+      const settings = await apiFetch<{ defaultLessonDurationMinutes: number | null }>(
+        `/schools/${schoolId}/settings`, token,
+      ).catch(() => null);
+      if (settings?.defaultLessonDurationMinutes) {
+        setLessonDurationMinutes(settings.defaultLessonDurationMinutes);
+      }
+
       setInitialLoading(false);
     } catch (error) {
       setStatus('Unable to load student portal data. Check your token and backend availability.');
@@ -814,7 +823,7 @@ export default function StudentPage() {
                       event={createStudentLessonEvent(
                         drivers.find((d) => d.id === booking.driverId)?.fullName ?? 'Instructor',
                         new Date(booking.startTime),
-                        new Date(new Date(booking.startTime).getTime() + 90 * 60 * 1000), // 90 min lesson
+                        new Date(new Date(booking.startTime).getTime() + lessonDurationMinutes * 60 * 1000),
                       )}
                     />
                     <input

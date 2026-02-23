@@ -190,7 +190,7 @@ export default function LoginPage() {
             });
 
             if (!response.ok) {
-              const data = await response.json();
+              const data = await response.json().catch(() => ({}));
               throw new Error(data.error || 'Login failed');
             }
 
