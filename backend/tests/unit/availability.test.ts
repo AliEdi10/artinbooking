@@ -114,6 +114,28 @@ describe('computeAvailableSlots', () => {
     expect(slots.some((slot) => slot.toISOString() === freeTime)).toBe(true);
   });
 
+  it('enforces compact scheduling — only adjacent slots when bookings exist', async () => {
+    // Driver works 9am-5pm, 60-min lessons, no buffer, zero travel.
+    // Existing booking: 12:00-1:00pm.
+    // Without compact scheduling: 9:00-11:00 and 1:00-4:00 would all be available (25 slots).
+    // With compact scheduling: only 11:00 (adjacent before) and 1:00 (adjacent after).
+    const driver = driverProfile();
+    const date = new Date('2024-05-04T00:00:00');
+    const bookings = [
+      bookingWithLocations('2024-05-04T12:00:00', '2024-05-04T13:00:00', baseLocation, baseLocation),
+    ];
+
+    const slots = await computeAvailableSlots(
+      { date, driverProfile: driver, bookings, pickupLocation: baseLocation, dropoffLocation: baseLocation },
+      travelZero,
+    );
+
+    // Only two slots: 11:00 (right before booking) and 13:00 (right after booking)
+    expect(slots.length).toBe(2);
+    expect(slots[0].getTime()).toBe(new Date('2024-05-04T11:00:00').getTime());
+    expect(slots[1].getTime()).toBe(new Date('2024-05-04T13:00:00').getTime());
+  });
+
   it('filters out slots that violate travel constraints', async () => {
     const driver = driverProfile({ maxSegmentTravelTimeMin: 10 });
     const date = new Date('2024-05-03T00:00:00');

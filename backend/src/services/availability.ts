@@ -267,6 +267,11 @@ export async function computeAvailableSlots(
   const windowStartTimes = new Set(openWindows.map((w) => w.start.getTime()));
   const windowEndTimes = new Set(openWindows.map((w) => w.end.getTime()));
 
+  // Compact scheduling: when the driver already has bookings, new slots must be
+  // adjacent to an existing booking (separated only by travel + buffer). This prevents
+  // idle gaps in the instructor's schedule. When no bookings exist yet, any slot is fine.
+  const hasExistingBookings = bookings.length > 0;
+
   // eslint-disable-next-line no-restricted-syntax
   for (const gap of gaps) {
     if (gap.gapEndTime <= gap.gapStartTime) continue;
@@ -277,6 +282,9 @@ export async function computeAvailableSlots(
     const startBuffer = isFirstInWindow ? 0 : bufferMinutes;
     const endBuffer = isLastInWindow ? 0 : bufferMinutes;
     let candidate = roundUpToGrid(addMinutes(gap.gapStartTime, startBuffer));
+
+    // Collect all feasible slots in this gap, then apply compact filtering
+    const gapSlots: Date[] = [];
 
     while (candidate < gap.gapEndTime) {
       const candidateEnd = addMinutes(candidate, lessonDuration);
@@ -318,10 +326,34 @@ export async function computeAvailableSlots(
         (dailyMaxTravelDistance === undefined || adjustedTotals.distance <= dailyMaxTravelDistance);
 
       if (startsAfterGap && endsBeforeNext && segmentLimitsSatisfied && dailyCapsSatisfied) {
-        feasibleSlots.push(candidate);
+        gapSlots.push(candidate);
       }
 
       candidate = addMinutes(candidate, GRID_MINUTES);
+    }
+
+    // Compact scheduling filter: only keep slots adjacent to existing bookings.
+    // - No bookings yet: all slots are fine (first booking of the day).
+    // - Gap between booking and window end: only earliest slot (right after the booking).
+    // - Gap between window start and booking: only latest slot (right before the booking).
+    // - Gap between two bookings: earliest (adjacent to prev) + latest (adjacent to next).
+    if (!hasExistingBookings || gapSlots.length === 0) {
+      feasibleSlots.push(...gapSlots);
+    } else if (isFirstInWindow && isLastInWindow) {
+      // Entire window is open but bookings exist in other windows — keep all
+      feasibleSlots.push(...gapSlots);
+    } else if (!isFirstInWindow && !isLastInWindow) {
+      // Gap between two bookings: offer earliest + latest
+      feasibleSlots.push(gapSlots[0]);
+      if (gapSlots.length > 1) {
+        feasibleSlots.push(gapSlots[gapSlots.length - 1]);
+      }
+    } else if (!isFirstInWindow && isLastInWindow) {
+      // Gap after last booking → window end: only earliest (adjacent to last booking)
+      feasibleSlots.push(gapSlots[0]);
+    } else {
+      // Gap from window start → first booking: only latest (adjacent to first booking)
+      feasibleSlots.push(gapSlots[gapSlots.length - 1]);
     }
   }
 
