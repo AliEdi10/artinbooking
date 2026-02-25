@@ -93,9 +93,9 @@ export default function StudentPage() {
       const slots = await apiFetch<string[]>(
         `/schools/${schoolId}/drivers/${driverId}/available-slots?date=${date}&pickupAddressId=${pickupId}&dropoffAddressId=${dropoffId}`,
         token,
-      ).catch(() => []);
+      );
       setSuggestedSlots(slots.map((slot) => ({ startTime: slot, driverId })));
-    } catch (error) {
+    } catch {
       setSuggestedSlots([]);
     }
   }

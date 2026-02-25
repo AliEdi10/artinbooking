@@ -1495,13 +1495,10 @@ export function createApp() {
 
         const pickupLocation = addressToLocation(pickupAddress);
         const dropoffLocation = addressToLocation(dropoffAddress);
-        if (!pickupLocation || !dropoffLocation) {
-          res.status(400).json({ error: 'Pickup and dropoff addresses require coordinates' });
-          return;
-        }
-
-        if (!driver.serviceCenterLocation) {
-          res.status(400).json({ error: 'Driver is missing a service center location' });
+        if (!pickupLocation || !dropoffLocation || !driver.serviceCenterLocation) {
+          // Missing coordinates or service center — driver/address not fully configured.
+          // Return empty slots instead of 400 so students see "no availability" gracefully.
+          res.json([]);
           return;
         }
 
