@@ -146,7 +146,32 @@ distance\_between is used for quick radius checks; travel is used to compute act
 
 
 
-\## 3. Behaviour for an empty day
+\### 1.5 Driver availability overrides
+
+Drivers can customize their working hours per specific date through availability entries stored in the `driver_availability` table. Three types of entries are supported:
+
+\- **working\_hours** — Replaces the default work\_day\_start/work\_day\_end for that date. Multiple working\_hours entries define split shifts.
+
+\- **override\_open** — Extends availability beyond the base window (merged with working\_hours via interval union).
+
+\- **override\_closed** — Blocks out a time range (subtracted from all open windows). Used for breaks, appointments, etc.
+
+The engine first builds base windows (from working\_hours entries, or the driver's default work day if none exist), merges in override\_open entries, then subtracts all override\_closed intervals. The result is a set of non-overlapping open windows for the day.
+
+
+
+\## 3. Day-boundary travel exemptions
+
+Travel time is **not enforced at work day start or end boundaries**. The driver is expected to handle their own commute to/from the service center. Travel time (and buffer) is only enforced between consecutive bookings within the day.
+
+This means:
+\- The first slot of the day can start right at work\_day\_start regardless of how far the pickup is from the service center.
+\- The last slot can end right at work\_day\_end regardless of how far the dropoff is from the service center.
+\- Between bookings, travel time from the previous dropoff to the next pickup IS enforced, along with the buffer.
+
+
+
+\## 4. Behaviour for an empty day
 
 
 
@@ -154,7 +179,7 @@ If the instructor has no bookings on that day:
 
 
 
-1\) We consider the entire \[work\_day\_start, work\_day\_end] as a single gap.
+1\) We consider the entire \[work\_day\_start, work\_day\_end] as a single gap (or multiple gaps if availability overrides define split windows).
 
 2\) For each candidate start time S on the 15-minute grid:
 
@@ -164,39 +189,19 @@ If the instructor has no bookings on that day:
 
 &nbsp;  - Check distance\_between(service\_center\_location, pickup\_location) ≤ service\_radius\_km.
 
-&nbsp;  - Compute travel from base to pickup:
+&nbsp;  - Service radius and per-segment travel limits are still checked.
 
-&nbsp;    - (tA, dA) = travel(service\_center\_location, pickup\_location, S).
+&nbsp;  - Day-boundary travel exemption applies (see section 3) — travel time to/from base is not deducted.
 
-&nbsp;  - Compute travel from drop-off back to base:
-
-&nbsp;    - new\_end = S + L
-
-&nbsp;    - (tB, dB) = travel(dropoff\_location, service\_center\_location, new\_end).
-
-&nbsp;  - Check constraints:
-
-&nbsp;    - work\_day\_start + tA + B ≤ S
-
-&nbsp;    - new\_end + tB + B ≤ work\_day\_end
-
-&nbsp;    - tA ≤ T\_max, dA ≤ D\_max
-
-&nbsp;    - tB ≤ T\_max, dB ≤ D\_max
-
-&nbsp;    - If daily caps are set:
-
-&nbsp;      - tA + tB ≤ daily\_max\_travel\_time\_min
-
-&nbsp;      - dA + dB ≤ daily\_max\_travel\_distance\_km
+&nbsp;  - If daily caps are set, projected travel totals must stay within limits.
 
 
 
-3\) Only the start times S that pass all checks are returned as available.
+3\) All valid start times S are returned. Since this is the first booking of the day, **all feasible slots are offered** (compact scheduling only restricts when bookings already exist — see section 6).
 
 
 
-\## 4. Behaviour with existing bookings
+\## 5. Behaviour with existing bookings
 
 
 
@@ -334,13 +339,19 @@ When there are existing bookings that day:
 
 &nbsp;  If all checks pass, S is a feasible start time in that gap.
 
-
-
-4\) Aggregate feasible slots:
+&nbsp;  **Day-boundary travel exemption (section 3):** At the first gap (after work\_day\_start) and last gap (before work\_day\_end), travel time to/from the service center is not enforced.
 
 
 
-&nbsp;  - Collect all S across all gaps that pass the checks.
+4\) Apply compact scheduling filter (section 6) to each gap's feasible slots.
+
+
+
+5\) Aggregate feasible slots:
+
+
+
+&nbsp;  - Collect all S across all gaps that pass the checks and compact filter.
 
 &nbsp;  - Remove duplicates and sort chronologically.
 
@@ -348,7 +359,29 @@ When there are existing bookings that day:
 
 
 
-\## 5. Policy integration
+\## 6. Compact scheduling
+
+When the driver already has bookings on the day, new slots are restricted to be **adjacent to existing bookings**. This prevents idle gaps in the instructor's schedule — the instructor should never be free for more than the buffer time between lessons.
+
+Rules per gap:
+
+\- **No bookings on the day:** All feasible slots in all gaps are offered (first booking can go anywhere).
+
+\- **Gap between two bookings:** Only the earliest slot (adjacent to the previous booking) and the latest slot (adjacent to the next booking) are offered.
+
+\- **Gap after last booking → window end:** Only the earliest slot (right after the last booking) is offered.
+
+\- **Gap from window start → first booking:** Only the latest slot (right before the first booking) is offered.
+
+\- **Entire window open but bookings exist in other windows:** All slots are offered (driver needs to start somewhere in that window).
+
+Example: Driver works 9am–5pm with a 60-min lesson at 12:00–1:00pm (zero travel, zero buffer).
+\- Without compact scheduling: 9:00, 9:15, 9:30, ..., 11:00, 1:00, 1:15, ..., 4:00 (29 slots).
+\- With compact scheduling: only 11:00 (right before the booking) and 1:00 (right after the booking).
+
+
+
+\## 7. Policy integration
 
 
 
@@ -374,23 +407,25 @@ These policies are enforced at the API level (for example, before calling get\_a
 
 
 
-\## 6. Implementation notes
+\## 8. Implementation notes
 
 
 
-\- The engine will be implemented in TypeScript in the backend, probably as an availability service module.
+\- The engine is implemented in TypeScript at `backend/src/services/availability.ts`.
 
-\- Unit tests must validate:
+\- Travel calculations use Google Maps Distance Matrix API via `backend/src/services/travelProvider.ts`. When no API key is configured, a haversine-based fallback at 40 km/h average speed is used.
 
-&nbsp; - Empty day behaviour.
+\- 49 unit tests in `backend/tests/unit/availability.test.ts` validate:
 
-&nbsp; - Days with various patterns of existing bookings.
+&nbsp; - Empty day behaviour (15-minute grid, correct slot count).
 
-&nbsp; - Edge cases where bookings are near work\_day\_start/work\_day\_end.
+&nbsp; - Overlap detection with existing bookings.
 
-&nbsp; - Travel-time violations and radius violations.
+&nbsp; - Compact scheduling (only adjacent slots offered).
 
-\- The travel() and distance\_between() functions should initially be mocked for tests and later wired to a real maps API (for example, Google Maps Platform).
+&nbsp; - Travel-time constraint violations.
+
+\- All times use America/Halifax timezone (configured via `TZ=America/Halifax` in the backend entrypoint).
 
 
 

@@ -503,6 +503,100 @@ All error responses follow this format:
 
 ---
 
+## Additional Endpoints (not in original spec)
+
+The following endpoints were added after the initial API documentation:
+
+### School Management
+
+#### `PATCH /schools/:schoolId`
+Update school name/contact email. **Auth:** SUPERADMIN only.
+
+#### `PATCH /schools/:schoolId/status`
+Change school status (active, suspended, deleted). **Auth:** SUPERADMIN only.
+
+**Request Body:**
+```json
+{ "status": "active" }
+```
+
+---
+
+### Invitation Management
+
+#### `GET /invitations/validate?token=<token>`
+Validate an invitation token (public, no auth). Returns email, role, school name, expiry.
+
+#### `POST /invitations/accept`
+Accept an invitation and create an account. Supports password or Bearer token (identity provider) flow.
+
+**Request Body:**
+```json
+{
+  "token": "invitation_token",
+  "password": "newpassword123",
+  "fullName": "Student Name",
+  "phone": "+1234567890",
+  "isMinor": false
+}
+```
+
+#### `DELETE /schools/:schoolId/invitations/:invitationId`
+Cancel/delete a pending invitation. **Auth:** SCHOOL_ADMIN.
+
+---
+
+### Address Management
+
+#### `PATCH /schools/:schoolId/addresses/:addressId`
+Update an existing address. **Auth:** SCHOOL_ADMIN, STUDENT (own only).
+
+#### `GET /schools/:schoolId/addresses/batch?studentIds=1,2,3`
+Batch-fetch addresses for multiple students. Max 200 IDs. **Auth:** SCHOOL_ADMIN, DRIVER.
+
+---
+
+### Booking Lifecycle
+
+#### `POST /schools/:schoolId/bookings/:bookingId/complete`
+Mark a booking as completed. **Auth:** SCHOOL_ADMIN, DRIVER (own bookings only).
+
+---
+
+### Reschedule (via PATCH booking)
+
+When `PATCH /schools/:schoolId/bookings/:bookingId` includes a `startTime`, it triggers the reschedule flow:
+- Validates the new slot against the availability engine
+- For students: rejects if slot is unavailable
+- For admins/drivers: returns `{ code: "REQUIRES_FORCE" }` if slot is outside availability; resend with `{ force: true }` to override
+- Uses atomic reschedule with overlap check
+
+---
+
+### Driver Holidays
+
+#### `GET /schools/:schoolId/drivers/holidays`
+List all driver holidays/time-off for a school. **Auth:** SCHOOL_ADMIN.
+
+---
+
+### System
+
+#### `GET /system/status`
+Server status: uptime, DB latency, memory, pool stats. **Auth:** SUPERADMIN.
+
+---
+
+### Analytics & Audit Logs
+
+#### `GET /schools/:schoolId/analytics/dashboard`
+Dashboard stats (booking counts, revenue, popular times). **Auth:** SCHOOL_ADMIN, DRIVER.
+
+#### `GET /schools/:schoolId/analytics/audit-log`
+Paginated audit log. Query params: `limit` (max 200), `offset`. **Auth:** SCHOOL_ADMIN.
+
+---
+
 ## OpenAPI Specification
 
 For the full OpenAPI 3.0 specification, see [openapi.yaml](./openapi.yaml).

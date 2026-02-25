@@ -3,7 +3,7 @@
 This folder contains the PostgreSQL schema for the multi-tenant driving school platform. Migrations are ordered to introduce core types and tables, then layer in role-specific profiles, addresses, licence metadata, availability, bookings, and audit history.
 
 Key files:
-- `migrations/0001-0007_*.sql`: Apply sequentially to build the schema from scratch.
+- `migrations/0001-0018_*.sql`: Apply sequentially to build the schema from scratch.
 - `schema.sql`: Reference snapshot of the enums, tables, and intent for indexes/constraints.
 - `seeds/`: Optional data to load a platform superadmin plus a sample school with associated users, profiles, addresses, availability, bookings, and audit rows.
 

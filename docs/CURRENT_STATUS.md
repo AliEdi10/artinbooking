@@ -14,7 +14,7 @@
 |-----------|----------|--------|
 | Frontend | **Vercel** | ✅ Live at https://artinbooking.vercel.app |
 | Backend | **Railway** | ✅ Running |
-| Database | **Railway PostgreSQL** | ✅ 13 migrations applied |
+| Database | **Railway PostgreSQL** | ✅ 18 migrations applied |
 | Email | **Resend API** | ✅ Configured |
 
 **NOT using GCP** - ignore all GCP/Terraform docs.
@@ -29,7 +29,7 @@
 | Admin dashboard (full CRUD) | ✅ Complete |
 | Driver portal (availability, service center, student view) | ✅ Complete |
 | Student portal (profile, addresses, licence, booking) | ✅ Complete |
-| Booking system (travel-aware) | ✅ Complete |
+| Booking system (travel-aware + compact scheduling) | ✅ Complete |
 | Email notifications (booking + reminders) | ✅ Complete |
 | Password reset flow | ✅ Complete |
 | Lesson reminder emails (24hr) | ✅ Complete |
@@ -40,6 +40,23 @@
 | API documentation | ✅ Complete |
 
 ---
+
+## ✅ RECENT UPDATES (Feb 24, 2026)
+
+| Update | Status |
+|--------|--------|
+| Compact scheduling — slots adjacent to existing bookings only | ✅ Done |
+| 5 rounds of security/stability audits | ✅ Done |
+| ErrorBoundary wired into root layout | ✅ Done |
+| Reminder scheduler overlap guard (isRunning) | ✅ Done |
+| Lesson duration from school settings (not hardcoded) | ✅ Done |
+| Double-click protection on all action buttons | ✅ Done |
+| Driver cancellation emails | ✅ Done |
+| Re-entrant reschedule await fix | ✅ Done |
+| Admin exempt from cancellation cutoff | ✅ Done |
+| Driver blocked from changing driverId on reschedule | ✅ Done |
+| allowDriverSelfAvailabilityEdit enforced on POST/DELETE | ✅ Done |
+| Input size limits (studentIds, audit log) | ✅ Done |
 
 ## ✅ RECENT UPDATES (Feb 3, 2026)
 
@@ -95,7 +112,7 @@ The main code is in:
 - `frontend/src/app/admin/page.tsx` - Admin portal
 - `frontend/src/app/driver/page.tsx` - Driver portal  
 - `frontend/src/app/student/page.tsx` - Student portal
-- `db/migrations/` - 13 SQL migrations (all applied)
+- `db/migrations/` - 18 SQL migrations (all applied)
 - `docs/api/openapi.yaml` - API documentation
 
 **Ignore** the other docs in this folder - they are from the original design phase.
