@@ -321,6 +321,193 @@ router.get('/schools/:schoolId/drivers/:driverId/earnings/export', authenticateR
 });
 
 /**
+ * GET /schools/:schoolId/reports/completed-classes.csv
+ * CSV of completed/cancelled lessons, filterable by instructor and date range.
+ */
+router.get('/schools/:schoolId/reports/completed-classes.csv', authenticateRequest, requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN']), async (req, res) => {
+    const schoolId = resolveSchoolContext(req as AuthenticatedRequest, res);
+    if (!schoolId) return;
+
+    const driverId = req.query.driverId ? parseInt(req.query.driverId as string, 10) : null;
+    const startDate = req.query.startDate as string | undefined;
+    const endDate = req.query.endDate as string | undefined;
+
+    try {
+        const params: (number | string)[] = [schoolId];
+        let sql = `SELECT b.start_time, b.end_time, b.status, b.cancellation_reason_code,
+                          d.full_name AS instructor_name, s.full_name AS student_name
+                   FROM bookings b
+                   JOIN driver_profiles d ON d.id = b.driver_id
+                   JOIN student_profiles s ON s.id = b.student_id
+                   WHERE b.driving_school_id = $1
+                     AND b.status != 'scheduled'`;
+        if (driverId && !isNaN(driverId)) {
+            params.push(driverId);
+            sql += ` AND b.driver_id = $${params.length}`;
+        }
+        if (startDate) {
+            params.push(startDate);
+            sql += ` AND b.start_time >= $${params.length}::date`;
+        }
+        if (endDate) {
+            params.push(endDate);
+            sql += ` AND b.start_time < ($${params.length}::date + INTERVAL '1 day')`;
+        }
+        sql += ' ORDER BY b.start_time DESC';
+
+        const result = await query<{
+            start_time: Date; end_time: Date; status: string;
+            cancellation_reason_code: string | null;
+            instructor_name: string; student_name: string;
+        }>(sql, params);
+
+        const tz = 'America/Halifax';
+        const csvRows = ['Instructor,Student,Date,Start Time,End Time,Duration (min),Status,Cancellation Reason'];
+        for (const row of result.rows) {
+            const durationMin = Math.round((new Date(row.end_time).getTime() - new Date(row.start_time).getTime()) / 60000);
+            csvRows.push([
+                `"${row.instructor_name.replace(/"/g, '""')}"`,
+                `"${row.student_name.replace(/"/g, '""')}"`,
+                new Date(row.start_time).toLocaleDateString('en-CA', { timeZone: tz }),
+                new Date(row.start_time).toLocaleTimeString('en-US', { timeZone: tz, hour: '2-digit', minute: '2-digit' }),
+                new Date(row.end_time).toLocaleTimeString('en-US', { timeZone: tz, hour: '2-digit', minute: '2-digit' }),
+                String(durationMin),
+                row.status.replace(/_/g, ' '),
+                `"${(row.cancellation_reason_code ?? '').replace(/"/g, '""')}"`,
+            ].join(','));
+        }
+
+        const today = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="completed-classes-${today}.csv"`);
+        res.send(csvRows.join('\n'));
+    } catch (error) {
+        console.error('Completed classes export error:', error);
+        res.status(500).json({ error: 'Failed to export completed classes' });
+    }
+});
+
+/**
+ * GET /schools/:schoolId/reports/off-days.csv
+ * CSV of instructor off-days (override_closed availability entries).
+ */
+router.get('/schools/:schoolId/reports/off-days.csv', authenticateRequest, requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN']), async (req, res) => {
+    const schoolId = resolveSchoolContext(req as AuthenticatedRequest, res);
+    if (!schoolId) return;
+
+    const driverId = req.query.driverId ? parseInt(req.query.driverId as string, 10) : null;
+    const startDate = req.query.startDate as string | undefined;
+    const endDate = req.query.endDate as string | undefined;
+
+    try {
+        const params: (number | string)[] = [schoolId];
+        let sql = `SELECT da.date, da.notes, d.full_name AS instructor_name
+                   FROM driver_availability da
+                   JOIN driver_profiles d ON d.id = da.driver_id
+                   WHERE da.driving_school_id = $1
+                     AND da.type = 'override_closed'`;
+        if (driverId && !isNaN(driverId)) {
+            params.push(driverId);
+            sql += ` AND da.driver_id = $${params.length}`;
+        }
+        if (startDate) {
+            params.push(startDate);
+            sql += ` AND da.date >= $${params.length}::date`;
+        }
+        if (endDate) {
+            params.push(endDate);
+            sql += ` AND da.date <= $${params.length}::date`;
+        }
+        sql += ' ORDER BY da.date DESC';
+
+        const result = await query<{ date: Date; notes: string | null; instructor_name: string }>(sql, params);
+
+        const tz = 'America/Halifax';
+        const csvRows = ['Instructor,Date,Notes'];
+        for (const row of result.rows) {
+            csvRows.push([
+                `"${row.instructor_name.replace(/"/g, '""')}"`,
+                new Date(row.date).toLocaleDateString('en-CA', { timeZone: tz }),
+                `"${(row.notes ?? '').replace(/"/g, '""')}"`,
+            ].join(','));
+        }
+
+        const today = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="off-days-${today}.csv"`);
+        res.send(csvRows.join('\n'));
+    } catch (error) {
+        console.error('Off-days export error:', error);
+        res.status(500).json({ error: 'Failed to export off-days' });
+    }
+});
+
+/**
+ * GET /schools/:schoolId/reports/future-schedule.csv
+ * CSV of upcoming scheduled lessons, filterable by instructor and date range.
+ */
+router.get('/schools/:schoolId/reports/future-schedule.csv', authenticateRequest, requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN']), async (req, res) => {
+    const schoolId = resolveSchoolContext(req as AuthenticatedRequest, res);
+    if (!schoolId) return;
+
+    const driverId = req.query.driverId ? parseInt(req.query.driverId as string, 10) : null;
+    const startDate = req.query.startDate as string | undefined;
+    const endDate = req.query.endDate as string | undefined;
+
+    try {
+        const params: (number | string)[] = [schoolId];
+        let sql = `SELECT b.start_time, b.end_time, b.status,
+                          d.full_name AS instructor_name, s.full_name AS student_name
+                   FROM bookings b
+                   JOIN driver_profiles d ON d.id = b.driver_id
+                   JOIN student_profiles s ON s.id = b.student_id
+                   WHERE b.driving_school_id = $1
+                     AND b.status = 'scheduled'`;
+        if (driverId && !isNaN(driverId)) {
+            params.push(driverId);
+            sql += ` AND b.driver_id = $${params.length}`;
+        }
+        if (startDate) {
+            params.push(startDate);
+            sql += ` AND b.start_time >= $${params.length}::date`;
+        }
+        if (endDate) {
+            params.push(endDate);
+            sql += ` AND b.start_time < ($${params.length}::date + INTERVAL '1 day')`;
+        }
+        sql += ' ORDER BY b.start_time ASC';
+
+        const result = await query<{
+            start_time: Date; end_time: Date; status: string;
+            instructor_name: string; student_name: string;
+        }>(sql, params);
+
+        const tz = 'America/Halifax';
+        const csvRows = ['Instructor,Student,Date,Start Time,End Time,Duration (min),Status'];
+        for (const row of result.rows) {
+            const durationMin = Math.round((new Date(row.end_time).getTime() - new Date(row.start_time).getTime()) / 60000);
+            csvRows.push([
+                `"${row.instructor_name.replace(/"/g, '""')}"`,
+                `"${row.student_name.replace(/"/g, '""')}"`,
+                new Date(row.start_time).toLocaleDateString('en-CA', { timeZone: tz }),
+                new Date(row.start_time).toLocaleTimeString('en-US', { timeZone: tz, hour: '2-digit', minute: '2-digit' }),
+                new Date(row.end_time).toLocaleTimeString('en-US', { timeZone: tz, hour: '2-digit', minute: '2-digit' }),
+                String(durationMin),
+                row.status.replace(/_/g, ' '),
+            ].join(','));
+        }
+
+        const today = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="future-schedule-${today}.csv"`);
+        res.send(csvRows.join('\n'));
+    } catch (error) {
+        console.error('Future schedule export error:', error);
+        res.status(500).json({ error: 'Failed to export future schedule' });
+    }
+});
+
+/**
  * GET /schools/:schoolId/analytics/signups
  * New student signups within a configurable time range
  */

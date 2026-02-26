@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { apiFetch } from '../apiClient';
+import { apiFetch, API_BASE } from '../apiClient';
 import { SummaryCard } from './SummaryCard';
 import { formatDateCustom, formatDateTime } from '../utils/timezone';
 
@@ -50,7 +50,7 @@ type AuditLog = {
     createdAt: string;
 };
 
-export type AdminTab = 'overview' | 'drivers' | 'audit';
+export type AdminTab = 'overview' | 'drivers' | 'audit' | 'reports';
 
 interface AnalyticsDashboardProps {
     schoolId: number;
@@ -68,6 +68,11 @@ export function AnalyticsDashboard({ schoolId, token, activeTab, onTabChange }: 
     const [signupData, setSignupData] = useState<SignupData | null>(null);
     const [activeInactive, setActiveInactive] = useState<ActiveInactiveData | null>(null);
     const [loading, setLoading] = useState(true);
+
+    // Reports tab state
+    const [reportDrivers, setReportDrivers] = useState<{ id: number; fullName: string }[]>([]);
+    const [reportFilters, setReportFilters] = useState({ driverId: '', startDate: '', endDate: '' });
+    const [isDownloading, setIsDownloading] = useState<string | null>(null);
 
     useEffect(() => {
         loadAnalytics();
@@ -101,6 +106,44 @@ export function AnalyticsDashboard({ schoolId, token, activeTab, onTabChange }: 
             .then(data => setAuditLogs(data.logs))
             .catch(() => { });
     }, [activeTab, schoolId, token]);
+
+    // Lazy-load driver list for the reports instructor filter
+    useEffect(() => {
+        if (activeTab !== 'reports' || !token || !schoolId || reportDrivers.length > 0) return;
+        apiFetch<{ id: number; fullName: string }[]>(`/schools/${schoolId}/drivers`, token)
+            .then(setReportDrivers)
+            .catch(() => { });
+    }, [activeTab, schoolId, token]);
+
+    async function downloadCsv(path: string, filename: string) {
+        setIsDownloading(filename);
+        try {
+            const resp = await fetch(`${API_BASE}${path}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!resp.ok) throw new Error('Export failed');
+            const blob = await resp.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch {
+            // silently fail — user will notice no download occurred
+        } finally {
+            setIsDownloading(null);
+        }
+    }
+
+    function buildReportUrl(base: string) {
+        const params = new URLSearchParams();
+        if (reportFilters.driverId) params.set('driverId', reportFilters.driverId);
+        if (reportFilters.startDate) params.set('startDate', reportFilters.startDate);
+        if (reportFilters.endDate) params.set('endDate', reportFilters.endDate);
+        const qs = params.toString();
+        return `/schools/${schoolId}/${base}${qs ? `?${qs}` : ''}`;
+    }
 
     async function loadAnalytics() {
         if (!token || !schoolId) return;
@@ -138,8 +181,8 @@ export function AnalyticsDashboard({ schoolId, token, activeTab, onTabChange }: 
     return (
         <div className="space-y-6">
             {/* Tab Navigation */}
-            <div className="flex gap-2 border-b border-slate-200 pb-2">
-                {(['overview', 'drivers', 'audit'] as const).map((tab) => (
+            <div className="flex gap-2 border-b border-slate-200 pb-2 flex-wrap">
+                {(['overview', 'drivers', 'audit', 'reports'] as const).map((tab) => (
                     <button
                         key={tab}
                         onClick={() => onTabChange(tab)}
@@ -148,7 +191,7 @@ export function AnalyticsDashboard({ schoolId, token, activeTab, onTabChange }: 
                             : 'text-slate-800 hover:bg-slate-100'
                             }`}
                     >
-                        {tab === 'overview' ? '📊 Overview' : tab === 'drivers' ? '🚗 Drivers' : '📜 Audit Log'}
+                        {tab === 'overview' ? '📊 Overview' : tab === 'drivers' ? '🚗 Drivers' : tab === 'audit' ? '📜 Audit Log' : '📥 Reports'}
                     </button>
                 ))}
             </div>
@@ -348,6 +391,109 @@ export function AnalyticsDashboard({ schoolId, token, activeTab, onTabChange }: 
                         </ul>
                     )}
                 </SummaryCard>
+            )}
+
+            {/* Reports Tab */}
+            {activeTab === 'reports' && (
+                <div className="space-y-4">
+                    {/* Shared filters */}
+                    <SummaryCard title="Export Filters" description="Apply filters to all reports below. Leave blank to export all records.">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                            <div>
+                                <label className="block text-xs font-medium text-slate-700 mb-1">Instructor</label>
+                                <select
+                                    className="w-full border rounded px-3 py-2 text-slate-900 bg-white"
+                                    value={reportFilters.driverId}
+                                    onChange={(e) => setReportFilters((f) => ({ ...f, driverId: e.target.value }))}
+                                >
+                                    <option value="">All instructors</option>
+                                    {reportDrivers.map((d) => (
+                                        <option key={d.id} value={String(d.id)}>{d.fullName}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-slate-700 mb-1">Start Date</label>
+                                <input
+                                    type="date"
+                                    className="w-full border rounded px-3 py-2 text-slate-900"
+                                    value={reportFilters.startDate}
+                                    onChange={(e) => setReportFilters((f) => ({ ...f, startDate: e.target.value }))}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-slate-700 mb-1">End Date</label>
+                                <input
+                                    type="date"
+                                    className="w-full border rounded px-3 py-2 text-slate-900"
+                                    value={reportFilters.endDate}
+                                    onChange={(e) => setReportFilters((f) => ({ ...f, endDate: e.target.value }))}
+                                />
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            className="mt-3 text-xs text-slate-500 hover:text-slate-700 underline"
+                            onClick={() => setReportFilters({ driverId: '', startDate: '', endDate: '' })}
+                        >
+                            Clear filters
+                        </button>
+                    </SummaryCard>
+
+                    {/* Report cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <SummaryCard
+                            title="Completed & Cancelled Classes"
+                            description="All lessons that have been completed or cancelled. Includes duration, status, and cancellation reason."
+                        >
+                            <p className="text-xs text-slate-600 mb-4">
+                                Columns: Instructor, Student, Date, Start Time, End Time, Duration (min), Status, Cancellation Reason
+                            </p>
+                            <button
+                                type="button"
+                                className="w-full bg-slate-900 text-white rounded px-3 py-2 text-sm font-medium hover:bg-slate-800 disabled:opacity-50"
+                                disabled={isDownloading === 'completed-classes.csv'}
+                                onClick={() => downloadCsv(buildReportUrl('reports/completed-classes.csv'), 'completed-classes.csv')}
+                            >
+                                {isDownloading === 'completed-classes.csv' ? 'Exporting...' : '⬇ Export CSV'}
+                            </button>
+                        </SummaryCard>
+
+                        <SummaryCard
+                            title="Instructor Off-Days"
+                            description="Days where instructors have marked themselves unavailable."
+                        >
+                            <p className="text-xs text-slate-600 mb-4">
+                                Columns: Instructor, Date, Notes
+                            </p>
+                            <button
+                                type="button"
+                                className="w-full bg-slate-900 text-white rounded px-3 py-2 text-sm font-medium hover:bg-slate-800 disabled:opacity-50"
+                                disabled={isDownloading === 'off-days.csv'}
+                                onClick={() => downloadCsv(buildReportUrl('reports/off-days.csv'), 'off-days.csv')}
+                            >
+                                {isDownloading === 'off-days.csv' ? 'Exporting...' : '⬇ Export CSV'}
+                            </button>
+                        </SummaryCard>
+
+                        <SummaryCard
+                            title="Future Schedule"
+                            description="All upcoming scheduled lessons that have not yet taken place."
+                        >
+                            <p className="text-xs text-slate-600 mb-4">
+                                Columns: Instructor, Student, Date, Start Time, End Time, Duration (min), Status
+                            </p>
+                            <button
+                                type="button"
+                                className="w-full bg-slate-900 text-white rounded px-3 py-2 text-sm font-medium hover:bg-slate-800 disabled:opacity-50"
+                                disabled={isDownloading === 'future-schedule.csv'}
+                                onClick={() => downloadCsv(buildReportUrl('reports/future-schedule.csv'), 'future-schedule.csv')}
+                            >
+                                {isDownloading === 'future-schedule.csv' ? 'Exporting...' : '⬇ Export CSV'}
+                            </button>
+                        </SummaryCard>
+                    </div>
+                </div>
             )}
         </div>
     );
