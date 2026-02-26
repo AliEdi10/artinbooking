@@ -537,7 +537,7 @@ export default function StudentPage() {
                       value={addressForm.line1}
                       onChange={(e) => setAddressForm({ ...addressForm, line1: e.target.value })}
                     />
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <input
                         className="border rounded px-3 py-2 w-full text-slate-800"
                         placeholder="City"
@@ -979,7 +979,7 @@ export default function StudentPage() {
       {/* Instructor Profile Modal */}
       {viewingDriver && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setViewingDriver(null)}>
-          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white rounded-xl shadow-xl max-w-[90vw] sm:max-w-sm w-full p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-start">
               <h3 className="text-lg font-semibold text-slate-900">Instructor Profile</h3>
               <button type="button" onClick={() => setViewingDriver(null)} className="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>

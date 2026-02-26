@@ -906,7 +906,7 @@ function DriverPageContent() {
                     : 'Not set - will default to 09:00-17:00'}
                 >
                   <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div>
                         <label className="block text-xs font-medium text-slate-800 mb-1">Start Time</label>
                         <input
@@ -1447,7 +1447,7 @@ function DriverPageContent() {
                 description="Set your working hours for a date range. Students can book within these windows."
               >
                 <form className="space-y-3 text-sm" onSubmit={publishAvailability}>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
                       <label className="block text-xs font-medium text-slate-800 mb-1">Start Date</label>
                       <input
@@ -1469,7 +1469,7 @@ function DriverPageContent() {
                       />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
                       <label className="block text-xs font-medium text-slate-800 mb-1">Start Time</label>
                       <input
@@ -1536,7 +1536,7 @@ function DriverPageContent() {
                 footer={`${driverState.availability.filter(a => a.type === 'override_closed').length} day(s) blocked`}
               >
                 <form className="space-y-3 mb-3" onSubmit={addHoliday}>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
                       <label className="block text-xs font-medium text-slate-800 mb-1">Start Date</label>
                       <input
@@ -1637,7 +1637,7 @@ function DriverPageContent() {
       {/* Student Profile Modal */}
       {viewingStudent && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setViewingStudent(null)}>
-          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white rounded-xl shadow-xl max-w-[90vw] sm:max-w-sm w-full p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-start">
               <h3 className="text-lg font-semibold text-slate-900">Student Profile</h3>
               <button type="button" onClick={() => setViewingStudent(null)} className="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
