@@ -20,6 +20,8 @@ import { formatDateTime, formatDate, formatTime, todayDateString } from '../util
 type StudentProfile = {
   id: number;
   fullName: string;
+  phone?: string | null;
+  email?: string | null;
   licenceStatus: string;
   licenceNumber?: string | null;
   licenceImageUrl?: string | null;
@@ -87,6 +89,8 @@ export default function StudentPage() {
   const [isRescheduling, setIsRescheduling] = useState(false);
   const [lessonDurationMinutes, setLessonDurationMinutes] = useState(90);
   const [viewingDriver, setViewingDriver] = useState<DriverProfile | null>(null);
+  const [contactForm, setContactForm] = useState({ phone: '', email: '' });
+  const [isSavingContact, setIsSavingContact] = useState(false);
 
   async function fetchSlots(driverId: number, pickupId: number, dropoffId: number, date: string) {
     if (!token || !schoolId) return;
@@ -136,6 +140,12 @@ export default function StudentPage() {
         licenceNumber: activeStudent.licenceNumber ?? '',
         licenceProvinceOrState: activeStudent.licenceProvinceOrState ?? '',
         licenceExpiryDate: activeStudent.licenceExpiryDate?.split('T')[0] ?? '',
+      });
+
+      // Populate contact form with existing data
+      setContactForm({
+        phone: activeStudent.phone ?? '',
+        email: activeStudent.email ?? '',
       });
 
       const addressResults = await apiFetch<Address[]>(
@@ -358,6 +368,23 @@ export default function StudentPage() {
     } catch (error) {
       toast.error('Unable to upload licence image.', { id: toastId });
       setUploadingLicence(false);
+    }
+  }
+
+  async function saveContactInfo() {
+    if (!token || !schoolId || !student || isSavingContact) return;
+    setIsSavingContact(true);
+    try {
+      await apiFetch(`/schools/${schoolId}/students/${student.id}`, token, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: contactForm.phone || null, email: contactForm.email || null }),
+      });
+      toast.success('Contact info saved.');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setIsSavingContact(false);
     }
   }
 
@@ -802,6 +829,41 @@ export default function StudentPage() {
               )}
             </SummaryCard>
           </div>
+          <SummaryCard
+            title="Contact Information"
+            description="Your contact details visible to your instructor."
+          >
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Phone</label>
+                <input
+                  className="w-full border rounded px-3 py-2 text-sm text-slate-900"
+                  type="tel"
+                  placeholder="e.g. +1 (902) 555-0100"
+                  value={contactForm.phone}
+                  onChange={(e) => setContactForm((prev) => ({ ...prev, phone: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Email</label>
+                <input
+                  className="w-full border rounded px-3 py-2 text-sm text-slate-900"
+                  type="email"
+                  placeholder="e.g. you@example.com"
+                  value={contactForm.email}
+                  onChange={(e) => setContactForm((prev) => ({ ...prev, email: e.target.value }))}
+                />
+              </div>
+              <button
+                type="button"
+                className="px-4 py-2 bg-slate-900 text-white rounded text-sm hover:bg-slate-700 disabled:opacity-50"
+                onClick={saveContactInfo}
+                disabled={isSavingContact}
+              >
+                {isSavingContact ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </SummaryCard>
           <SummaryCard
             title="Upcoming bookings"
             description="View and manage your scheduled lessons."

@@ -140,6 +140,9 @@ function DriverPageContent() {
   const [contactForm, setContactForm] = useState({ phone: '', email: '' });
   const [isSavingContact, setIsSavingContact] = useState(false);
 
+  // Student profile modal
+  const [viewingStudent, setViewingStudent] = useState<StudentProfile | null>(null);
+
   // Service Center and Working Hours state
   const [serviceCenterCoords, setServiceCenterCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [serviceRadiusKm, setServiceRadiusKm] = useState<number>(25); // Default 25km
@@ -187,6 +190,7 @@ function DriverPageContent() {
       rawStartTime: booking.startTime,
       status: booking.status,
       id: booking.id,
+      studentId: booking.studentId,
       student: driverState.students.find((student) => student.id === booking.studentId)?.fullName ?? 'Student',
       pickupAddress: formatAddress(pickupAddr),
       dropoffAddress: formatAddress(dropoffAddr),
@@ -690,11 +694,18 @@ function DriverPageContent() {
                 </h2>
                 <ul className="space-y-2">
                   {overdue.map(b => {
-                    const studentName = driverState.students.find(s => s.id === b.studentId)?.fullName ?? 'Student';
+                    const overdueStudent = driverState.students.find(s => s.id === b.studentId) ?? null;
+                    const studentName = overdueStudent?.fullName ?? 'Student';
                     return (
                       <li key={b.id} className="flex items-center justify-between bg-white border border-amber-200 rounded p-2">
                         <div>
-                          <p className="text-sm font-medium text-slate-800">{studentName}</p>
+                          <button
+                            type="button"
+                            className="text-sm font-medium text-slate-800 hover:text-blue-700 hover:underline text-left"
+                            onClick={() => overdueStudent && setViewingStudent(overdueStudent)}
+                          >
+                            {studentName}
+                          </button>
                           <p className="text-xs text-slate-800">{formatDateTime(b.startTime)}</p>
                         </div>
                         <div className="flex gap-2">
@@ -754,7 +765,16 @@ function DriverPageContent() {
                               {lesson.status}
                             </span>
                           </div>
-                          <p className="font-medium text-slate-800">{lesson.student}</p>
+                          <button
+                            type="button"
+                            className="font-medium text-slate-800 hover:text-blue-700 hover:underline text-left"
+                            onClick={() => {
+                              const s = driverState.students.find((st) => st.id === lesson.studentId);
+                              if (s) setViewingStudent(s);
+                            }}
+                          >
+                            {lesson.student}
+                          </button>
                           {lesson.pickupAddress && (
                             <p className="text-xs text-slate-800 mt-1">
                               📍 Pickup: {lesson.pickupAddress}
@@ -1019,7 +1039,19 @@ function DriverPageContent() {
                           <div>
                             <p className="font-medium text-slate-800">{lesson.time}</p>
                             <p className="text-xs text-slate-800">{lesson.status}</p>
-                            <p className="text-[11px] text-slate-800">Student: {lesson.student}</p>
+                            <p className="text-[11px] text-slate-800">
+                              Student:{' '}
+                              <button
+                                type="button"
+                                className="hover:text-blue-700 hover:underline"
+                                onClick={() => {
+                                  const s = driverState.students.find((st) => st.id === lesson.studentId);
+                                  if (s) setViewingStudent(s);
+                                }}
+                              >
+                                {lesson.student}
+                              </button>
+                            </p>
                             {lesson.pickupAddress && (
                               <p className="text-[11px] text-blue-600">📍 Pickup: {lesson.pickupAddress}</p>
                             )}
@@ -1571,7 +1603,16 @@ function DriverPageContent() {
                           <p className="text-xs text-slate-800">
                             {formatTime(booking.startTime)}
                             {' - '}
-                            {driverState.students.find((s) => s.id === booking.studentId)?.fullName ?? 'Unknown Student'}
+                            <button
+                              type="button"
+                              className="hover:text-blue-700 hover:underline"
+                              onClick={() => {
+                                const s = driverState.students.find((st) => st.id === booking.studentId);
+                                if (s) setViewingStudent(s);
+                              }}
+                            >
+                              {driverState.students.find((s) => s.id === booking.studentId)?.fullName ?? 'Unknown Student'}
+                            </button>
                           </p>
                         </div>
                         <span className={`px-2 py-1 rounded text-xs font-medium ${booking.status === 'completed'
@@ -1592,6 +1633,67 @@ function DriverPageContent() {
           )}
         </div>
       </AppShell>
+
+      {/* Student Profile Modal */}
+      {viewingStudent && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setViewingStudent(null)}>
+          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-start">
+              <h3 className="text-lg font-semibold text-slate-900">Student Profile</h3>
+              <button type="button" onClick={() => setViewingStudent(null)} className="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 text-xl font-bold">
+                {viewingStudent.fullName.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <p className="text-lg font-medium text-slate-900">{viewingStudent.fullName}</p>
+                {viewingStudent.isMinor && (
+                  <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded">Minor</span>
+                )}
+              </div>
+            </div>
+            <div className="space-y-3 text-sm">
+              {viewingStudent.phone && (
+                <div className="flex items-center gap-3">
+                  <span className="text-slate-400 w-5 text-center">&#128222;</span>
+                  <a href={`tel:${viewingStudent.phone}`} className="text-blue-700 hover:underline">{viewingStudent.phone}</a>
+                </div>
+              )}
+              {viewingStudent.email && (
+                <div className="flex items-center gap-3">
+                  <span className="text-slate-400 w-5 text-center">&#9993;</span>
+                  <a href={`mailto:${viewingStudent.email}`} className="text-blue-700 hover:underline">{viewingStudent.email}</a>
+                </div>
+              )}
+              {viewingStudent.isMinor && viewingStudent.guardianPhone && (
+                <div className="flex items-center gap-3">
+                  <span className="text-slate-400 w-5 text-center">&#128106;</span>
+                  <span className="text-slate-600">Guardian: </span>
+                  <a href={`tel:${viewingStudent.guardianPhone}`} className="text-blue-700 hover:underline">{viewingStudent.guardianPhone}</a>
+                </div>
+              )}
+              {viewingStudent.isMinor && viewingStudent.guardianEmail && (
+                <div className="flex items-center gap-3">
+                  <span className="text-slate-400 w-5 text-center">&#9993;</span>
+                  <span className="text-slate-600">Guardian: </span>
+                  <a href={`mailto:${viewingStudent.guardianEmail}`} className="text-blue-700 hover:underline">{viewingStudent.guardianEmail}</a>
+                </div>
+              )}
+              {!viewingStudent.phone && !viewingStudent.email && (
+                <p className="text-slate-500 text-sm">No contact information available yet.</p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setViewingStudent(null)}
+              className="w-full bg-slate-900 text-white rounded px-3 py-2 text-sm font-medium hover:bg-slate-800"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Phase 4: Cancel Booking Confirmation Dialog */}
       <ConfirmDialog
