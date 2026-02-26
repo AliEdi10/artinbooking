@@ -297,6 +297,8 @@ export async function sendDriverCancellationNotification(
   rawPickupAddress: string,
   rawDropoffAddress: string,
   rawSchoolName: string,
+  customSubject?: string | null,
+  customNote?: string | null,
 ): Promise<void> {
   const driverName = escapeHtml(rawDriverName);
   const studentName = escapeHtml(rawStudentName);
@@ -311,16 +313,21 @@ export async function sendDriverCancellationNotification(
     return;
   }
 
+  const vars = { studentName: rawStudentName, instructorName: rawDriverName, lessonDate: rawLessonDate, lessonTime: rawLessonTime, schoolName: rawSchoolName };
+  const subject = customSubject ? interpolate(customSubject, vars) : `❌ Lesson Cancelled - ${lessonDate} at ${lessonTime}`;
+  const noteHtml = renderCustomNote(customNote ?? undefined, vars);
+
   try {
     await getResend().emails.send({
       from: FROM_EMAIL,
       to,
-      subject: `❌ Lesson Cancelled - ${lessonDate} at ${lessonTime}`,
+      subject,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #dc2626;">❌ Lesson Cancelled</h2>
           <p>Hi ${driverName},</p>
           <p>A lesson has been cancelled.</p>
+          ${noteHtml}
 
           <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin: 20px 0;">
             <p style="margin: 4px 0;"><strong>Student:</strong> ${studentName}</p>
@@ -566,17 +573,22 @@ export async function sendDriverLessonReminderEmail(params: LessonReminderEmailP
 
   console.log(`Sending driver lesson reminder email to ${to}...`);
 
+  const vars = { studentName: params.studentName, instructorName: params.driverName, lessonDate: params.lessonDate, lessonTime: params.lessonTime, schoolName: params.schoolName };
+  const subject = params.customSubject ? interpolate(params.customSubject, vars) : `⏰ Reminder: Lesson Tomorrow with ${studentName} at ${lessonTime}`;
+  const noteHtml = renderCustomNote(params.customNote ?? undefined, vars);
+
   try {
     await getResend().emails.send({
       from: FROM_EMAIL,
       to,
-      subject: `⏰ Reminder: Lesson Tomorrow with ${studentName} at ${lessonTime}`,
+      subject,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #1e40af;">⏰ Lesson Reminder</h2>
           <p>Hi ${recipientName},</p>
           <p>This is a reminder that you have a lesson scheduled for <strong>tomorrow</strong>.</p>
-          
+          ${noteHtml}
+
           <div style="background-color: #eff6ff; border: 1px solid #93c5fd; border-radius: 8px; padding: 16px; margin: 20px 0;">
             <h3 style="margin: 0 0 12px 0; color: #1e40af;">📅 Lesson Details</h3>
             <p style="margin: 4px 0;"><strong>Student:</strong> ${studentName}</p>
@@ -584,9 +596,9 @@ export async function sendDriverLessonReminderEmail(params: LessonReminderEmailP
             <p style="margin: 4px 0;"><strong>Time:</strong> ${lessonTime}</p>
             <p style="margin: 4px 0;"><strong>Pickup Location:</strong> ${pickupAddress}</p>
           </div>
-          
+
           <p style="color: #6b7280; font-size: 14px;">
-            View your full schedule at 
+            View your full schedule at
             <a href="${FRONTEND_URL}/driver">${FRONTEND_URL}/driver</a>
           </p>
           

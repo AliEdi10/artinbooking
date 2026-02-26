@@ -5,12 +5,23 @@ export interface TravelProvider {
   travel(from: Location, to: Location, departure: Date): Promise<{ timeMinutes: number; distanceKm: number }>;
 }
 
+interface DistanceMatrixResponse {
+  rows: Array<{
+    elements: Array<{
+      status: string;
+      distance?: { value: number };
+      duration?: { value: number };
+      duration_in_traffic?: { value: number };
+    }>;
+  }>;
+}
+
 function parseDistanceMatrixResponse(json: unknown) {
-  if (!json || typeof json !== 'object' || !('rows' in json) || !Array.isArray((json as any).rows)) {
+  if (!json || typeof json !== 'object' || !('rows' in json) || !Array.isArray((json as DistanceMatrixResponse).rows)) {
     throw new Error('Unexpected distance matrix response');
   }
 
-  const row = (json as any).rows[0];
+  const row = (json as DistanceMatrixResponse).rows[0];
   const element = row?.elements?.[0];
   if (!element || element.status !== 'OK') {
     throw new Error('Distance matrix element missing');

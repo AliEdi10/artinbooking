@@ -2207,8 +2207,9 @@ export function createApp() {
               console.warn('Could not resolve addresses for cancellation email', addrErr);
             }
 
+            const cancelTpl = await getEmailTemplate(schoolId, 'booking_cancelled').catch(() => null);
+
             if (studentUser?.email && student) {
-              const cancelTpl = await getEmailTemplate(schoolId, 'booking_cancelled').catch(() => null);
               await sendBookingCancellationEmail({
                 to: studentUser.email,
                 studentName: student.fullName,
@@ -2248,6 +2249,8 @@ export function createApp() {
                 pickupAddr,
                 dropoffAddr,
                 school?.name || 'Driving School',
+                cancelTpl?.subject,
+                cancelTpl?.customNote,
               );
             }
           } catch (emailError) {

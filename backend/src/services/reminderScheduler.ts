@@ -105,7 +105,7 @@ async function processBookingReminder(bookingRow: Awaited<ReturnType<typeof getB
         // Send reminder to student
         if (student.email || studentUser?.email) {
             await sendStudentLessonReminderEmail({
-                to: student.email || studentUser!.email,
+                to: student.email ?? studentUser?.email ?? '',
                 recipientName: student.fullName,
                 studentName: student.fullName,
                 driverName: driver.fullName,
@@ -146,6 +146,8 @@ async function processBookingReminder(bookingRow: Awaited<ReturnType<typeof getB
                 lessonDate,
                 lessonTime,
                 pickupAddress,
+                customSubject: reminderTpl?.subject,
+                customNote: reminderTpl?.customNote,
             });
         } else {
             console.warn(`No email found for driver ${driver.id} (${driver.fullName})`);
