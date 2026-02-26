@@ -22,12 +22,32 @@ function escapeHtml(str: string): string {
     .replace(/'/g, '&#39;');
 }
 
+/**
+ * Replace {varName} placeholders in a string with values from the vars map.
+ */
+function interpolate(template: string, vars: Record<string, string>): string {
+  return template.replace(/\{(\w+)\}/g, (_, key) =>
+    key in vars ? escapeHtml(vars[key]) : `{${key}}`
+  );
+}
+
+/**
+ * Render an optional custom note as a styled HTML paragraph injected into an email.
+ */
+function renderCustomNote(note: string | undefined, vars: Record<string, string>): string {
+  if (!note) return '';
+  const text = interpolate(note, vars);
+  return `<div style="background-color:#f8f9fa;border-left:4px solid #6366f1;padding:12px 16px;margin:16px 0;font-size:14px;color:#374151;">${text}</div>`;
+}
+
 export interface SendInvitationEmailParams {
   to: string;
   inviteeName: string;
   role: string;
   schoolName: string;
   invitationToken: string;
+  customSubject?: string | null;
+  customNote?: string | null;
 }
 
 export async function sendInvitationEmail(params: SendInvitationEmailParams): Promise<void> {
@@ -47,6 +67,10 @@ export async function sendInvitationEmail(params: SendInvitationEmailParams): Pr
 
   console.log(`Attempting to send invitation email to ${to}...`);
 
+  const vars = { inviteeName: params.inviteeName, schoolName: params.schoolName, role: roleDisplay };
+  const subject = params.customSubject ? interpolate(params.customSubject, vars) : `You're invited to join ${schoolName}`;
+  const noteHtml = renderCustomNote(params.customNote ?? undefined, vars);
+
   try {
     // Add special note for students
     const studentNote = role === 'STUDENT'
@@ -58,15 +82,16 @@ export async function sendInvitationEmail(params: SendInvitationEmailParams): Pr
     const result = await getResend().emails.send({
       from: FROM_EMAIL,
       to,
-      subject: `You're invited to join ${schoolName}`,
+      subject,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #1e40af;">Welcome to ${APP_NAME}!</h2>
           <p>Hi ${inviteeName || 'there'},</p>
           <p>You've been invited to join <strong>${schoolName}</strong> as a ${roleDisplay}.</p>
+          ${noteHtml}
           ${studentNote}
           <p style="margin: 24px 0;">
-            <a href="${registrationUrl}" 
+            <a href="${registrationUrl}"
                style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
               Complete Your Registration
             </a>
@@ -129,6 +154,8 @@ export interface BookingEmailParams {
   lessonTime: string; // e.g., "10:00 AM"
   pickupAddress: string;
   dropoffAddress: string;
+  customSubject?: string | null;
+  customNote?: string | null;
 }
 
 export async function sendBookingConfirmationEmail(params: BookingEmailParams): Promise<void> {
@@ -148,16 +175,21 @@ export async function sendBookingConfirmationEmail(params: BookingEmailParams): 
 
   console.log(`Sending booking confirmation email to ${to}...`);
 
+  const vars = { studentName: params.studentName, instructorName: params.driverName, lessonDate: params.lessonDate, lessonTime: params.lessonTime, schoolName: params.schoolName };
+  const subject = params.customSubject ? interpolate(params.customSubject, vars) : `✅ Lesson Confirmed - ${lessonDate} at ${lessonTime}`;
+  const noteHtml = renderCustomNote(params.customNote ?? undefined, vars);
+
   try {
     const result = await getResend().emails.send({
       from: FROM_EMAIL,
       to,
-      subject: `✅ Lesson Confirmed - ${lessonDate} at ${lessonTime}`,
+      subject,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #059669;">✅ Your Driving Lesson is Confirmed!</h2>
           <p>Hi ${studentName},</p>
           <p>Your driving lesson with <strong>${schoolName}</strong> has been booked!</p>
+          ${noteHtml}
           
           <div style="background-color: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 16px; margin: 20px 0;">
             <h3 style="margin: 0 0 12px 0; color: #166534;">📅 Lesson Details</h3>
@@ -214,16 +246,21 @@ export async function sendBookingCancellationEmail(params: Omit<BookingEmailPara
 
   console.log(`Sending booking cancellation email to ${to}...`);
 
+  const vars = { studentName: params.studentName, lessonDate: params.lessonDate, lessonTime: params.lessonTime, schoolName: params.schoolName };
+  const subject = params.customSubject ? interpolate(params.customSubject, vars) : `❌ Lesson Cancelled - ${lessonDate}`;
+  const noteHtml = renderCustomNote(params.customNote ?? undefined, vars);
+
   try {
     const result = await getResend().emails.send({
       from: FROM_EMAIL,
       to,
-      subject: `❌ Lesson Cancelled - ${lessonDate}`,
+      subject,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #dc2626;">❌ Your Lesson Has Been Cancelled</h2>
           <p>Hi ${studentName},</p>
           <p>Your driving lesson has been cancelled.</p>
+          ${noteHtml}
           
           <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin: 20px 0;">
             <h3 style="margin: 0 0 12px 0; color: #991b1b;">Cancelled Lesson</h3>
@@ -433,6 +470,8 @@ export interface LessonReminderEmailParams {
   lessonDate: string;
   lessonTime: string;
   pickupAddress: string;
+  customSubject?: string | null;
+  customNote?: string | null;
 }
 
 /**
@@ -454,16 +493,21 @@ export async function sendStudentLessonReminderEmail(params: LessonReminderEmail
 
   console.log(`Sending student lesson reminder email to ${to}...`);
 
+  const vars = { studentName: params.studentName, instructorName: params.driverName, lessonDate: params.lessonDate, lessonTime: params.lessonTime, schoolName: params.schoolName };
+  const subject = params.customSubject ? interpolate(params.customSubject, vars) : `⏰ Reminder: Driving Lesson Tomorrow at ${lessonTime}`;
+  const noteHtml = renderCustomNote(params.customNote ?? undefined, vars);
+
   try {
     await getResend().emails.send({
       from: FROM_EMAIL,
       to,
-      subject: `⏰ Reminder: Driving Lesson Tomorrow at ${lessonTime}`,
+      subject,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #1e40af;">⏰ Lesson Reminder</h2>
           <p>Hi ${recipientName},</p>
           <p>This is a friendly reminder that you have a driving lesson scheduled for <strong>tomorrow</strong>!</p>
+          ${noteHtml}
           
           <div style="background-color: #eff6ff; border: 1px solid #93c5fd; border-radius: 8px; padding: 16px; margin: 20px 0;">
             <h3 style="margin: 0 0 12px 0; color: #1e40af;">📅 Lesson Details</h3>

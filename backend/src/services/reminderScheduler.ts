@@ -13,6 +13,7 @@ import { getDriverProfileById } from '../repositories/driverProfiles';
 import { getDrivingSchoolById } from '../repositories/drivingSchools';
 import { getAddressById } from '../repositories/studentAddresses';
 import { getUserById } from '../repositories/users';
+import { getEmailTemplate } from '../repositories/emailTemplates';
 import {
     sendStudentLessonReminderEmail,
     sendDriverLessonReminderEmail,
@@ -98,6 +99,9 @@ async function processBookingReminder(bookingRow: Awaited<ReturnType<typeof getB
         const lessonDate = formatDate(booking.startTime);
         const lessonTime = formatTime(booking.startTime);
 
+        // Load custom reminder template for this school (best-effort)
+        const reminderTpl = await getEmailTemplate(booking.drivingSchoolId, 'lesson_reminder').catch(() => null);
+
         // Send reminder to student
         if (student.email || studentUser?.email) {
             await sendStudentLessonReminderEmail({
@@ -109,6 +113,8 @@ async function processBookingReminder(bookingRow: Awaited<ReturnType<typeof getB
                 lessonDate,
                 lessonTime,
                 pickupAddress,
+                customSubject: reminderTpl?.subject,
+                customNote: reminderTpl?.customNote,
             });
         } else {
             console.warn(`No email found for student ${student.id} (${student.fullName})`);

@@ -103,6 +103,56 @@ export default function AdminPage() {
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
 
+  type EmailTemplateKey = 'booking_confirmation' | 'booking_cancelled' | 'lesson_reminder' | 'invitation';
+  type EmailTemplate = { templateKey: EmailTemplateKey; subject: string | null; customNote: string | null };
+  const TEMPLATE_LABELS: Record<EmailTemplateKey, { label: string; vars: string }> = {
+    booking_confirmation: { label: 'Booking Confirmation', vars: '{studentName}, {instructorName}, {lessonDate}, {lessonTime}, {schoolName}' },
+    booking_cancelled:   { label: 'Booking Cancelled',    vars: '{studentName}, {lessonDate}, {lessonTime}, {schoolName}' },
+    lesson_reminder:     { label: 'Lesson Reminder',      vars: '{studentName}, {instructorName}, {lessonDate}, {lessonTime}, {schoolName}' },
+    invitation:          { label: 'Invitation',            vars: '{inviteeName}, {role}, {schoolName}' },
+  };
+  const ALL_TEMPLATE_KEYS = Object.keys(TEMPLATE_LABELS) as EmailTemplateKey[];
+  const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
+  const [expandedTemplate, setExpandedTemplate] = useState<EmailTemplateKey | null>(null);
+  const [templateForms, setTemplateForms] = useState<Record<EmailTemplateKey, { subject: string; customNote: string }>>({
+    booking_confirmation: { subject: '', customNote: '' },
+    booking_cancelled:    { subject: '', customNote: '' },
+    lesson_reminder:      { subject: '', customNote: '' },
+    invitation:           { subject: '', customNote: '' },
+  });
+
+  async function loadEmailTemplates() {
+    if (!token || !schoolId) return;
+    try {
+      const templates = await apiFetch<EmailTemplate[]>(`/schools/${schoolId}/email-templates`, token);
+      setEmailTemplates(templates);
+      setTemplateForms(prev => {
+        const next = { ...prev };
+        for (const tpl of templates) {
+          next[tpl.templateKey] = { subject: tpl.subject ?? '', customNote: tpl.customNote ?? '' };
+        }
+        return next;
+      });
+    } catch { /* ignore */ }
+  }
+
+  async function saveEmailTemplate(key: EmailTemplateKey) {
+    if (!token || !schoolId) return;
+    const toastId = toast.loading('Saving template...');
+    try {
+      const { subject, customNote } = templateForms[key];
+      await apiFetch(`/schools/${schoolId}/email-templates/${key}`, token, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject: subject || null, customNote: customNote || null }),
+      });
+      await loadEmailTemplates();
+      toast.success('Template saved!', { id: toastId });
+    } catch (err) {
+      toast.error(getErrorMessage(err), { id: toastId });
+    }
+  }
+
   async function loadSettings() {
     if (!token || !schoolId) { setLoadingSettings(false); return; }
     setLoadingSettings(true);
@@ -169,6 +219,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     loadSettings();
+    loadEmailTemplates();
   }, [schoolId, token]);
 
   useEffect(() => {
@@ -967,6 +1018,62 @@ export default function AdminPage() {
                       {isAdminAction ? 'Saving...' : 'Save settings'}
                     </button>
                   </form>
+                </SummaryCard>
+                <SummaryCard
+                  title="Email Templates"
+                  description="Customize email subject and message for each notification type."
+                >
+                  <div className="space-y-2 text-sm">
+                    {ALL_TEMPLATE_KEYS.map((key) => {
+                      const meta = TEMPLATE_LABELS[key];
+                      const isOpen = expandedTemplate === key;
+                      const form = templateForms[key];
+                      return (
+                        <div key={key} className="border rounded-lg overflow-hidden">
+                          <button
+                            type="button"
+                            className="w-full flex justify-between items-center px-3 py-2 text-left hover:bg-slate-50 text-sm font-medium"
+                            onClick={() => setExpandedTemplate(isOpen ? null : key)}
+                          >
+                            <span>{meta.label}</span>
+                            <span className="text-slate-400">{isOpen ? '▲' : '▼'}</span>
+                          </button>
+                          {isOpen && (
+                            <div className="p-3 border-t space-y-2 bg-slate-50">
+                              <p className="text-xs text-slate-500">Available variables: {meta.vars}</p>
+                              <label className="block text-xs text-slate-700">
+                                Subject (leave blank to use default)
+                                <input
+                                  type="text"
+                                  className="mt-1 border rounded px-2 py-1 w-full text-sm"
+                                  placeholder="e.g. Your lesson with {schoolName} is confirmed!"
+                                  value={form.subject}
+                                  onChange={(e) => setTemplateForms(prev => ({ ...prev, [key]: { ...prev[key], subject: e.target.value } }))}
+                                />
+                              </label>
+                              <label className="block text-xs text-slate-700">
+                                Custom note (shown at top of email body, leave blank to omit)
+                                <textarea
+                                  className="mt-1 border rounded px-2 py-1 w-full text-sm h-16 resize-none"
+                                  placeholder="e.g. Please arrive 5 minutes early. Contact us at {schoolName} if you have questions."
+                                  value={form.customNote}
+                                  onChange={(e) => setTemplateForms(prev => ({ ...prev, [key]: { ...prev[key], customNote: e.target.value } }))}
+                                />
+                              </label>
+                              <button
+                                type="button"
+                                disabled={isAdminAction}
+                                onClick={() => saveEmailTemplate(key)}
+                                className="text-xs px-3 py-1.5 bg-slate-900 text-white rounded hover:bg-slate-700 disabled:opacity-50"
+                              >
+                                Save
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </SummaryCard>
               </div>
               <SummaryCard

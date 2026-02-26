@@ -25,6 +25,7 @@ import { createAddress, getAddressById, getAddressesByIds, listAddressesForStude
 import { cancelBooking, completeBooking, createBooking, createBookingAtomic, getBookingById, listBookings, updateBooking, rescheduleBookingAtomic, countScheduledBookingsForStudentOnDate, getTotalBookedHoursForStudent } from './repositories/bookings';
 import { createAvailability, deleteAvailability, listAvailability, getDriverHolidaysForSchool } from './repositories/driverAvailability';
 import { getSchoolSettings, upsertSchoolSettings } from './repositories/schoolSettings';
+import { getAllEmailTemplates, getEmailTemplate, upsertEmailTemplate, EmailTemplateKey } from './repositories/emailTemplates';
 import { UserRole } from './models';
 import { AuthenticatedRequest } from './types/auth';
 import { AvailabilityRequest, BookingWithLocations, computeAvailableSlots, Location } from './services/availability';
@@ -489,12 +490,15 @@ export function createApp() {
 
         // Send invitation email (don't fail if email fails)
         try {
+          const inviteTpl = await getEmailTemplate(requestedSchoolId, 'invitation').catch(() => null);
           await sendInvitationEmail({
             to: email,
             inviteeName: fullName || '',
             role: roleValue,
             schoolName: school.name,
             invitationToken: token,
+            customSubject: inviteTpl?.subject,
+            customNote: inviteTpl?.customNote,
           });
         } catch (emailError) {
           console.error('Failed to send invitation email:', emailError);
@@ -602,12 +606,15 @@ export function createApp() {
         const school = await getDrivingSchoolById(schoolId);
         if (school) {
           try {
+            const inviteTpl = await getEmailTemplate(schoolId, 'invitation').catch(() => null);
             await sendInvitationEmail({
               to: updated.email,
               inviteeName: updated.fullName || '',
               role: updated.role,
               schoolName: school.name,
               invitationToken: newToken,
+              customSubject: inviteTpl?.subject,
+              customNote: inviteTpl?.customNote,
             });
           } catch (emailError) {
             console.error('Failed to send resend invitation email:', emailError);
@@ -1854,6 +1861,7 @@ export function createApp() {
             const dropoffAddr = `${dropoffAddress.line1}, ${dropoffAddress.city}`;
 
             if (studentUser?.email) {
+              const confirmTpl = await getEmailTemplate(schoolId, 'booking_confirmation').catch(() => null);
               await sendBookingConfirmationEmail({
                 to: studentUser.email,
                 studentName: student.fullName,
@@ -1863,6 +1871,8 @@ export function createApp() {
                 lessonTime,
                 pickupAddress: pickupAddr,
                 dropoffAddress: dropoffAddr,
+                customSubject: confirmTpl?.subject,
+                customNote: confirmTpl?.customNote,
               });
             }
 
@@ -2184,6 +2194,7 @@ export function createApp() {
             }
 
             if (studentUser?.email && student) {
+              const cancelTpl = await getEmailTemplate(schoolId, 'booking_cancelled').catch(() => null);
               await sendBookingCancellationEmail({
                 to: studentUser.email,
                 studentName: student.fullName,
@@ -2192,6 +2203,8 @@ export function createApp() {
                 lessonTime,
                 pickupAddress: pickupAddr,
                 dropoffAddress: dropoffAddr,
+                customSubject: cancelTpl?.subject,
+                customNote: cancelTpl?.customNote,
               });
             }
 
@@ -2336,6 +2349,47 @@ export function createApp() {
     authenticateRequest,
     requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN']),
     updateSchoolSettingsHandler,
+  );
+
+  // Email template endpoints
+  const VALID_TEMPLATE_KEYS: EmailTemplateKey[] = ['booking_confirmation', 'booking_cancelled', 'lesson_reminder', 'invitation'];
+
+  app.get(
+    '/schools/:schoolId/email-templates',
+    authenticateRequest,
+    requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN']),
+    async (req: AuthenticatedRequest, res, next) => {
+      try {
+        const schoolId = await resolveSchoolContext(req as AuthenticatedRequest, res);
+        if (!schoolId) return;
+        const templates = await getAllEmailTemplates(schoolId);
+        res.json(templates);
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
+
+  app.put(
+    '/schools/:schoolId/email-templates/:key',
+    authenticateRequest,
+    requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN']),
+    async (req: AuthenticatedRequest, res, next) => {
+      try {
+        const schoolId = await resolveSchoolContext(req as AuthenticatedRequest, res);
+        if (!schoolId) return;
+        const key = req.params.key as EmailTemplateKey;
+        if (!VALID_TEMPLATE_KEYS.includes(key)) {
+          res.status(400).json({ error: `Invalid template key. Must be one of: ${VALID_TEMPLATE_KEYS.join(', ')}` });
+          return;
+        }
+        const { subject, customNote } = req.body as { subject?: string; customNote?: string };
+        const template = await upsertEmailTemplate(schoolId, key, subject ?? null, customNote ?? null);
+        res.json(template);
+      } catch (error) {
+        next(error);
+      }
+    },
   );
 
   app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
