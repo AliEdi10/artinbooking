@@ -1874,6 +1874,20 @@ export function createApp() {
                 customSubject: confirmTpl?.subject,
                 customNote: confirmTpl?.customNote,
               });
+              if (student.isMinor && student.guardianEmail) {
+                await sendBookingConfirmationEmail({
+                  to: student.guardianEmail,
+                  studentName: student.fullName,
+                  driverName: driver.fullName,
+                  schoolName: school?.name || 'Driving School',
+                  lessonDate,
+                  lessonTime,
+                  pickupAddress: pickupAddr,
+                  dropoffAddress: dropoffAddr,
+                  customSubject: confirmTpl?.subject,
+                  customNote: confirmTpl?.customNote,
+                });
+              }
             }
 
             if (driverUser?.email) {
@@ -2206,6 +2220,19 @@ export function createApp() {
                 customSubject: cancelTpl?.subject,
                 customNote: cancelTpl?.customNote,
               });
+              if (student.isMinor && student.guardianEmail) {
+                await sendBookingCancellationEmail({
+                  to: student.guardianEmail,
+                  studentName: student.fullName,
+                  schoolName: school?.name || 'Driving School',
+                  lessonDate,
+                  lessonTime,
+                  pickupAddress: pickupAddr,
+                  dropoffAddress: dropoffAddr,
+                  customSubject: cancelTpl?.subject,
+                  customNote: cancelTpl?.customNote,
+                });
+              }
             }
 
             // Notify the driver about the cancellation

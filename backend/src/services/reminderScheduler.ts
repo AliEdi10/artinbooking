@@ -116,6 +116,21 @@ async function processBookingReminder(bookingRow: Awaited<ReturnType<typeof getB
                 customSubject: reminderTpl?.subject,
                 customNote: reminderTpl?.customNote,
             });
+            // CC guardian for minor students
+            if (student.isMinor && student.guardianEmail) {
+                await sendStudentLessonReminderEmail({
+                    to: student.guardianEmail,
+                    recipientName: 'Guardian',
+                    studentName: student.fullName,
+                    driverName: driver.fullName,
+                    schoolName: school.name,
+                    lessonDate,
+                    lessonTime,
+                    pickupAddress,
+                    customSubject: reminderTpl?.subject,
+                    customNote: reminderTpl?.customNote,
+                });
+            }
         } else {
             console.warn(`No email found for student ${student.id} (${student.fullName})`);
         }
