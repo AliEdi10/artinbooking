@@ -44,6 +44,7 @@ export interface CreateDriverProfileInput {
   drivingSchoolId: number;
   fullName: string;
   phone?: string;
+  email?: string;
   serviceCenterLocation?: unknown;
   workDayStart?: string;
   workDayEnd?: string;
@@ -65,6 +66,7 @@ export async function createDriverProfile(input: CreateDriverProfileInput): Prom
       driving_school_id,
       full_name,
       phone,
+      email,
       service_center_location,
       work_day_start,
       work_day_end,
@@ -78,13 +80,14 @@ export async function createDriverProfile(input: CreateDriverProfileInput): Prom
       notes,
       active
     ) VALUES (
-      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16
+      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17
     ) RETURNING *`,
     [
       input.userId,
       input.drivingSchoolId,
       input.fullName,
       input.phone ?? null,
+      input.email ?? null,
       input.serviceCenterLocation ?? null,
       input.workDayStart ?? null,
       input.workDayEnd ?? null,
@@ -111,7 +114,7 @@ export async function updateDriverProfile(
   const fields: string[] = [];
   const values: unknown[] = [];
 
-  const allowedColumns = new Set(['full_name', 'phone', 'service_center_location', 'work_day_start', 'work_day_end', 'lesson_duration_minutes', 'buffer_minutes_between_lessons', 'service_radius_km', 'max_segment_travel_time_min', 'max_segment_travel_distance_km', 'daily_max_travel_time_min', 'daily_max_travel_distance_km', 'notes', 'active']);
+  const allowedColumns = new Set(['full_name', 'phone', 'email', 'service_center_location', 'work_day_start', 'work_day_end', 'lesson_duration_minutes', 'buffer_minutes_between_lessons', 'service_radius_km', 'max_segment_travel_time_min', 'max_segment_travel_distance_km', 'daily_max_travel_time_min', 'daily_max_travel_distance_km', 'notes', 'active']);
   Object.entries(updates).forEach(([key, value]) => {
     if (value === undefined) return;
     const column = key.replace(/[A-Z]/g, (m) => `_${m.toLowerCase()}`);

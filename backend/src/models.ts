@@ -76,6 +76,7 @@ export interface DriverProfileRow {
   driving_school_id: number;
   full_name: string;
   phone: string | null;
+  email: string | null;
   service_center_location: unknown;
   work_day_start: string | null;
   work_day_end: string | null;
@@ -98,6 +99,7 @@ export interface DriverProfile {
   drivingSchoolId: number;
   fullName: string;
   phone: string | null;
+  email: string | null;
   serviceCenterLocation: unknown;
   workDayStart: string | null;
   workDayEnd: string | null;
@@ -198,6 +200,7 @@ export const mapDriverProfile = (row: DriverProfileRow): DriverProfile => ({
   drivingSchoolId: Number(row.driving_school_id),
   fullName: row.full_name,
   phone: row.phone,
+  email: row.email,
   serviceCenterLocation: row.service_center_location,
   workDayStart: row.work_day_start,
   workDayEnd: row.work_day_end,

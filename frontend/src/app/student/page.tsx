@@ -41,7 +41,7 @@ type Address = {
 };
 
 type Booking = { id: number; studentId: number; driverId: number; startTime: string; status: string };
-type DriverProfile = { id: number; fullName: string; active: boolean };
+type DriverProfile = { id: number; fullName: string; phone: string | null; email: string | null; active: boolean };
 
 type SuggestedSlot = { startTime: string; driverId: number };
 
@@ -86,6 +86,7 @@ export default function StudentPage() {
   const [bookingInProgress, setBookingInProgress] = useState(false);
   const [isRescheduling, setIsRescheduling] = useState(false);
   const [lessonDurationMinutes, setLessonDurationMinutes] = useState(90);
+  const [viewingDriver, setViewingDriver] = useState<DriverProfile | null>(null);
 
   async function fetchSlots(driverId: number, pickupId: number, dropoffId: number, date: string) {
     if (!token || !schoolId) return;
@@ -814,9 +815,16 @@ export default function StudentPage() {
                       <p className="font-medium text-slate-800">{formatDateTime(booking.startTime)}</p>
                       <p className="text-xs text-slate-800">Status: {booking.status}</p>
                     </div>
-                    <p className="text-xs text-slate-800">
-                      Driver: {drivers.find((driver) => driver.id === booking.driverId)?.fullName ?? 'Driver'}
-                    </p>
+                    <button
+                      type="button"
+                      className="text-xs text-blue-700 hover:underline cursor-pointer"
+                      onClick={() => {
+                        const d = drivers.find((driver) => driver.id === booking.driverId);
+                        if (d) setViewingDriver(d);
+                      }}
+                    >
+                      Instructor: {drivers.find((driver) => driver.id === booking.driverId)?.fullName ?? 'Driver'}
+                    </button>
                   </div>
                   <div className="flex flex-wrap gap-2 text-xs items-center">
                     <AddToCalendarButton
@@ -877,7 +885,16 @@ export default function StudentPage() {
                       <p className="text-xs text-slate-800">
                         {formatTime(booking.startTime)}
                         {' with '}
-                        {drivers.find((d) => d.id === booking.driverId)?.fullName ?? 'Unknown'}
+                        <button
+                          type="button"
+                          className="text-blue-700 hover:underline cursor-pointer"
+                          onClick={() => {
+                            const d = drivers.find((driver) => driver.id === booking.driverId);
+                            if (d) setViewingDriver(d);
+                          }}
+                        >
+                          {drivers.find((d) => d.id === booking.driverId)?.fullName ?? 'Unknown'}
+                        </button>
                       </p>
                     </div>
                     <span className={`px-2 py-1 rounded text-xs font-medium ${booking.status === 'completed'
@@ -896,6 +913,50 @@ export default function StudentPage() {
           </SummaryCard>
         </div>
       </AppShell>
+
+      {/* Instructor Profile Modal */}
+      {viewingDriver && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setViewingDriver(null)}>
+          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-start">
+              <h3 className="text-lg font-semibold text-slate-900">Instructor Profile</h3>
+              <button type="button" onClick={() => setViewingDriver(null)} className="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xl font-bold">
+                {viewingDriver.fullName.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <p className="text-lg font-medium text-slate-900">{viewingDriver.fullName}</p>
+              </div>
+            </div>
+            <div className="space-y-3 text-sm">
+              {viewingDriver.phone && (
+                <div className="flex items-center gap-3">
+                  <span className="text-slate-400 w-5 text-center">&#128222;</span>
+                  <a href={`tel:${viewingDriver.phone}`} className="text-blue-700 hover:underline">{viewingDriver.phone}</a>
+                </div>
+              )}
+              {viewingDriver.email && (
+                <div className="flex items-center gap-3">
+                  <span className="text-slate-400 w-5 text-center">&#9993;</span>
+                  <a href={`mailto:${viewingDriver.email}`} className="text-blue-700 hover:underline">{viewingDriver.email}</a>
+                </div>
+              )}
+              {!viewingDriver.phone && !viewingDriver.email && (
+                <p className="text-slate-500 text-sm">No contact information available yet.</p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setViewingDriver(null)}
+              className="w-full bg-slate-900 text-white rounded px-3 py-2 text-sm font-medium hover:bg-slate-800"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Cancel Booking Confirmation Dialog */}
       <ConfirmDialog

@@ -24,6 +24,8 @@ import { SchoolSelectorBanner } from '../components/SchoolSelectorBanner';
 type DriverProfile = {
   id: number;
   fullName: string;
+  phone?: string | null;
+  email?: string | null;
   active: boolean;
   serviceCenterLocation?: { latitude: number; longitude: number } | null;
   workDayStart?: string | null;
@@ -134,6 +136,10 @@ function DriverPageContent() {
   const [confirmDeleteSlot, setConfirmDeleteSlot] = useState<{ id: number; date: string } | null>(null);
   const [confirmDeleteBlock, setConfirmDeleteBlock] = useState<{ id: number; date: string } | null>(null);
 
+  // Contact Info state
+  const [contactForm, setContactForm] = useState({ phone: '', email: '' });
+  const [isSavingContact, setIsSavingContact] = useState(false);
+
   // Service Center and Working Hours state
   const [serviceCenterCoords, setServiceCenterCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [serviceRadiusKm, setServiceRadiusKm] = useState<number>(25); // Default 25km
@@ -213,6 +219,10 @@ function DriverPageContent() {
           end: activeDriver.workDayEnd || '17:00',
         });
       }
+      setContactForm({
+        phone: activeDriver.phone || '',
+        email: activeDriver.email || '',
+      });
 
       setStatus('Loading availability and bookings...');
 
@@ -296,7 +306,24 @@ function DriverPageContent() {
     }
   }
 
-
+  async function saveContactInfo() {
+    if (!token || !schoolId || !driverState.driver) return;
+    setIsSavingContact(true);
+    const toastId = toast.loading('Saving contact info...');
+    try {
+      await apiFetch(`/schools/${schoolId}/drivers/${driverState.driver.id}`, token, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: contactForm.phone || null, email: contactForm.email || null }),
+      });
+      await loadDriverContext();
+      toast.success('Contact info saved!', { id: toastId });
+    } catch (err) {
+      toast.error(getErrorMessage(err), { id: toastId });
+    } finally {
+      setIsSavingContact(false);
+    }
+  }
 
   async function loadSchoolSettings() {
     if (!token || !schoolId) return;
@@ -765,6 +792,44 @@ function DriverPageContent() {
           {/* Overview Tab Content */}
           {activeTab === 'overview' && (
             <>
+              {/* Contact Info */}
+              <SummaryCard
+                title="Contact Information"
+                description="Your contact details visible to students."
+                footer={driverState.driver?.phone || driverState.driver?.email ? 'Contact info on file' : 'No contact info yet'}
+              >
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-800 mb-1">Phone Number</label>
+                    <input
+                      type="tel"
+                      className="w-full border rounded px-3 py-2 text-slate-900"
+                      placeholder="+1 (902) 555-1234"
+                      value={contactForm.phone}
+                      onChange={(e) => setContactForm({ ...contactForm, phone: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-800 mb-1">Contact Email</label>
+                    <input
+                      type="email"
+                      className="w-full border rounded px-3 py-2 text-slate-900"
+                      placeholder="instructor@example.com"
+                      value={contactForm.email}
+                      onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    className="w-full bg-slate-900 text-white font-medium rounded px-3 py-2 hover:bg-slate-800 disabled:opacity-50"
+                    onClick={saveContactInfo}
+                    disabled={isSavingContact}
+                  >
+                    {isSavingContact ? 'Saving...' : 'Save Contact Info'}
+                  </button>
+                </div>
+              </SummaryCard>
+
               {/* Service Center Location & Default Working Hours */}
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 <SummaryCard

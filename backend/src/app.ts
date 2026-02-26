@@ -801,6 +801,8 @@ export function createApp() {
             userId: user.id,
             drivingSchoolId: invitation.drivingSchoolId,
             fullName: fullName || invitation.fullName || invitation.email.split('@')[0],
+            phone: phone,
+            email: invitation.email,
           });
         }
 
@@ -964,7 +966,7 @@ export function createApp() {
           return;
         }
 
-        const allowedFields = ['fullName', 'phone', 'workDayStart', 'workDayEnd', 'notes', 'active',
+        const allowedFields = ['fullName', 'phone', 'email', 'workDayStart', 'workDayEnd', 'notes', 'active',
           'serviceCenterLocation', 'serviceRadiusKm', 'lessonDurationMinutes', 'bufferMinutesBetweenLessons',
           'maxSegmentTravelTimeMin', 'maxSegmentTravelDistanceKm',
           'dailyMaxTravelTimeMin', 'dailyMaxTravelDistanceKm'];

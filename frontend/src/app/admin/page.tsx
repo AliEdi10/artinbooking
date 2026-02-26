@@ -29,7 +29,7 @@ type SchoolSettings = {
   allowDriverSelfAvailabilityEdit: boolean;
 };
 
-type Driver = { id: number; fullName: string; active: boolean };
+type Driver = { id: number; fullName: string; phone: string | null; email: string | null; active: boolean };
 type Student = {
   id: number;
   fullName: string;
@@ -517,9 +517,18 @@ export default function AdminPage() {
               >
                 <ul className="space-y-1 text-sm text-slate-800">
                   {drivers.map((driver) => (
-                    <li key={driver.id} className="flex justify-between">
-                      <span>{driver.fullName}</span>
-                      <span className="text-xs text-slate-800">{driver.active ? 'active' : 'inactive'}</span>
+                    <li key={driver.id} className="border rounded p-2 bg-slate-50">
+                      <div className="flex justify-between">
+                        <span className="font-medium">{driver.fullName}</span>
+                        <span className="text-xs text-slate-800">{driver.active ? 'active' : 'inactive'}</span>
+                      </div>
+                      {(driver.phone || driver.email) && (
+                        <div className="text-xs text-slate-600 mt-1">
+                          {driver.phone && <span>{driver.phone}</span>}
+                          {driver.phone && driver.email && <span> · </span>}
+                          {driver.email && <span>{driver.email}</span>}
+                        </div>
+                      )}
                     </li>
                   ))}
                   {drivers.length === 0 && !loadingRoster ? (
