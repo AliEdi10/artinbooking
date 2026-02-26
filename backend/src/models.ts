@@ -412,6 +412,7 @@ export interface SchoolSettingsRow {
   daily_booking_cap_per_driver: number | null;
   allow_student_to_pick_driver: boolean;
   allow_driver_self_availability_edit: boolean;
+  reminder_hours_before: number;
   created_at: Date;
   updated_at: Date;
 }
@@ -431,6 +432,7 @@ export interface SchoolSettings {
   dailyBookingCapPerDriver: number | null;
   allowStudentToPickDriver: boolean;
   allowDriverSelfAvailabilityEdit: boolean;
+  reminderHoursBefore: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -450,6 +452,7 @@ export const mapSchoolSettings = (row: SchoolSettingsRow): SchoolSettings => ({
   dailyBookingCapPerDriver: row.daily_booking_cap_per_driver,
   allowStudentToPickDriver: row.allow_student_to_pick_driver,
   allowDriverSelfAvailabilityEdit: row.allow_driver_self_availability_edit,
+  reminderHoursBefore: row.reminder_hours_before ?? 24,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });

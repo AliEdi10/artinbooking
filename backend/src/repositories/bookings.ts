@@ -354,21 +354,17 @@ export async function rescheduleBookingAtomic(
 
 /**
  * Get bookings that need reminder emails sent
- * Finds scheduled bookings starting in 23-25 hours that haven't received a reminder yet
+ * Uses each school's configured reminder_hours_before (default 24h) with a ±1h window
  */
 export async function getBookingsForReminder(): Promise<BookingRow[]> {
-  const now = new Date();
-  const in23Hours = new Date(now.getTime() + 23 * 60 * 60 * 1000);
-  const in25Hours = new Date(now.getTime() + 25 * 60 * 60 * 1000);
-
   const result = await getPool().query<BookingRow>(
-    `SELECT * FROM bookings
-     WHERE status = 'scheduled'
-       AND reminder_sent_at IS NULL
-       AND start_time >= $1
-       AND start_time <= $2
-     ORDER BY start_time ASC`,
-    [in23Hours.toISOString(), in25Hours.toISOString()],
+    `SELECT b.* FROM bookings b
+     LEFT JOIN school_settings ss ON ss.driving_school_id = b.driving_school_id
+     WHERE b.status = 'scheduled'
+       AND b.reminder_sent_at IS NULL
+       AND b.start_time >= NOW() + (COALESCE(ss.reminder_hours_before, 24) - 1) * INTERVAL '1 hour'
+       AND b.start_time <= NOW() + (COALESCE(ss.reminder_hours_before, 24) + 1) * INTERVAL '1 hour'
+     ORDER BY b.start_time ASC`,
   );
 
   return result.rows;

@@ -31,6 +31,7 @@ export async function upsertSchoolSettings(
     dailyBookingCapPerDriver: settings.dailyBookingCapPerDriver !== undefined ? settings.dailyBookingCapPerDriver : (existing?.dailyBookingCapPerDriver ?? null),
     allowStudentToPickDriver: settings.allowStudentToPickDriver !== undefined ? settings.allowStudentToPickDriver : (existing?.allowStudentToPickDriver ?? true),
     allowDriverSelfAvailabilityEdit: settings.allowDriverSelfAvailabilityEdit !== undefined ? settings.allowDriverSelfAvailabilityEdit : (existing?.allowDriverSelfAvailabilityEdit ?? true),
+    reminderHoursBefore: settings.reminderHoursBefore !== undefined ? settings.reminderHoursBefore : (existing?.reminderHoursBefore ?? 24),
   };
 
   const result = await getPool().query<SchoolSettingsRow>(
@@ -47,9 +48,10 @@ export async function upsertSchoolSettings(
       default_daily_max_travel_distance_km,
       daily_booking_cap_per_driver,
       allow_student_to_pick_driver,
-      allow_driver_self_availability_edit
+      allow_driver_self_availability_edit,
+      reminder_hours_before
     ) VALUES (
-      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13
+      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14
     ) ON CONFLICT (driving_school_id) DO UPDATE SET
       min_booking_lead_time_hours = EXCLUDED.min_booking_lead_time_hours,
       cancellation_cutoff_hours = EXCLUDED.cancellation_cutoff_hours,
@@ -63,6 +65,7 @@ export async function upsertSchoolSettings(
       daily_booking_cap_per_driver = EXCLUDED.daily_booking_cap_per_driver,
       allow_student_to_pick_driver = EXCLUDED.allow_student_to_pick_driver,
       allow_driver_self_availability_edit = EXCLUDED.allow_driver_self_availability_edit,
+      reminder_hours_before = EXCLUDED.reminder_hours_before,
       updated_at = NOW()
     RETURNING *`,
     [
@@ -79,6 +82,7 @@ export async function upsertSchoolSettings(
       merged.dailyBookingCapPerDriver,
       merged.allowStudentToPickDriver,
       merged.allowDriverSelfAvailabilityEdit,
+      merged.reminderHoursBefore,
     ],
   );
 

@@ -2291,7 +2291,8 @@ export function createApp() {
         'defaultLessonDurationMinutes', 'defaultBufferMinutesBetweenLessons',
         'defaultServiceRadiusKm', 'defaultMaxSegmentTravelTimeMin', 'defaultMaxSegmentTravelDistanceKm',
         'defaultDailyMaxTravelTimeMin', 'defaultDailyMaxTravelDistanceKm',
-        'dailyBookingCapPerDriver', 'allowStudentToPickDriver', 'allowDriverSelfAvailabilityEdit'];
+        'dailyBookingCapPerDriver', 'allowStudentToPickDriver', 'allowDriverSelfAvailabilityEdit',
+        'reminderHoursBefore'];
       const body = pick(req.body, settingsFields);
       const numericFields: Array<{ key: string; min: number; max: number }> = [
         { key: 'minBookingLeadTimeHours', min: 0, max: 720 },
@@ -2304,6 +2305,7 @@ export function createApp() {
         { key: 'defaultDailyMaxTravelTimeMin', min: 0, max: 720 },
         { key: 'defaultDailyMaxTravelDistanceKm', min: 0, max: 1000 },
         { key: 'dailyBookingCapPerDriver', min: 1, max: 50 },
+        { key: 'reminderHoursBefore', min: 1, max: 168 },
       ];
       for (const { key, min, max } of numericFields) {
         if (body[key] !== undefined && body[key] !== null) {

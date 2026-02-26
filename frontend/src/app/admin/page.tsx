@@ -27,6 +27,7 @@ type SchoolSettings = {
   dailyBookingCapPerDriver: number | null;
   allowStudentToPickDriver: boolean;
   allowDriverSelfAvailabilityEdit: boolean;
+  reminderHoursBefore: number;
 };
 
 type Driver = { id: number; fullName: string; phone: string | null; email: string | null; active: boolean };
@@ -91,6 +92,7 @@ export default function AdminPage() {
     dailyBookingCapPerDriver: '',
     allowStudentToPickDriver: true,
     allowDriverSelfAvailabilityEdit: true,
+    reminderHoursBefore: '24',
   });
   const [selectedBookingId, setSelectedBookingId] = useState<number | null>(null);
   const [rescheduleStart, setRescheduleStart] = useState('');
@@ -121,6 +123,7 @@ export default function AdminPage() {
         dailyBookingCapPerDriver: loadedSettings.dailyBookingCapPerDriver?.toString() ?? '',
         allowStudentToPickDriver: loadedSettings.allowStudentToPickDriver,
         allowDriverSelfAvailabilityEdit: loadedSettings.allowDriverSelfAvailabilityEdit,
+        reminderHoursBefore: (loadedSettings.reminderHoursBefore ?? 24).toString(),
       });
     } catch (err) {
       setError('Unable to load school settings. Ensure backend is running and your token is valid.');
@@ -374,6 +377,7 @@ export default function AdminPage() {
             : null,
           allowStudentToPickDriver: settingsForm.allowStudentToPickDriver,
           allowDriverSelfAvailabilityEdit: settingsForm.allowDriverSelfAvailabilityEdit,
+          reminderHoursBefore: Number(settingsForm.reminderHoursBefore),
         }),
       });
       await loadSettings();
@@ -745,11 +749,21 @@ export default function AdminPage() {
                             <div>
                               <p className="text-sm text-slate-800 mb-2">Licence Image</p>
                               {selectedStudent.licenceImageUrl ? (
-                                <img
-                                  src={selectedStudent.licenceImageUrl}
-                                  alt="Licence"
-                                  className="w-full max-h-48 object-contain border rounded-lg bg-slate-50"
-                                />
+                                <>
+                                  <img
+                                    src={selectedStudent.licenceImageUrl}
+                                    alt="Licence"
+                                    className="w-full max-h-48 object-contain border rounded-lg bg-slate-50"
+                                  />
+                                  <a
+                                    href={selectedStudent.licenceImageUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="mt-2 inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"
+                                  >
+                                    ↗ Open full image
+                                  </a>
+                                </>
                               ) : (
                                 <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center text-slate-800">
                                   No licence image uploaded
@@ -931,6 +945,18 @@ export default function AdminPage() {
                           value={settingsForm.dailyBookingCapPerDriver}
                           onChange={(e) => setSettingsForm({ ...settingsForm, dailyBookingCapPerDriver: e.target.value })}
                         />
+                      </label>
+                      <label className="text-xs text-slate-800">
+                        Reminder timing
+                        <select
+                          className="border rounded px-2 py-1 w-full"
+                          value={settingsForm.reminderHoursBefore}
+                          onChange={(e) => setSettingsForm({ ...settingsForm, reminderHoursBefore: e.target.value })}
+                        >
+                          <option value="24">24 hours before</option>
+                          <option value="48">48 hours before</option>
+                          <option value="72">72 hours before</option>
+                        </select>
                       </label>
                     </div>
                     <button
