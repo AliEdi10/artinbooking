@@ -1,6 +1,6 @@
 # Operations Runbook
 
-**Updated: February 2026**
+**Updated: February 27, 2026**
 
 This runbook covers operations for the artinbk platform deployed on Vercel + Railway.
 
@@ -27,30 +27,50 @@ Push to `master` branch → Railway auto-deploys
 
 ## Database Migrations
 
-Connect using psql:
+### Via Railway CLI
+```bash
+railway login
+railway link        # select your project + environment
+railway connect     # select PostgreSQL service → opens psql
+```
+
+Then run SQL from migration files in `db/migrations/` in order.
+
+### Via psql directly
 ```bash
 PGPASSWORD=<password> psql -h <host> -U postgres -p <port> -d railway
 ```
 
-Apply migration:
-```sql
--- Example: migration 0011
-ALTER TABLE student_profiles ADD COLUMN IF NOT EXISTS is_minor BOOLEAN DEFAULT FALSE;
-```
+### Current migrations (21 total)
+See `docs/CURRENT_STATUS.md` for the full migration list (0001–0021, gap at 0014).
 
 ## Environment Variables
 
 ### Backend (Railway)
-- `DATABASE_URL` - PostgreSQL connection
-- `JWT_SECRET` - JWT signing secret
-- `FRONTEND_URL` - https://artinbooking.vercel.app
-- `RESEND_API_KEY` - Email service
-- `GOOGLE_MAPS_API_KEY` - Maps integration
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `PGHOST` | Database host (default: localhost) | Railway auto-sets |
+| `PGPORT` | Database port (default: 5432) | Railway auto-sets |
+| `PGUSER` | Database user (default: postgres) | Railway auto-sets |
+| `PGPASSWORD` | Database password | **Yes** |
+| `PGDATABASE` | Database name (default: artinbk) | Railway auto-sets |
+| `RESEND_API_KEY` | Resend email service API key | **Yes** (emails fail silently if missing) |
+| `EMAIL_FROM` | Sender email (default: onboarding@resend.dev) | No |
+| `FRONTEND_URL` | Frontend URL (default: https://artinbooking.vercel.app) | No |
+| `MAPS_API_KEY` | Google Maps Distance Matrix API key | No (falls back to haversine) |
+| `AUTH_LOCAL_JWT` | Set to 'true' to enable local JWT auth | **Yes** |
+| `AUTH_LOCAL_PRIVATE_KEY` | RS256 private key for JWT signing | **Yes** (if AUTH_LOCAL_JWT=true) |
+| `AUTH_LOCAL_KEY_ID` | JWT key ID | **Yes** (if AUTH_LOCAL_JWT=true) |
+| `AUTH_LOCAL_AUDIENCE` | JWT audience | **Yes** (if AUTH_LOCAL_JWT=true) |
+| `ENABLE_REMINDER_SCHEDULER` | Set to 'true' to enable lesson reminders | **Yes** in production |
+| `APP_NAME` | App name in emails (default: Artin Driving School) | No |
 
 ### Frontend (Vercel)
-- `NEXT_PUBLIC_BACKEND_URL` - Backend URL
-- `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` - Maps integration
-- `NEXT_PUBLIC_DEV_MODE` - Set to `false` for production
+| Variable | Description |
+|----------|-------------|
+| `NEXT_PUBLIC_BACKEND_URL` | Backend API URL |
+| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Google Maps JS API key |
+| `NEXT_PUBLIC_DEV_MODE` | Set to `false` for production |
 
 ## Rollback
 
@@ -65,42 +85,37 @@ Prefer forward fixes. If needed, restore from Railway backup.
 
 | Issue | Solution |
 |-------|----------|
-| 401 Unauthorized | Token expired - user needs to re-login |
+| 401 Unauthorized | Token expired - user needs to re-login (auto-logout after 7 days) |
 | 500 on booking | Check driver has service center set |
 | Emails not sending | Verify RESEND_API_KEY in Railway |
-| Maps not loading | Verify GOOGLE_MAPS_API_KEY |
-| Rate limit errors with X-Forwarded-For | Backend has `trust proxy` enabled for Railway - should auto-resolve |
-| Schools show as "Inactive" | Frontend type mismatch fixed - redeploy frontend |
-| Schools activate immediately | Fixed - schools now start suspended and activate on admin invitation acceptance |
+| Maps not loading | Verify GOOGLE_MAPS_API_KEY (frontend) and MAPS_API_KEY (backend) |
+| Reminders not firing | Verify ENABLE_REMINDER_SCHEDULER=true in Railway |
+| Schools show as "Inactive" | Check school status field — new schools start as 'suspended' |
+| Rate limit errors | Backend has `trust proxy` enabled for Railway |
 
-## Recent Changes (February 2026)
+## Email System
 
-### Backend Changes
-- **Trust Proxy Configuration**: Backend now trusts Railway's reverse proxy (`app.set('trust proxy', 1)`)
-  - Fixes rate limiting issues with X-Forwarded-For headers
-  - Essential for production deployment on Railway
-  - No configuration needed - works automatically
+### Supported email types
+1. **Invitation** — sent when admin invites a student or driver
+2. **Booking Confirmation** — sent to student (and guardian if minor) when lesson is booked
+3. **Booking Cancellation** — sent to student (and guardian if minor) and driver when lesson is cancelled
+4. **Lesson Reminder** — sent to student (and guardian if minor) and driver before the lesson
 
-- **School Activation Workflow**: Schools lifecycle updated
-  - New schools create with `status='suspended'`
-  - Automatically activate when SCHOOL_ADMIN accepts invitation
-  - Prevents premature school activation before email confirmation
-  - Code location: `backend/src/repositories/drivingSchools.ts`
+### Customizable templates
+Admins can customize the subject line and add a custom note for each email type via the admin dashboard → Email Templates section. Templates support `{varName}` interpolation.
 
-### Frontend Changes
-- **Type Definitions**: DrivingSchool type updated
-  - Changed from `active: boolean` to `status: 'active' | 'suspended' | 'deleted'`
-  - Aligns with backend PostgreSQL enum
-  - Fixes superadmin dashboard and homepage display issues
+### Guardian email CC
+For minor students (is_minor=true) with a guardian_email set, booking confirmation, cancellation, and lesson reminder emails are automatically sent to the guardian as well.
 
-- **UI/UX Improvements**:
-  - All grey text upgraded to darker shades for better readability
-  - Technical jargon removed from student-facing pages
-  - Improved WCAG accessibility compliance
+### Reminder timing
+Each school can configure reminder timing (24h, 48h, or 72h before lesson) via admin settings → Reminder Timing.
 
-### Database Schema
-- No migration needed - schema already supports enum status field
-- Existing schools may need manual status update if created before this change
+## PWA
+
+The app is installable as a Progressive Web App:
+- `manifest.json` at `/manifest.json`
+- Standalone display mode, theme color #1e40af
+- Uses existing favicon.png and logo.png as icons
 
 ## Logs
 

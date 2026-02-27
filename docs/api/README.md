@@ -590,10 +590,71 @@ Server status: uptime, DB latency, memory, pool stats. **Auth:** SUPERADMIN.
 ### Analytics & Audit Logs
 
 #### `GET /schools/:schoolId/analytics/dashboard`
-Dashboard stats (booking counts, revenue, popular times). **Auth:** SCHOOL_ADMIN, DRIVER.
+Dashboard stats (booking counts, popular times). **Auth:** SCHOOL_ADMIN, DRIVER.
 
 #### `GET /schools/:schoolId/analytics/audit-log`
 Paginated audit log. Query params: `limit` (max 200), `offset`. **Auth:** SCHOOL_ADMIN.
+
+---
+
+### CSV Reports
+
+#### `GET /schools/:schoolId/analytics/csv/students`
+Export all students as CSV. **Auth:** SCHOOL_ADMIN.
+
+#### `GET /schools/:schoolId/analytics/csv/bookings`
+Export bookings as CSV. Query params: `status` (upcoming/past/all). **Auth:** SCHOOL_ADMIN.
+
+#### `GET /schools/:schoolId/analytics/csv/drivers`
+Export all drivers as CSV. **Auth:** SCHOOL_ADMIN.
+
+---
+
+### Email Templates
+
+#### `GET /schools/:schoolId/email-templates`
+List all custom email templates for a school. **Auth:** SCHOOL_ADMIN.
+
+**Response:** `200 OK`
+```json
+[
+  {
+    "templateKey": "booking_confirmation",
+    "subject": "Your Lesson is Confirmed - {lessonDate}",
+    "customNote": "Please arrive 5 minutes early.",
+    "updatedAt": "2026-02-27T10:00:00Z"
+  }
+]
+```
+
+#### `PUT /schools/:schoolId/email-templates/:key`
+Create or update an email template. **Auth:** SCHOOL_ADMIN.
+
+**Valid keys:** `booking_confirmation`, `booking_cancelled`, `lesson_reminder`, `invitation`
+
+**Request Body:**
+```json
+{
+  "subject": "Custom Subject - {studentName}",
+  "customNote": "Custom note text with {lessonDate} variables"
+}
+```
+
+**Interpolation variables:** `{studentName}`, `{instructorName}`, `{lessonDate}`, `{lessonTime}`, `{schoolName}`
+
+---
+
+### School Settings (updated)
+
+The settings response now includes:
+
+```json
+{
+  "reminderHoursBefore": 24
+}
+```
+
+The `reminderHoursBefore` field controls how many hours before a lesson the reminder email is sent (1-168, default 24). Set via `PUT /schools/:schoolId/settings`.
 
 ---
 
