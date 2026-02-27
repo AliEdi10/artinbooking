@@ -357,7 +357,9 @@ export async function sendDriverBookingNotification(
   rawLessonTime: string,
   rawPickupAddress: string,
   rawDropoffAddress: string,
-  rawSchoolName: string
+  rawSchoolName: string,
+  customSubject?: string | null,
+  customNote?: string | null,
 ): Promise<void> {
   const driverName = escapeHtml(rawDriverName);
   const studentName = escapeHtml(rawStudentName);
@@ -372,16 +374,21 @@ export async function sendDriverBookingNotification(
     return;
   }
 
+  const vars = { studentName: rawStudentName, instructorName: rawDriverName, lessonDate: rawLessonDate, lessonTime: rawLessonTime, schoolName: rawSchoolName };
+  const subject = customSubject ? interpolate(customSubject, vars) : `📅 New Lesson Booked - ${lessonDate} at ${lessonTime}`;
+  const noteHtml = renderCustomNote(customNote ?? undefined, vars);
+
   try {
     await getResend().emails.send({
       from: FROM_EMAIL,
       to,
-      subject: `📅 New Lesson Booked - ${lessonDate} at ${lessonTime}`,
+      subject,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #1e40af;">📅 New Lesson Assignment</h2>
           <p>Hi ${driverName},</p>
           <p>A new lesson has been booked with you!</p>
+          ${noteHtml}
 
           <div style="background-color: #eff6ff; border: 1px solid #93c5fd; border-radius: 8px; padding: 16px; margin: 20px 0;">
             <p style="margin: 4px 0;"><strong>Student:</strong> ${studentName}</p>
@@ -390,7 +397,7 @@ export async function sendDriverBookingNotification(
             <p style="margin: 4px 0;"><strong>Pickup:</strong> ${pickupAddress}</p>
             <p style="margin: 4px 0;"><strong>Drop-off:</strong> ${dropoffAddress}</p>
           </div>
-          
+
           <p style="color: #6b7280; font-size: 12px; margin-top: 32px;">
             - ${schoolName}
           </p>
@@ -418,16 +425,21 @@ export async function sendBookingRescheduleEmail(params: BookingEmailParams): Pr
     return;
   }
 
+  const vars = { studentName: params.studentName, instructorName: params.driverName, lessonDate: params.lessonDate, lessonTime: params.lessonTime, schoolName: params.schoolName };
+  const subject = params.customSubject ? interpolate(params.customSubject, vars) : `🔄 Lesson Rescheduled - ${lessonDate} at ${lessonTime}`;
+  const noteHtml = renderCustomNote(params.customNote ?? undefined, vars);
+
   try {
     await getResend().emails.send({
       from: FROM_EMAIL,
       to,
-      subject: `🔄 Lesson Rescheduled - ${lessonDate} at ${lessonTime}`,
+      subject,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #d97706;">🔄 Your Lesson Has Been Rescheduled</h2>
           <p>Hi ${studentName},</p>
           <p>Your driving lesson with <strong>${schoolName}</strong> has been rescheduled to a new time.</p>
+          ${noteHtml}
 
           <div style="background-color: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 16px; margin: 20px 0;">
             <h3 style="margin: 0 0 12px 0; color: #92400e;">📅 New Lesson Details</h3>

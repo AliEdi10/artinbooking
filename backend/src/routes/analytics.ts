@@ -3,7 +3,7 @@ import { authenticateRequest } from '../middleware/authentication';
 import { requireRoles } from '../middleware/authorization';
 import { AuthenticatedRequest } from '../types/auth';
 import { query } from '../db';
-import { listAuditLogs } from '../repositories/auditLogs';
+import { listAuditLogs, createAuditLog } from '../repositories/auditLogs';
 import { getDriverProfileByUserId } from '../repositories/driverProfiles';
 
 const router = express.Router();
@@ -314,6 +314,7 @@ router.get('/schools/:schoolId/drivers/:driverId/earnings/export', authenticateR
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', `attachment; filename="earnings-${safeFilename}.csv"`);
         res.send(csvRows.join('\n'));
+        createAuditLog({ drivingSchoolId: schoolId, actorUserId: authReq.user?.id, action: 'csv_export_earnings', entityType: 'driver_profile', entityId: driverId, details: { rows: bookingsResult.rows.length } }).catch(() => {});
     } catch (error) {
         console.error('Earnings export error:', error);
         res.status(500).json({ error: 'Failed to export earnings' });
@@ -381,6 +382,7 @@ router.get('/schools/:schoolId/reports/completed-classes.csv', authenticateReque
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', `attachment; filename="completed-classes-${today}.csv"`);
         res.send(csvRows.join('\n'));
+        createAuditLog({ drivingSchoolId: schoolId, actorUserId: (req as AuthenticatedRequest).user?.id, action: 'csv_export_completed_classes', details: { rows: result.rows.length } }).catch(() => {});
     } catch (error) {
         console.error('Completed classes export error:', error);
         res.status(500).json({ error: 'Failed to export completed classes' });
@@ -436,6 +438,7 @@ router.get('/schools/:schoolId/reports/off-days.csv', authenticateRequest, requi
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', `attachment; filename="off-days-${today}.csv"`);
         res.send(csvRows.join('\n'));
+        createAuditLog({ drivingSchoolId: schoolId, actorUserId: (req as AuthenticatedRequest).user?.id, action: 'csv_export_off_days', details: { rows: result.rows.length } }).catch(() => {});
     } catch (error) {
         console.error('Off-days export error:', error);
         res.status(500).json({ error: 'Failed to export off-days' });
@@ -501,6 +504,7 @@ router.get('/schools/:schoolId/reports/future-schedule.csv', authenticateRequest
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', `attachment; filename="future-schedule-${today}.csv"`);
         res.send(csvRows.join('\n'));
+        createAuditLog({ drivingSchoolId: schoolId, actorUserId: (req as AuthenticatedRequest).user?.id, action: 'csv_export_future_schedule', details: { rows: result.rows.length } }).catch(() => {});
     } catch (error) {
         console.error('Future schedule export error:', error);
         res.status(500).json({ error: 'Failed to export future schedule' });

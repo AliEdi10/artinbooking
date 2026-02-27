@@ -18,6 +18,23 @@ const router = express.Router();
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// Per-email rate limiting for password reset (max 3 per hour per email)
+const resetAttempts = new Map<string, { count: number; windowStart: number }>();
+const RESET_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const RESET_MAX_PER_EMAIL = 3;
+
+function isResetRateLimited(email: string): boolean {
+    const key = email.toLowerCase();
+    const now = Date.now();
+    const entry = resetAttempts.get(key);
+    if (!entry || now - entry.windowStart > RESET_WINDOW_MS) {
+        resetAttempts.set(key, { count: 1, windowStart: now });
+        return false;
+    }
+    entry.count++;
+    return entry.count > RESET_MAX_PER_EMAIL;
+}
+
 function validatePassword(password: string): string | null {
     if (password.length < 8) return 'Password must be at least 8 characters long';
     if (password.length > 128) return 'Password must be at most 128 characters long';
@@ -170,6 +187,13 @@ router.post('/forgot-password', async (req, res, next) => {
 
         // Always return same response to prevent email enumeration
         const successMessage = 'If an account exists with this email, you will receive a password reset link.';
+
+        // Per-email rate limiting (max 3 resets per hour per email)
+        if (isResetRateLimited(email)) {
+            // Still return success to prevent enumeration
+            res.json({ message: successMessage });
+            return;
+        }
 
         const user = await loadUserByIdentity(undefined, email);
 

@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import cors from 'cors';
 import express from 'express';
+import helmet from 'helmet';
 import { authenticateRequest, authenticateRequestAllowUnregistered } from './middleware/authentication';
 import { enforceTenantScope, requireRoles } from './middleware/authorization';
 import { getDrivingSchoolById, getDrivingSchools, createDrivingSchool, activateDrivingSchool, updateDrivingSchool, updateDrivingSchoolStatus } from './repositories/drivingSchools';
@@ -155,6 +156,13 @@ export function createApp() {
 
   // Request logging (first, to capture all requests)
   app.use(httpLogger);
+
+  // Security headers — safe for JSON API (no CSP/crossOriginResourcePolicy that would block frontend)
+  app.use(helmet({
+    contentSecurityPolicy: false,            // API-only, CSP not needed
+    crossOriginResourcePolicy: false,        // allow frontend to fetch from different origin
+    crossOriginEmbedderPolicy: false,        // not applicable for API
+  }));
 
   // CORS configuration - whitelist allowed origins
   const allowedOrigins = [
@@ -1860,8 +1868,8 @@ export function createApp() {
             const pickupAddr = `${pickupAddress.line1}, ${pickupAddress.city}`;
             const dropoffAddr = `${dropoffAddress.line1}, ${dropoffAddress.city}`;
 
+            const confirmTpl = await getEmailTemplate(schoolId, 'booking_confirmation').catch(() => null);
             if (studentUser?.email) {
-              const confirmTpl = await getEmailTemplate(schoolId, 'booking_confirmation').catch(() => null);
               await sendBookingConfirmationEmail({
                 to: studentUser.email,
                 studentName: student.fullName,
@@ -1900,6 +1908,8 @@ export function createApp() {
                 pickupAddr,
                 dropoffAddr,
                 school?.name || 'Driving School',
+                confirmTpl?.subject,
+                confirmTpl?.customNote,
               );
             }
           } catch (emailError) {
@@ -2067,6 +2077,8 @@ export function createApp() {
                 const pickAddr = pickupAddress ? `${pickupAddress.line1}, ${pickupAddress.city}` : 'N/A';
                 const dropAddr = dropoffAddress ? `${dropoffAddress.line1}, ${dropoffAddress.city}` : 'N/A';
 
+                const rescheduleTpl = await getEmailTemplate(schoolId, 'booking_confirmation').catch(() => null);
+
                 if (studentUser?.email && studentProfile && driverProfile) {
                   await sendBookingRescheduleEmail({
                     to: studentUser.email,
@@ -2077,7 +2089,23 @@ export function createApp() {
                     lessonTime,
                     pickupAddress: pickAddr,
                     dropoffAddress: dropAddr,
+                    customSubject: rescheduleTpl?.subject,
+                    customNote: rescheduleTpl?.customNote,
                   });
+                  if (studentProfile.isMinor && studentProfile.guardianEmail) {
+                    await sendBookingRescheduleEmail({
+                      to: studentProfile.guardianEmail,
+                      studentName: studentProfile.fullName,
+                      driverName: driverProfile.fullName,
+                      schoolName: school?.name || 'Driving School',
+                      lessonDate,
+                      lessonTime,
+                      pickupAddress: pickAddr,
+                      dropoffAddress: dropAddr,
+                      customSubject: rescheduleTpl?.subject,
+                      customNote: rescheduleTpl?.customNote,
+                    });
+                  }
                 }
 
                 if (driverUser?.email && driverProfile && studentProfile) {
@@ -2090,6 +2118,8 @@ export function createApp() {
                     pickAddr,
                     dropAddr,
                     school?.name || 'Driving School',
+                    rescheduleTpl?.subject,
+                    rescheduleTpl?.customNote,
                   );
                 }
               } catch (emailError) {
