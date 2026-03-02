@@ -902,7 +902,7 @@ export default function StudentPage() {
                       value={reschedule[booking.id] ?? ''}
                       onChange={(e) => setReschedule((prev) => ({ ...prev, [booking.id]: e.target.value }))}
                       placeholder="New start time"
-                      min={new Date().toISOString().slice(0, 16)}
+                      min={(() => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16); })()}
                     />
                     <button
                       className="px-3 py-1 rounded bg-white border border-slate-300 hover:bg-slate-100 min-h-[32px] disabled:opacity-50 disabled:cursor-not-allowed"

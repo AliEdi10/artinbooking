@@ -1122,7 +1122,7 @@ export default function AdminPage() {
                         value={rescheduleStart}
                         onChange={(e) => setRescheduleStart(e.target.value)}
                         required
-                        min={new Date().toISOString().slice(0, 16)}
+                        min={(() => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16); })()}
                       />
                       <select
                         className="border rounded px-2 py-1 w-full text-slate-900"

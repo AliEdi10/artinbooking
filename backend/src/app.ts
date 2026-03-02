@@ -136,6 +136,15 @@ import { query, getPool } from './db';
 
 const serverStartTime = Date.now();
 
+function toLocation(value: unknown): Location | null {
+  if (!value || typeof value !== 'object') return null;
+  const obj = value as Record<string, unknown>;
+  const lat = typeof obj.lat === 'number' ? obj.lat : typeof obj.latitude === 'number' ? obj.latitude : null;
+  const lng = typeof obj.lng === 'number' ? obj.lng : typeof obj.longitude === 'number' ? obj.longitude : null;
+  if (lat === null || lng === null) return null;
+  return { latitude: lat, longitude: lng };
+}
+
 function formatUptime(ms: number): string {
   const seconds = Math.floor(ms / 1000);
   const days = Math.floor(seconds / 86400);
@@ -1512,7 +1521,8 @@ export function createApp() {
 
         const pickupLocation = addressToLocation(pickupAddress);
         const dropoffLocation = addressToLocation(dropoffAddress);
-        if (!pickupLocation || !dropoffLocation || !driver.serviceCenterLocation) {
+        const serviceCenterLoc = toLocation(driver.serviceCenterLocation);
+        if (!pickupLocation || !dropoffLocation || !serviceCenterLoc) {
           // Missing coordinates or service center — driver/address not fully configured.
           // Return empty slots instead of 400 so students see "no availability" gracefully.
           res.json([]);
@@ -1522,11 +1532,11 @@ export function createApp() {
         const serviceRadius =
           coerceNumber(driver.serviceRadiusKm) ?? coerceNumber(settings?.defaultServiceRadiusKm) ?? Infinity;
         const radiusToPickup = travelCalculator.distanceBetween(
-          driver.serviceCenterLocation as Location,
+          serviceCenterLoc,
           pickupLocation,
         );
         const radiusToDropoff = travelCalculator.distanceBetween(
-          driver.serviceCenterLocation as Location,
+          serviceCenterLoc,
           dropoffLocation,
         );
 
@@ -1755,7 +1765,8 @@ export function createApp() {
 
         const lessonDuration = driver.lessonDurationMinutes ?? settings?.defaultLessonDurationMinutes ?? 60;
 
-        if (!driver.serviceCenterLocation) {
+        const serviceCtrLoc = toLocation(driver.serviceCenterLocation);
+        if (!serviceCtrLoc) {
           res.status(400).json({ error: 'Driver is missing a service center location' });
           return;
         }
@@ -1763,11 +1774,11 @@ export function createApp() {
         const serviceRadius =
           coerceNumber(driver.serviceRadiusKm) ?? coerceNumber(settings?.defaultServiceRadiusKm) ?? Infinity;
         const radiusToPickup = travelCalculator.distanceBetween(
-          driver.serviceCenterLocation as Location,
+          serviceCtrLoc,
           pickupLocation,
         );
         const radiusToDropoff = travelCalculator.distanceBetween(
-          driver.serviceCenterLocation as Location,
+          serviceCtrLoc,
           dropoffLocation,
         );
 
@@ -1915,7 +1926,7 @@ export function createApp() {
           } catch (emailError) {
             console.error('Failed to send booking notification emails:', emailError);
           }
-        })();
+        })().catch(err => console.error('Unhandled error in booking email IIFE:', err));
 
         res.status(201).json(booking);
       } catch (error) {
@@ -2125,7 +2136,7 @@ export function createApp() {
               } catch (emailError) {
                 console.error('Failed to send reschedule notification emails:', emailError);
               }
-            })();
+            })().catch(err => console.error('Unhandled error in reschedule email IIFE:', err));
           } catch (err) {
             if (err instanceof Error && err.message === 'BOOKING_OVERLAP') {
               res.status(409).json({ error: 'Rescheduled time conflicts with an existing booking' });
@@ -2286,7 +2297,7 @@ export function createApp() {
           } catch (emailError) {
             console.error('Failed to send cancellation email:', emailError);
           }
-        })();
+        })().catch(err => console.error('Unhandled error in cancellation email IIFE:', err));
 
         res.json(cancelled);
       } catch (error) {

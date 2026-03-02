@@ -203,7 +203,11 @@ export async function verifyJwtFromRequest(
     };
   }
 
-  const [headerSegment, payloadSegment] = token.split('.');
+  const parts = token.split('.');
+  if (parts.length !== 3) {
+    throw new Error('Invalid JWT format: expected 3 segments');
+  }
+  const [headerSegment, payloadSegment] = parts;
   const header = decodeSegment(headerSegment) as JwtHeader;
   const claims = decodeSegment(payloadSegment) as JwtClaims;
 
