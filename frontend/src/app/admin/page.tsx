@@ -103,22 +103,24 @@ export default function AdminPage() {
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
 
-  type EmailTemplateKey = 'booking_confirmation' | 'booking_cancelled' | 'lesson_reminder' | 'invitation';
+  type EmailTemplateKey = 'booking_confirmation' | 'booking_cancelled' | 'booking_rescheduled' | 'lesson_reminder' | 'invitation';
   type EmailTemplate = { templateKey: EmailTemplateKey; subject: string | null; customNote: string | null };
   const TEMPLATE_LABELS: Record<EmailTemplateKey, { label: string; vars: string }> = {
-    booking_confirmation: { label: 'Booking Confirmation', vars: '{studentName}, {instructorName}, {lessonDate}, {lessonTime}, {schoolName}' },
-    booking_cancelled:   { label: 'Booking Cancelled',    vars: '{studentName}, {lessonDate}, {lessonTime}, {schoolName}' },
-    lesson_reminder:     { label: 'Lesson Reminder',      vars: '{studentName}, {instructorName}, {lessonDate}, {lessonTime}, {schoolName}' },
-    invitation:          { label: 'Invitation',            vars: '{inviteeName}, {role}, {schoolName}' },
+    booking_confirmation:  { label: 'Booking Confirmation',  vars: '{studentName}, {instructorName}, {lessonDate}, {lessonTime}, {schoolName}' },
+    booking_cancelled:     { label: 'Booking Cancelled',     vars: '{studentName}, {lessonDate}, {lessonTime}, {schoolName}' },
+    booking_rescheduled:   { label: 'Booking Rescheduled',   vars: '{studentName}, {instructorName}, {lessonDate}, {lessonTime}, {schoolName}' },
+    lesson_reminder:       { label: 'Lesson Reminder',       vars: '{studentName}, {instructorName}, {lessonDate}, {lessonTime}, {schoolName}' },
+    invitation:            { label: 'Invitation',             vars: '{inviteeName}, {role}, {schoolName}' },
   };
   const ALL_TEMPLATE_KEYS = Object.keys(TEMPLATE_LABELS) as EmailTemplateKey[];
   const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
   const [expandedTemplate, setExpandedTemplate] = useState<EmailTemplateKey | null>(null);
   const [templateForms, setTemplateForms] = useState<Record<EmailTemplateKey, { subject: string; customNote: string }>>({
-    booking_confirmation: { subject: '', customNote: '' },
-    booking_cancelled:    { subject: '', customNote: '' },
-    lesson_reminder:      { subject: '', customNote: '' },
-    invitation:           { subject: '', customNote: '' },
+    booking_confirmation:  { subject: '', customNote: '' },
+    booking_cancelled:     { subject: '', customNote: '' },
+    booking_rescheduled:   { subject: '', customNote: '' },
+    lesson_reminder:       { subject: '', customNote: '' },
+    invitation:            { subject: '', customNote: '' },
   });
 
   async function loadEmailTemplates() {

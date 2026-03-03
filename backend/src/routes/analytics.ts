@@ -189,16 +189,16 @@ router.get('/schools/:schoolId/drivers/:driverId/earnings', authenticateRequest,
     const schoolId = resolveSchoolContext(authReq, res);
     if (!schoolId) return;
     const driverId = parseInt(req.params.driverId, 10);
-
-    // Drivers can only view their own earnings
-    if (authReq.user?.role === 'DRIVER') {
-        const driverProfile = await getDriverProfileByUserId(authReq.user.id, schoolId);
-        if (!driverProfile || driverProfile.id !== driverId) {
-            return res.status(403).json({ error: 'Drivers may only view their own earnings' });
-        }
-    }
+    if (isNaN(driverId)) return res.status(400).json({ error: 'Invalid driver ID' });
 
     try {
+        // Drivers can only view their own earnings
+        if (authReq.user?.role === 'DRIVER') {
+            const driverProfile = await getDriverProfileByUserId(authReq.user.id, schoolId);
+            if (!driverProfile || driverProfile.id !== driverId) {
+                return res.status(403).json({ error: 'Drivers may only view their own earnings' });
+            }
+        }
         const driverResult = await query<{ full_name: string }>(
             'SELECT full_name FROM driver_profiles WHERE id = $1 AND driving_school_id = $2',
             [driverId, schoolId]
@@ -261,16 +261,16 @@ router.get('/schools/:schoolId/drivers/:driverId/earnings/export', authenticateR
     const schoolId = resolveSchoolContext(authReq, res);
     if (!schoolId) return;
     const driverId = parseInt(req.params.driverId, 10);
-
-    // Drivers can only export their own earnings
-    if (authReq.user?.role === 'DRIVER') {
-        const driverProfile = await getDriverProfileByUserId(authReq.user.id, schoolId);
-        if (!driverProfile || driverProfile.id !== driverId) {
-            return res.status(403).json({ error: 'Drivers may only export their own earnings' });
-        }
-    }
+    if (isNaN(driverId)) return res.status(400).json({ error: 'Invalid driver ID' });
 
     try {
+        // Drivers can only export their own earnings
+        if (authReq.user?.role === 'DRIVER') {
+            const driverProfile = await getDriverProfileByUserId(authReq.user.id, schoolId);
+            if (!driverProfile || driverProfile.id !== driverId) {
+                return res.status(403).json({ error: 'Drivers may only export their own earnings' });
+            }
+        }
         const driverResult = await query<{ full_name: string }>(
             'SELECT full_name FROM driver_profiles WHERE id = $1 AND driving_school_id = $2',
             [driverId, schoolId]

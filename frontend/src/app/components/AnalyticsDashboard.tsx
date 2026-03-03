@@ -75,6 +75,10 @@ export function AnalyticsDashboard({ schoolId, token, activeTab, onTabChange }: 
     const [isDownloading, setIsDownloading] = useState<string | null>(null);
 
     useEffect(() => {
+        // Reset lazy-loaded data so it re-fetches for the new school
+        setDriverStats([]);
+        setAuditLogs([]);
+        setReportDrivers([]);
         loadAnalytics();
     }, [schoolId, token]);
 

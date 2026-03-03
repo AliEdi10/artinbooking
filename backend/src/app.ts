@@ -2093,7 +2093,7 @@ export function createApp() {
                 const pickAddr = pickupAddress ? `${pickupAddress.line1}, ${pickupAddress.city}` : 'N/A';
                 const dropAddr = dropoffAddress ? `${dropoffAddress.line1}, ${dropoffAddress.city}` : 'N/A';
 
-                const rescheduleTpl = await getEmailTemplate(schoolId, 'booking_confirmation').catch(() => null);
+                const rescheduleTpl = await getEmailTemplate(schoolId, 'booking_rescheduled').catch(() => null);
 
                 if (studentUser?.email && studentProfile && driverProfile) {
                   await sendBookingRescheduleEmail({
@@ -2221,6 +2221,10 @@ export function createApp() {
               : 'cancelled_by_school';
 
         const cancelled = await cancelBooking(booking.id, schoolId, status, reason);
+        if (!cancelled) {
+          res.status(409).json({ error: 'Booking is no longer in a cancellable state' });
+          return;
+        }
 
         // Send cancellation email (non-blocking)
         (async () => {
@@ -2428,7 +2432,7 @@ export function createApp() {
   );
 
   // Email template endpoints
-  const VALID_TEMPLATE_KEYS: EmailTemplateKey[] = ['booking_confirmation', 'booking_cancelled', 'lesson_reminder', 'invitation'];
+  const VALID_TEMPLATE_KEYS: EmailTemplateKey[] = ['booking_confirmation', 'booking_cancelled', 'booking_rescheduled', 'lesson_reminder', 'invitation'];
 
   app.get(
     '/schools/:schoolId/email-templates',

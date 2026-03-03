@@ -23,6 +23,16 @@ const resetAttempts = new Map<string, { count: number; windowStart: number }>();
 const RESET_WINDOW_MS = 60 * 60 * 1000; // 1 hour
 const RESET_MAX_PER_EMAIL = 3;
 
+// Evict expired entries every 10 minutes to prevent unbounded memory growth
+setInterval(() => {
+    const now = Date.now();
+    for (const [key, entry] of resetAttempts) {
+        if (now - entry.windowStart > RESET_WINDOW_MS) {
+            resetAttempts.delete(key);
+        }
+    }
+}, 10 * 60 * 1000).unref();
+
 function isResetRateLimited(email: string): boolean {
     const key = email.toLowerCase();
     const now = Date.now();

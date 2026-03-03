@@ -1,6 +1,6 @@
 import { getPool } from '../db';
 
-export type EmailTemplateKey = 'booking_confirmation' | 'booking_cancelled' | 'lesson_reminder' | 'invitation';
+export type EmailTemplateKey = 'booking_confirmation' | 'booking_cancelled' | 'booking_rescheduled' | 'lesson_reminder' | 'invitation';
 
 export interface EmailTemplate {
   templateKey: EmailTemplateKey;
