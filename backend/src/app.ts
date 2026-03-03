@@ -97,9 +97,9 @@ async function buildDriverDayBookings(
 ): Promise<BookingWithLocations[]> {
   const bookings = await listBookings(drivingSchoolId, { driverId });
 
-  const dateStr = date.toISOString().slice(0, 10);
+  const dateStr = toHalifaxDate(date);
   const dayBookings = bookings.filter(
-    (b) => b.status === 'scheduled' && b.startTime.toISOString().slice(0, 10) === dateStr,
+    (b) => b.status === 'scheduled' && toHalifaxDate(b.startTime) === dateStr,
   );
 
   // Batch-load all addresses in one query instead of N+1
@@ -135,6 +135,11 @@ import { httpLogger, logger } from './middleware/logging';
 import { query, getPool } from './db';
 
 const serverStartTime = Date.now();
+
+/** Get YYYY-MM-DD string in Halifax timezone (not UTC) */
+function toHalifaxDate(date: Date): string {
+  return date.toLocaleDateString('en-CA', { timeZone: 'America/Halifax' });
+}
 
 function toLocation(value: unknown): Location | null {
   if (!value || typeof value !== 'object') return null;
@@ -1370,7 +1375,7 @@ export function createApp() {
         const existingAvailability = await listAvailability(driverId, schoolId);
         if (type === 'override_closed') {
           const hasWorkingHours = existingAvailability.some(
-            a => a.date.toISOString().slice(0, 10) === date && a.type === 'working_hours'
+            a => toHalifaxDate(a.date) === date && a.type === 'working_hours'
           );
           if (hasWorkingHours) {
             res.status(409).json({ error: 'Cannot block a day with published availability. Delete the availability first.' });
@@ -1379,7 +1384,7 @@ export function createApp() {
         }
         if (type === 'working_hours') {
           const hasClosed = existingAvailability.some(
-            a => a.date.toISOString().slice(0, 10) === date && a.type === 'override_closed'
+            a => toHalifaxDate(a.date) === date && a.type === 'override_closed'
           );
           if (hasClosed) {
             res.status(409).json({ error: 'Cannot add availability on a blocked day. Remove the time-off first.' });
@@ -1494,7 +1499,7 @@ export function createApp() {
 
         // Check if driver has a holiday/time off on this date
         const hasHolidayOnDate = driverAvailabilities.some(
-          (entry) => entry.date.toISOString().slice(0, 10) === dateParam && entry.type === 'override_closed'
+          (entry) => toHalifaxDate(entry.date) === dateParam && entry.type === 'override_closed'
         );
         if (hasHolidayOnDate) {
           res.json([]); // No slots available on driver's day off
@@ -1563,7 +1568,7 @@ export function createApp() {
           pickupLocation,
           dropoffLocation,
           schoolSettings: settings,
-          availabilities: driverAvailabilities.filter((entry) => entry.date.toISOString().slice(0, 10) === dateParam),
+          availabilities: driverAvailabilities.filter((entry) => toHalifaxDate(entry.date) === dateParam),
         };
 
         // Apply effective lead time = max(leadTime, cancellationCutoff)
@@ -1817,7 +1822,7 @@ export function createApp() {
           pickupLocation,
           dropoffLocation,
           schoolSettings: settings,
-          availabilities: driverAvailabilities.filter((entry) => entry.date.toISOString().slice(0, 10) === startTime.toISOString().slice(0, 10)),
+          availabilities: driverAvailabilities.filter((entry) => toHalifaxDate(entry.date) === toHalifaxDate(startTime)),
         };
 
         let availableSlots = await computeAvailableSlots(availabilityRequest, travelCalculator);
@@ -2014,7 +2019,7 @@ export function createApp() {
               dropoffLocation,
               schoolSettings: settings,
               availabilities: driverAvailabilities.filter(
-                (entry) => entry.date.toISOString().slice(0, 10) === newStart.toISOString().slice(0, 10),
+                (entry) => toHalifaxDate(entry.date) === toHalifaxDate(newStart),
               ),
             };
 

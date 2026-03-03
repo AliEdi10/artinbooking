@@ -756,7 +756,7 @@ export default function StudentPage() {
                     type="date"
                     value={slotQuery.date}
                     onChange={(e) => setSlotQuery({ ...slotQuery, date: e.target.value })}
-                    min={new Date().toISOString().split('T')[0]}
+                    min={todayDateString()}
                   />
                   <select
                     className="border rounded px-2 py-1 text-slate-900"

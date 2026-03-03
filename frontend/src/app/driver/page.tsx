@@ -1176,11 +1176,12 @@ function DriverPageContent() {
                     // Calculate age from date of birth
                     const calculateAge = (dob: string | null | undefined): number | null => {
                       if (!dob) return null;
-                      const birthDate = new Date(dob);
+                      // Parse as local date (not UTC) by splitting the YYYY-MM-DD string
+                      const [y, m, d] = dob.split('-').map(Number);
                       const today = new Date();
-                      let age = today.getFullYear() - birthDate.getFullYear();
-                      const monthDiff = today.getMonth() - birthDate.getMonth();
-                      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                      let age = today.getFullYear() - y;
+                      const monthDiff = today.getMonth() + 1 - m;
+                      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < d)) {
                         age--;
                       }
                       return age;

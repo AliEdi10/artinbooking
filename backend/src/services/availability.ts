@@ -1,5 +1,10 @@
 import { Booking, DriverAvailability, DriverProfile, SchoolSettings } from '../models';
 
+/** Get YYYY-MM-DD string in Halifax timezone (not UTC) */
+function toHalifaxDate(date: Date): string {
+  return date.toLocaleDateString('en-CA', { timeZone: 'America/Halifax' });
+}
+
 export interface Location {
   latitude: number;
   longitude: number;
@@ -77,7 +82,7 @@ async function buildEvents(
       bookings: bookings
         .filter(
           (booking) =>
-            booking.startTime.toISOString().slice(0, 10) === date.toISOString().slice(0, 10) &&
+            toHalifaxDate(booking.startTime) === toHalifaxDate(date) &&
             booking.startTime >= window.start &&
             booking.startTime < window.end,
         )
@@ -176,8 +181,8 @@ function deriveOpenWindows(
   driverProfile: DriverProfile,
   availabilities: DriverAvailability[] | undefined,
 ): { start: Date; end: Date }[] {
-  const dateStr = date.toISOString().slice(0, 10);
-  const sameDay = availabilities?.filter((entry) => entry.date.toISOString().slice(0, 10) === dateStr) ?? [];
+  const dateStr = toHalifaxDate(date);
+  const sameDay = availabilities?.filter((entry) => toHalifaxDate(entry.date) === dateStr) ?? [];
 
   const workingWindows = sameDay
     .filter((entry) => entry.type === 'working_hours')
