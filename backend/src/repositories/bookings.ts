@@ -208,6 +208,22 @@ export async function createBookingAtomic(input: CreateBookingInput, bufferMinut
       throw new Error('BOOKING_OVERLAP');
     }
 
+    // Check for student-level overlap (prevent booking two drivers at the same time)
+    const studentOverlap = await client.query<{ id: number }>(
+      `SELECT id FROM bookings
+       WHERE driving_school_id = $1
+         AND student_id = $2
+         AND status = 'scheduled'
+         AND start_time < $4::timestamptz
+         AND end_time > $3::timestamptz
+       FOR UPDATE`,
+      [input.drivingSchoolId, input.studentId, input.startTime, input.endTime],
+    );
+
+    if (studentOverlap.rowCount && studentOverlap.rowCount > 0) {
+      throw new Error('STUDENT_OVERLAP');
+    }
+
     const result = await client.query<BookingRow>(
       `INSERT INTO bookings (
         driving_school_id,

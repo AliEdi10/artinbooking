@@ -1864,6 +1864,10 @@ export function createApp() {
             res.status(409).json({ error: 'This time slot was just booked by someone else. Please choose another slot.' });
             return;
           }
+          if (err instanceof Error && err.message === 'STUDENT_OVERLAP') {
+            res.status(409).json({ error: 'You already have a booking at this time.' });
+            return;
+          }
           throw err;
         }
 
