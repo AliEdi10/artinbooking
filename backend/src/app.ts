@@ -95,12 +95,12 @@ async function buildDriverDayBookings(
   driverId: number,
   date: Date,
 ): Promise<BookingWithLocations[]> {
-  const bookings = await listBookings(drivingSchoolId, { driverId });
-
   const dateStr = toHalifaxDate(date);
-  const dayBookings = bookings.filter(
-    (b) => b.status === 'scheduled' && toHalifaxDate(b.startTime) === dateStr,
-  );
+  const dayBookings = await listBookings(drivingSchoolId, {
+    driverId,
+    status: 'upcoming',
+    dateStr,
+  });
 
   // Batch-load all addresses in one query instead of N+1
   const addressIds: number[] = [];
@@ -2149,6 +2149,10 @@ export function createApp() {
           } catch (err) {
             if (err instanceof Error && err.message === 'BOOKING_OVERLAP') {
               res.status(409).json({ error: 'Rescheduled time conflicts with an existing booking' });
+              return;
+            }
+            if (err instanceof Error && err.message === 'STUDENT_OVERLAP') {
+              res.status(409).json({ error: 'You already have a booking at this time.' });
               return;
             }
             throw err;

@@ -60,7 +60,7 @@ export default function AdminPage() {
 
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [loadingRoster, setLoadingRoster] = useState(true);
-  const [loadingBookings, setLoadingBookings] = useState(false);
+  const [loadingBookings, setLoadingBookings] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState('');
   const [confirmCancelInvitation, setConfirmCancelInvitation] = useState<number | null>(null);

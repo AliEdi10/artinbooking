@@ -152,6 +152,11 @@ router.post('/login', async (req, res, next) => {
             return;
         }
 
+        if (user.status !== 'active') {
+            res.status(403).json({ error: 'Account is disabled' });
+            return;
+        }
+
         // Look up display name from profile
         let displayName: string | undefined;
         if (user.drivingSchoolId) {

@@ -3,7 +3,7 @@ import { Booking, BookingRow, mapBooking } from '../models';
 
 export async function listBookings(
   drivingSchoolId: number,
-  filters: { studentId?: number; driverId?: number; status?: string } = {},
+  filters: { studentId?: number; driverId?: number; status?: string; dateStr?: string } = {},
 ): Promise<Booking[]> {
   const clauses = ['driving_school_id = $1'];
   const params: unknown[] = [drivingSchoolId];
@@ -28,6 +28,12 @@ export async function listBookings(
       params.push(filters.status);
       clauses.push(`status = $${params.length}`);
     }
+  }
+
+  if (filters.dateStr) {
+    // Filter to a single day in Halifax timezone
+    params.push(filters.dateStr);
+    clauses.push(`(start_time AT TIME ZONE 'America/Halifax')::date = $${params.length}::date`);
   }
 
   const result = await getPool().query<BookingRow>(
@@ -353,6 +359,29 @@ export async function rescheduleBookingAtomic(
 
     if (overlapResult.rowCount && overlapResult.rowCount > 0) {
       throw new Error('BOOKING_OVERLAP');
+    }
+
+    // Check student-level overlap (prevent student double-booking during reschedule)
+    const bookingRow = await client.query<{ student_id: number }>(
+      `SELECT student_id FROM bookings WHERE id = $1 AND driving_school_id = $2 FOR UPDATE`,
+      [id, drivingSchoolId],
+    );
+    if (bookingRow.rowCount && bookingRow.rowCount > 0) {
+      const studentId = bookingRow.rows[0].student_id;
+      const studentOverlap = await client.query<{ id: number }>(
+        `SELECT id FROM bookings
+         WHERE driving_school_id = $1
+           AND student_id = $2
+           AND status = 'scheduled'
+           AND id != $3
+           AND start_time < $5::timestamptz
+           AND end_time > $4::timestamptz
+         FOR UPDATE`,
+        [drivingSchoolId, studentId, id, newStartTime, newEndTime],
+      );
+      if (studentOverlap.rowCount && studentOverlap.rowCount > 0) {
+        throw new Error('STUDENT_OVERLAP');
+      }
     }
 
     const result = await client.query<BookingRow>(
