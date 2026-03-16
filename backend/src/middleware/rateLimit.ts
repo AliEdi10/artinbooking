@@ -21,11 +21,11 @@ export const generalLimiter = rateLimit({
 
 /**
  * Auth rate limiter - stricter limits for login/register/password reset.
- * 10 requests per 15 minutes per IP.
+ * 20 requests per 15 minutes per IP.
  */
 export const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 10,
+    max: 20,
     standardHeaders: true,
     legacyHeaders: false,
     message: {
