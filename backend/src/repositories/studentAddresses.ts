@@ -153,3 +153,14 @@ export async function updateAddress(
   if (result.rowCount === 0) return null;
   return mapStudentAddress(result.rows[0]);
 }
+
+export async function deleteAddress(
+  id: number,
+  drivingSchoolId: number,
+): Promise<boolean> {
+  const result = await getPool().query(
+    `DELETE FROM addresses WHERE id = $1 AND driving_school_id = $2`,
+    [id, drivingSchoolId],
+  );
+  return (result.rowCount ?? 0) > 0;
+}

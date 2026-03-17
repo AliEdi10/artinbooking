@@ -22,7 +22,7 @@ import {
   listStudentProfiles,
   updateStudentProfile,
 } from './repositories/studentProfiles';
-import { createAddress, getAddressById, getAddressesByIds, listAddressesForStudent, listAddressesForStudents, updateAddress } from './repositories/studentAddresses';
+import { createAddress, deleteAddress, getAddressById, getAddressesByIds, listAddressesForStudent, listAddressesForStudents, updateAddress } from './repositories/studentAddresses';
 import { cancelBooking, completeBooking, createBooking, createBookingAtomic, getBookingById, listBookings, updateBooking, rescheduleBookingAtomic, countScheduledBookingsForStudentOnDate, getTotalBookedHoursForStudent } from './repositories/bookings';
 import { createAvailability, deleteAvailability, listAvailability, getDriverHolidaysForSchool } from './repositories/driverAvailability';
 import { getSchoolSettings, upsertSchoolSettings } from './repositories/schoolSettings';
@@ -1294,6 +1294,53 @@ export function createApp() {
           'country', 'latitude', 'longitude', 'isDefaultPickup', 'isDefaultDropoff'];
         const updated = await updateAddress(addressId, schoolId, pick(req.body, addressFields));
         res.json(updated);
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
+
+  app.delete(
+    '/schools/:schoolId/addresses/:addressId',
+    authenticateRequest,
+    requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN', 'STUDENT']),
+    async (req: AuthenticatedRequest, res, next) => {
+      try {
+        const schoolId = await resolveSchoolContext(req, res);
+        if (!schoolId) return;
+
+        const addressId = Number(req.params.addressId);
+        if (Number.isNaN(addressId)) {
+          res.status(400).json({ error: 'Invalid address id' });
+          return;
+        }
+
+        const existing = await getAddressById(addressId, schoolId);
+        if (!existing) {
+          res.status(404).json({ error: 'Address not found' });
+          return;
+        }
+
+        if (req.user?.role === 'STUDENT') {
+          const student = await getStudentProfileByUserId(req.user.id, schoolId);
+          if (!student || student.id !== existing.studentId) {
+            res.status(403).json({ error: 'Students may only delete their own addresses' });
+            return;
+          }
+        }
+
+        // Prevent deletion if address is used in any scheduled booking
+        const bookingsUsingAddress = await listBookings(schoolId, { status: 'upcoming' });
+        const inUse = bookingsUsingAddress.some(
+          (b) => b.pickupAddressId === addressId || b.dropoffAddressId === addressId,
+        );
+        if (inUse) {
+          res.status(409).json({ error: 'Cannot delete address — it is used in an upcoming booking' });
+          return;
+        }
+
+        await deleteAddress(addressId, schoolId);
+        res.status(204).end();
       } catch (error) {
         next(error);
       }

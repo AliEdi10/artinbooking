@@ -86,6 +86,8 @@ export default function StudentPage() {
   const [confirmCancelBooking, setConfirmCancelBooking] = useState<number | null>(null);
   const [isCancellingBooking, setIsCancellingBooking] = useState(false);
   const [bookingInProgress, setBookingInProgress] = useState(false);
+  const [editingAddress, setEditingAddress] = useState<number | null>(null);
+  const [editAddressForm, setEditAddressForm] = useState({ label: '', line1: '', city: '', provinceOrState: '', isDefaultPickup: false, isDefaultDropoff: false });
   const [isRescheduling, setIsRescheduling] = useState(false);
   const [lessonDurationMinutes, setLessonDurationMinutes] = useState(90);
   const [viewingDriver, setViewingDriver] = useState<DriverProfile | null>(null);
@@ -232,6 +234,49 @@ export default function StudentPage() {
       toast.success('Address saved!', { id: toastId });
     } catch (error) {
       toast.error('Unable to save address.', { id: toastId });
+    }
+  }
+
+  function startEditAddress(addr: Address) {
+    setEditingAddress(addr.id);
+    setEditAddressForm({
+      label: addr.label || '',
+      line1: addr.line1 || '',
+      city: addr.city || '',
+      provinceOrState: addr.provinceOrState || '',
+      isDefaultPickup: addr.isDefaultPickup ?? false,
+      isDefaultDropoff: addr.isDefaultDropoff ?? false,
+    });
+  }
+
+  async function saveEditAddress(addressId: number) {
+    if (!token || !schoolId) return;
+    const toastId = toast.loading('Updating address...');
+    try {
+      await apiFetch(`/schools/${schoolId}/addresses/${addressId}`, token, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editAddressForm),
+      });
+      setEditingAddress(null);
+      await loadStudentContext();
+      toast.success('Address updated!', { id: toastId });
+    } catch (error) {
+      toast.error(getErrorMessage(error), { id: toastId });
+    }
+  }
+
+  async function removeAddress(addressId: number) {
+    if (!token || !schoolId) return;
+    const toastId = toast.loading('Deleting address...');
+    try {
+      await apiFetch(`/schools/${schoolId}/addresses/${addressId}`, token, {
+        method: 'DELETE',
+      });
+      await loadStudentContext();
+      toast.success('Address removed!', { id: toastId });
+    } catch (error) {
+      toast.error(getErrorMessage(error), { id: toastId });
     }
   }
 
@@ -474,14 +519,69 @@ export default function StudentPage() {
               <ul className="space-y-1 text-sm text-slate-800">
                 {addresses.map((address) => (
                   <li key={address.id} className="border rounded p-2 bg-slate-50">
-                    <p className="font-medium text-slate-800">{address.label}</p>
-                    <p className="text-xs text-slate-800">{address.line1}</p>
-                    <p className="text-xs text-slate-800">
-                      {address.city}, {address.provinceOrState}
-                    </p>
-                    <p className="text-[11px] text-slate-800">
-                      Pickup: {address.isDefaultPickup ? 'default' : 'no'} · Dropoff: {address.isDefaultDropoff ? 'default' : 'no'}
-                    </p>
+                    {editingAddress === address.id ? (
+                      <div className="space-y-2">
+                        <input
+                          className="border rounded px-2 py-1 w-full text-sm"
+                          placeholder="Label"
+                          value={editAddressForm.label}
+                          onChange={(e) => setEditAddressForm({ ...editAddressForm, label: e.target.value })}
+                        />
+                        <input
+                          className="border rounded px-2 py-1 w-full text-sm"
+                          placeholder="Street address"
+                          value={editAddressForm.line1}
+                          onChange={(e) => setEditAddressForm({ ...editAddressForm, line1: e.target.value })}
+                        />
+                        <div className="flex gap-2">
+                          <input
+                            className="border rounded px-2 py-1 w-full text-sm"
+                            placeholder="City"
+                            value={editAddressForm.city}
+                            onChange={(e) => setEditAddressForm({ ...editAddressForm, city: e.target.value })}
+                          />
+                          <input
+                            className="border rounded px-2 py-1 w-full text-sm"
+                            placeholder="Province"
+                            value={editAddressForm.provinceOrState}
+                            onChange={(e) => setEditAddressForm({ ...editAddressForm, provinceOrState: e.target.value })}
+                          />
+                        </div>
+                        <div className="flex gap-3 text-xs">
+                          <label className="flex items-center gap-1 cursor-pointer">
+                            <input type="checkbox" checked={editAddressForm.isDefaultPickup} onChange={(e) => setEditAddressForm({ ...editAddressForm, isDefaultPickup: e.target.checked })} className="w-3 h-3" />
+                            Pickup
+                          </label>
+                          <label className="flex items-center gap-1 cursor-pointer">
+                            <input type="checkbox" checked={editAddressForm.isDefaultDropoff} onChange={(e) => setEditAddressForm({ ...editAddressForm, isDefaultDropoff: e.target.checked })} className="w-3 h-3" />
+                            Dropoff
+                          </label>
+                        </div>
+                        <div className="flex gap-2">
+                          <button type="button" onClick={() => saveEditAddress(address.id)} className="bg-slate-900 text-white rounded px-3 py-1 text-xs font-medium hover:bg-slate-800">Save</button>
+                          <button type="button" onClick={() => setEditingAddress(null)} className="border rounded px-3 py-1 text-xs font-medium hover:bg-slate-100">Cancel</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-medium text-slate-800">{address.label}</p>
+                            <p className="text-xs text-slate-800">{address.line1}</p>
+                            <p className="text-xs text-slate-800">
+                              {address.city}, {address.provinceOrState}
+                            </p>
+                            <p className="text-[11px] text-slate-800">
+                              Pickup: {address.isDefaultPickup ? 'default' : 'no'} · Dropoff: {address.isDefaultDropoff ? 'default' : 'no'}
+                            </p>
+                          </div>
+                          <div className="flex gap-1 shrink-0">
+                            <button type="button" onClick={() => startEditAddress(address)} className="text-slate-500 hover:text-slate-800 text-xs px-1" title="Edit">Edit</button>
+                            <button type="button" onClick={() => { if (confirm('Delete this address?')) removeAddress(address.id); }} className="text-red-400 hover:text-red-600 text-xs px-1" title="Delete">Delete</button>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </li>
                 ))}
                 {addresses.length === 0 && !status ? (
