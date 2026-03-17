@@ -72,6 +72,8 @@ export default function AdminPage() {
   const [schools, setSchools] = useState<{ id: number; name: string }[]>([]);
 
   const [driverForm, setDriverForm] = useState({ email: '', fullName: '' });
+  const [editingDriver, setEditingDriver] = useState<number | null>(null);
+  const [editDriverForm, setEditDriverForm] = useState({ fullName: '', phone: '', email: '', active: true });
   const [studentForm, setStudentForm] = useState({
     email: '',
     fullName: '',
@@ -295,6 +297,52 @@ export default function AdminPage() {
     } finally {
       setIsCancellingInvitation(false);
       setConfirmCancelInvitation(null);
+    }
+  }
+
+  function startEditDriver(driver: Driver) {
+    setEditingDriver(driver.id);
+    setEditDriverForm({
+      fullName: driver.fullName,
+      phone: driver.phone || '',
+      email: driver.email || '',
+      active: driver.active,
+    });
+  }
+
+  async function saveEditDriver(driverId: number) {
+    if (!token || !schoolId) return;
+    const toastId = toast.loading('Updating instructor...');
+    try {
+      await apiFetch(`/schools/${schoolId}/drivers/${driverId}`, token, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName: editDriverForm.fullName,
+          phone: editDriverForm.phone || null,
+          email: editDriverForm.email || null,
+          active: editDriverForm.active,
+        }),
+      });
+      setEditingDriver(null);
+      await loadRoster();
+      toast.success('Instructor updated!', { id: toastId });
+    } catch (err) {
+      toast.error(getErrorMessage(err), { id: toastId });
+    }
+  }
+
+  async function removeDriver(driverId: number) {
+    if (!token || !schoolId) return;
+    const toastId = toast.loading('Deleting instructor...');
+    try {
+      await apiFetch(`/schools/${schoolId}/drivers/${driverId}`, token, {
+        method: 'DELETE',
+      });
+      await loadRoster();
+      toast.success('Instructor removed!', { id: toastId });
+    } catch (err) {
+      toast.error(getErrorMessage(err), { id: toastId });
     }
   }
 
@@ -575,16 +623,60 @@ export default function AdminPage() {
                 <ul className="space-y-1 text-sm text-slate-800">
                   {drivers.map((driver) => (
                     <li key={driver.id} className="border rounded p-2 bg-slate-50">
-                      <div className="flex justify-between">
-                        <span className="font-medium">{driver.fullName}</span>
-                        <span className="text-xs text-slate-800">{driver.active ? 'active' : 'inactive'}</span>
-                      </div>
-                      {(driver.phone || driver.email) && (
-                        <div className="text-xs text-slate-600 mt-1">
-                          {driver.phone && <span>{driver.phone}</span>}
-                          {driver.phone && driver.email && <span> · </span>}
-                          {driver.email && <span>{driver.email}</span>}
+                      {editingDriver === driver.id ? (
+                        <div className="space-y-2">
+                          <input
+                            className="border rounded px-2 py-1 w-full text-sm"
+                            placeholder="Full name"
+                            value={editDriverForm.fullName}
+                            onChange={(e) => setEditDriverForm({ ...editDriverForm, fullName: e.target.value })}
+                          />
+                          <input
+                            className="border rounded px-2 py-1 w-full text-sm"
+                            placeholder="Phone"
+                            value={editDriverForm.phone}
+                            onChange={(e) => setEditDriverForm({ ...editDriverForm, phone: e.target.value })}
+                          />
+                          <input
+                            className="border rounded px-2 py-1 w-full text-sm"
+                            placeholder="Email"
+                            value={editDriverForm.email}
+                            onChange={(e) => setEditDriverForm({ ...editDriverForm, email: e.target.value })}
+                          />
+                          <label className="flex items-center gap-2 text-xs cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={editDriverForm.active}
+                              onChange={(e) => setEditDriverForm({ ...editDriverForm, active: e.target.checked })}
+                              className="w-3 h-3"
+                            />
+                            Active
+                          </label>
+                          <div className="flex gap-2">
+                            <button type="button" onClick={() => saveEditDriver(driver.id)} className="bg-slate-900 text-white rounded px-3 py-1 text-xs font-medium hover:bg-slate-800">Save</button>
+                            <button type="button" onClick={() => setEditingDriver(null)} className="border rounded px-3 py-1 text-xs font-medium hover:bg-slate-100">Cancel</button>
+                          </div>
                         </div>
+                      ) : (
+                        <>
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <span className="font-medium">{driver.fullName}</span>
+                              <span className={`ml-2 text-xs ${driver.active ? 'text-green-700' : 'text-red-600'}`}>{driver.active ? 'active' : 'inactive'}</span>
+                            </div>
+                            <div className="flex gap-1 shrink-0">
+                              <button type="button" onClick={() => startEditDriver(driver)} className="text-slate-500 hover:text-slate-800 text-xs px-1">Edit</button>
+                              <button type="button" onClick={() => { if (confirm(`Delete instructor ${driver.fullName}? This cannot be undone.`)) removeDriver(driver.id); }} className="text-red-400 hover:text-red-600 text-xs px-1">Delete</button>
+                            </div>
+                          </div>
+                          {(driver.phone || driver.email) && (
+                            <div className="text-xs text-slate-600 mt-1">
+                              {driver.phone && <span>{driver.phone}</span>}
+                              {driver.phone && driver.email && <span> · </span>}
+                              {driver.email && <span>{driver.email}</span>}
+                            </div>
+                          )}
+                        </>
                       )}
                     </li>
                   ))}

@@ -1,4 +1,4 @@
-import { getPool } from '../db';
+import { getPool, withTransaction } from '../db';
 import { DriverProfile, DriverProfileRow, mapDriverProfile } from '../models';
 
 export async function listDriverProfiles(drivingSchoolId: number): Promise<DriverProfile[]> {
@@ -136,4 +136,23 @@ export async function updateDriverProfile(
 
   if (result.rowCount === 0) return null;
   return mapDriverProfile(result.rows[0]);
+}
+
+export async function deleteDriverProfile(
+  id: number,
+  drivingSchoolId: number,
+): Promise<boolean> {
+  return withTransaction(async (client) => {
+    // Remove availability records first
+    await client.query(
+      `DELETE FROM driver_availability WHERE driver_id = $1 AND driving_school_id = $2`,
+      [id, drivingSchoolId],
+    );
+    // Remove the driver profile
+    const result = await client.query(
+      `DELETE FROM driver_profiles WHERE id = $1 AND driving_school_id = $2`,
+      [id, drivingSchoolId],
+    );
+    return (result.rowCount ?? 0) > 0;
+  });
 }

@@ -11,6 +11,7 @@ import {
   createDriverProfile,
   getDriverProfileById,
   getDriverProfileByUserId,
+  deleteDriverProfile,
   listDriverProfiles,
   updateDriverProfile,
 } from './repositories/driverProfiles';
@@ -1001,6 +1002,44 @@ export function createApp() {
           'dailyMaxTravelTimeMin', 'dailyMaxTravelDistanceKm'];
         const updated = await updateDriverProfile(driverId, schoolId, pick(req.body, allowedFields));
         res.json(updated);
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
+
+  app.delete(
+    '/schools/:schoolId/drivers/:driverId',
+    authenticateRequest,
+    requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN']),
+    async (req: AuthenticatedRequest, res, next) => {
+      try {
+        const schoolId = await resolveSchoolContext(req, res);
+        if (!schoolId) return;
+
+        const driverId = Number(req.params.driverId);
+        if (Number.isNaN(driverId)) {
+          res.status(400).json({ error: 'Invalid driver id' });
+          return;
+        }
+
+        const existing = await getDriverProfileById(driverId, schoolId);
+        if (!existing) {
+          res.status(404).json({ error: 'Driver profile not found' });
+          return;
+        }
+
+        // Block deletion if driver has scheduled bookings
+        const scheduledBookings = await listBookings(schoolId, { driverId, status: 'upcoming' });
+        if (scheduledBookings.length > 0) {
+          res.status(409).json({
+            error: `Cannot delete instructor — they have ${scheduledBookings.length} upcoming booking(s). Cancel or reassign them first.`,
+          });
+          return;
+        }
+
+        await deleteDriverProfile(driverId, schoolId);
+        res.status(204).end();
       } catch (error) {
         next(error);
       }
