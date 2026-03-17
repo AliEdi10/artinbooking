@@ -1498,38 +1498,73 @@ function DriverPageContent() {
                 </form>
 
                 {/* List of published availability slots */}
-                <div className="mt-4 pt-4 border-t border-slate-200">
-                  <h4 className="text-sm font-medium text-slate-800 mb-2">
-                    📋 Published Availability ({driverState.availability.filter(a => a.type === 'working_hours').length} slot(s))
-                  </h4>
-                  <ul className="space-y-2 text-sm max-h-48 overflow-y-auto">
-                    {driverState.availability
-                      .filter(a => a.type === 'working_hours')
-                      .sort((a, b) => a.date.localeCompare(b.date))
-                      .map((slot) => (
-                        <li key={slot.id} className="flex justify-between items-center border rounded p-2 bg-green-50">
-                          <div>
-                            <span className="font-medium text-slate-800">{formatDate(slot.date)}</span>
-                            <span className="text-xs text-slate-800 ml-2">
-                              {slot.startTime} - {slot.endTime}
-                            </span>
-                            <span className="text-xs text-green-700 font-medium ml-2">✓ Available</span>
-                          </div>
-                          <button
-                            className="text-xs px-2 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200"
-                            onClick={() => setConfirmDeleteSlot({ id: slot.id, date: formatDate(slot.date) })}
-                          >
-                            🗑️ Remove
-                          </button>
-                        </li>
-                      ))}
-                    {driverState.availability.filter(a => a.type === 'working_hours').length === 0 ? (
-                      <li className="text-xs text-slate-800 text-center py-2">
-                        No availability published yet. Use the form above to add availability.
-                      </li>
-                    ) : null}
-                  </ul>
-                </div>
+                {(() => {
+                  const today = todayDateString();
+                  const workingSlots = driverState.availability.filter(a => a.type === 'working_hours');
+                  const upcomingSlots = workingSlots.filter(s => s.date >= today).sort((a, b) => a.date.localeCompare(b.date));
+                  const pastSlots = workingSlots.filter(s => s.date < today).sort((a, b) => b.date.localeCompare(a.date));
+                  return (
+                    <>
+                      <div className="mt-4 pt-4 border-t border-slate-200">
+                        <h4 className="text-sm font-medium text-slate-800 mb-2">
+                          📋 Upcoming Availability ({upcomingSlots.length} slot(s))
+                        </h4>
+                        <ul className="space-y-2 text-sm max-h-48 overflow-y-auto">
+                          {upcomingSlots.map((slot) => (
+                            <li key={slot.id} className="flex justify-between items-center border rounded p-2 bg-green-50">
+                              <div>
+                                <span className="font-medium text-slate-800">{formatDate(slot.date)}</span>
+                                <span className="text-xs text-slate-800 ml-2">
+                                  {slot.startTime} - {slot.endTime}
+                                </span>
+                                <span className="text-xs text-green-700 font-medium ml-2">✓ Available</span>
+                              </div>
+                              <button
+                                className="text-xs px-2 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200"
+                                onClick={() => setConfirmDeleteSlot({ id: slot.id, date: formatDate(slot.date) })}
+                              >
+                                🗑️ Remove
+                              </button>
+                            </li>
+                          ))}
+                          {upcomingSlots.length === 0 && (
+                            <li className="text-xs text-slate-800 text-center py-2">
+                              No upcoming availability. Use the form above to add availability.
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+                      {pastSlots.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-slate-200">
+                          <details>
+                            <summary className="text-sm font-medium text-slate-500 mb-2 cursor-pointer hover:text-slate-700">
+                              📁 Past Availability ({pastSlots.length} slot(s))
+                            </summary>
+                            <ul className="space-y-2 text-sm max-h-36 overflow-y-auto mt-2">
+                              {pastSlots.map((slot) => (
+                                <li key={slot.id} className="flex justify-between items-center border rounded p-2 bg-slate-50 opacity-70">
+                                  <div>
+                                    <span className="font-medium text-slate-600">{formatDate(slot.date)}</span>
+                                    <span className="text-xs text-slate-500 ml-2">
+                                      {slot.startTime} - {slot.endTime}
+                                    </span>
+                                    <span className="text-xs text-slate-400 font-medium ml-2">Passed</span>
+                                  </div>
+                                  <button
+                                    className="text-xs px-2 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200"
+                                    onClick={() => setConfirmDeleteSlot({ id: slot.id, date: formatDate(slot.date) })}
+                                  >
+                                    🗑️ Remove
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          </details>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </SummaryCard>
               <SummaryCard
                 title="🏖️ Time Off / Holidays"
