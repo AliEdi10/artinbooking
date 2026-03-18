@@ -2006,6 +2006,7 @@ export function createApp() {
             }
 
             if (driverUser?.email) {
+              const instrTpl = await getEmailTemplate(schoolId, 'instructor_new_booking').catch(() => null);
               await sendDriverBookingNotification(
                 driverUser.email,
                 driver.fullName,
@@ -2015,8 +2016,8 @@ export function createApp() {
                 pickupAddr,
                 dropoffAddr,
                 school?.name || 'Driving School',
-                confirmTpl?.subject,
-                confirmTpl?.customNote,
+                instrTpl?.subject,
+                instrTpl?.customNote,
               );
             }
           } catch (emailError) {
@@ -2216,6 +2217,7 @@ export function createApp() {
                 }
 
                 if (driverUser?.email && driverProfile && studentProfile) {
+                  const instrReschTpl = await getEmailTemplate(schoolId, 'instructor_new_booking').catch(() => null);
                   await sendDriverBookingNotification(
                     driverUser.email,
                     driverProfile.fullName,
@@ -2225,8 +2227,8 @@ export function createApp() {
                     pickAddr,
                     dropAddr,
                     school?.name || 'Driving School',
-                    rescheduleTpl?.subject,
-                    rescheduleTpl?.customNote,
+                    instrReschTpl?.subject,
+                    instrReschTpl?.customNote,
                   );
                 }
               } catch (emailError) {
@@ -2385,6 +2387,7 @@ export function createApp() {
             const driverProfile = await getDriverProfileById(booking.driverId, schoolId);
             const driverUser = driverProfile ? await getUserById(driverProfile.userId) : null;
             if (driverUser?.email && driverProfile && student) {
+              const instrCancelTpl = await getEmailTemplate(schoolId, 'instructor_booking_cancelled').catch(() => null);
               await sendDriverCancellationNotification(
                 driverUser.email,
                 driverProfile.fullName,
@@ -2394,8 +2397,8 @@ export function createApp() {
                 pickupAddr,
                 dropoffAddr,
                 school?.name || 'Driving School',
-                cancelTpl?.subject,
-                cancelTpl?.customNote,
+                instrCancelTpl?.subject,
+                instrCancelTpl?.customNote,
               );
             }
           } catch (emailError) {
@@ -2527,7 +2530,7 @@ export function createApp() {
   );
 
   // Email template endpoints
-  const VALID_TEMPLATE_KEYS: EmailTemplateKey[] = ['booking_confirmation', 'booking_cancelled', 'booking_rescheduled', 'lesson_reminder', 'invitation'];
+  const VALID_TEMPLATE_KEYS: EmailTemplateKey[] = ['booking_confirmation', 'booking_cancelled', 'booking_rescheduled', 'lesson_reminder', 'invitation', 'instructor_new_booking', 'instructor_booking_cancelled', 'instructor_lesson_reminder'];
 
   app.get(
     '/schools/:schoolId/email-templates',

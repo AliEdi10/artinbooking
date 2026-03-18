@@ -135,8 +135,9 @@ async function processBookingReminder(bookingRow: Awaited<ReturnType<typeof getB
             console.warn(`No email found for student ${student.id} (${student.fullName})`);
         }
 
-        // Send reminder to driver
+        // Send reminder to driver (use instructor-specific template if available)
         if (driverUser?.email) {
+            const instrReminderTpl = await getEmailTemplate(booking.drivingSchoolId, 'instructor_lesson_reminder').catch(() => null);
             await sendDriverLessonReminderEmail({
                 to: driverUser.email,
                 recipientName: driver.fullName,
@@ -146,8 +147,8 @@ async function processBookingReminder(bookingRow: Awaited<ReturnType<typeof getB
                 lessonDate,
                 lessonTime,
                 pickupAddress,
-                customSubject: reminderTpl?.subject,
-                customNote: reminderTpl?.customNote,
+                customSubject: instrReminderTpl?.subject ?? reminderTpl?.subject,
+                customNote: instrReminderTpl?.customNote ?? reminderTpl?.customNote,
             });
         } else {
             console.warn(`No email found for driver ${driver.id} (${driver.fullName})`);

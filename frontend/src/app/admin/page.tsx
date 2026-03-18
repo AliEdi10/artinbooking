@@ -105,24 +105,30 @@ export default function AdminPage() {
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
 
-  type EmailTemplateKey = 'booking_confirmation' | 'booking_cancelled' | 'booking_rescheduled' | 'lesson_reminder' | 'invitation';
+  type EmailTemplateKey = 'booking_confirmation' | 'booking_cancelled' | 'booking_rescheduled' | 'lesson_reminder' | 'invitation' | 'instructor_new_booking' | 'instructor_booking_cancelled' | 'instructor_lesson_reminder';
   type EmailTemplate = { templateKey: EmailTemplateKey; subject: string | null; customNote: string | null };
-  const TEMPLATE_LABELS: Record<EmailTemplateKey, { label: string; vars: string }> = {
-    booking_confirmation:  { label: 'Booking Confirmation',  vars: '{studentName}, {instructorName}, {lessonDate}, {lessonTime}, {schoolName}' },
-    booking_cancelled:     { label: 'Booking Cancelled',     vars: '{studentName}, {lessonDate}, {lessonTime}, {schoolName}' },
-    booking_rescheduled:   { label: 'Booking Rescheduled',   vars: '{studentName}, {instructorName}, {lessonDate}, {lessonTime}, {schoolName}' },
-    lesson_reminder:       { label: 'Lesson Reminder',       vars: '{studentName}, {instructorName}, {lessonDate}, {lessonTime}, {schoolName}' },
-    invitation:            { label: 'Invitation',             vars: '{inviteeName}, {role}, {schoolName}' },
+  const TEMPLATE_LABELS: Record<EmailTemplateKey, { label: string; vars: string; group: 'student' | 'instructor' }> = {
+    booking_confirmation:           { label: 'Booking Confirmation',            vars: '{studentName}, {instructorName}, {lessonDate}, {lessonTime}, {schoolName}', group: 'student' },
+    booking_cancelled:              { label: 'Booking Cancelled',               vars: '{studentName}, {lessonDate}, {lessonTime}, {schoolName}', group: 'student' },
+    booking_rescheduled:            { label: 'Booking Rescheduled',             vars: '{studentName}, {instructorName}, {lessonDate}, {lessonTime}, {schoolName}', group: 'student' },
+    lesson_reminder:                { label: 'Lesson Reminder',                 vars: '{studentName}, {instructorName}, {lessonDate}, {lessonTime}, {schoolName}', group: 'student' },
+    invitation:                     { label: 'Invitation',                       vars: '{inviteeName}, {role}, {schoolName}', group: 'student' },
+    instructor_new_booking:         { label: 'New Booking (Instructor)',         vars: '{studentName}, {instructorName}, {lessonDate}, {lessonTime}, {schoolName}', group: 'instructor' },
+    instructor_booking_cancelled:   { label: 'Booking Cancelled (Instructor)',   vars: '{studentName}, {instructorName}, {lessonDate}, {lessonTime}, {schoolName}', group: 'instructor' },
+    instructor_lesson_reminder:     { label: 'Lesson Reminder (Instructor)',     vars: '{studentName}, {instructorName}, {lessonDate}, {lessonTime}, {schoolName}', group: 'instructor' },
   };
   const ALL_TEMPLATE_KEYS = Object.keys(TEMPLATE_LABELS) as EmailTemplateKey[];
   const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
   const [expandedTemplate, setExpandedTemplate] = useState<EmailTemplateKey | null>(null);
   const [templateForms, setTemplateForms] = useState<Record<EmailTemplateKey, { subject: string; customNote: string }>>({
-    booking_confirmation:  { subject: '', customNote: '' },
-    booking_cancelled:     { subject: '', customNote: '' },
-    booking_rescheduled:   { subject: '', customNote: '' },
-    lesson_reminder:       { subject: '', customNote: '' },
-    invitation:            { subject: '', customNote: '' },
+    booking_confirmation:          { subject: '', customNote: '' },
+    booking_cancelled:             { subject: '', customNote: '' },
+    booking_rescheduled:           { subject: '', customNote: '' },
+    lesson_reminder:               { subject: '', customNote: '' },
+    invitation:                    { subject: '', customNote: '' },
+    instructor_new_booking:        { subject: '', customNote: '' },
+    instructor_booking_cancelled:  { subject: '', customNote: '' },
+    instructor_lesson_reminder:    { subject: '', customNote: '' },
   });
 
   async function loadEmailTemplates() {
@@ -1118,55 +1124,62 @@ export default function AdminPage() {
                   description="Customize email subject and message for each notification type."
                 >
                   <div className="space-y-2 text-sm">
-                    {ALL_TEMPLATE_KEYS.map((key) => {
-                      const meta = TEMPLATE_LABELS[key];
-                      const isOpen = expandedTemplate === key;
-                      const form = templateForms[key];
-                      return (
-                        <div key={key} className="border rounded-lg overflow-hidden">
-                          <button
-                            type="button"
-                            className="w-full flex justify-between items-center px-3 py-2 text-left hover:bg-slate-50 text-sm font-medium"
-                            onClick={() => setExpandedTemplate(isOpen ? null : key)}
-                          >
-                            <span>{meta.label}</span>
-                            <span className="text-slate-400">{isOpen ? '▲' : '▼'}</span>
-                          </button>
-                          {isOpen && (
-                            <div className="p-3 border-t space-y-2 bg-slate-50">
-                              <p className="text-xs text-slate-500">Available variables: {meta.vars}</p>
-                              <label className="block text-xs text-slate-700">
-                                Subject (leave blank to use default)
-                                <input
-                                  type="text"
-                                  className="mt-1 border rounded px-2 py-1 w-full text-sm"
-                                  placeholder="e.g. Your lesson with {schoolName} is confirmed!"
-                                  value={form.subject}
-                                  onChange={(e) => setTemplateForms(prev => ({ ...prev, [key]: { ...prev[key], subject: e.target.value } }))}
-                                />
-                              </label>
-                              <label className="block text-xs text-slate-700">
-                                Custom note (shown at top of email body, leave blank to omit)
-                                <textarea
-                                  className="mt-1 border rounded px-2 py-1 w-full text-sm h-16 resize-none"
-                                  placeholder="e.g. Please arrive 5 minutes early. Contact us at {schoolName} if you have questions."
-                                  value={form.customNote}
-                                  onChange={(e) => setTemplateForms(prev => ({ ...prev, [key]: { ...prev[key], customNote: e.target.value } }))}
-                                />
-                              </label>
+                    {(['student', 'instructor'] as const).map((group) => (
+                      <div key={group}>
+                        <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mt-3 mb-1">
+                          {group === 'student' ? 'Student Emails' : 'Instructor Emails'}
+                        </h4>
+                        {ALL_TEMPLATE_KEYS.filter(k => TEMPLATE_LABELS[k].group === group).map((key) => {
+                          const meta = TEMPLATE_LABELS[key];
+                          const isOpen = expandedTemplate === key;
+                          const form = templateForms[key];
+                          return (
+                            <div key={key} className="border rounded-lg overflow-hidden mb-2">
                               <button
                                 type="button"
-                                disabled={isAdminAction}
-                                onClick={() => saveEmailTemplate(key)}
-                                className="text-xs px-3 py-1.5 bg-slate-900 text-white rounded hover:bg-slate-700 disabled:opacity-50"
+                                className="w-full flex justify-between items-center px-3 py-2 text-left hover:bg-slate-50 text-sm font-medium"
+                                onClick={() => setExpandedTemplate(isOpen ? null : key)}
                               >
-                                Save
+                                <span>{meta.label}</span>
+                                <span className="text-slate-400">{isOpen ? '▲' : '▼'}</span>
                               </button>
+                              {isOpen && (
+                                <div className="p-3 border-t space-y-2 bg-slate-50">
+                                  <p className="text-xs text-slate-500">Available variables: {meta.vars}</p>
+                                  <label className="block text-xs text-slate-700">
+                                    Subject (leave blank to use default)
+                                    <input
+                                      type="text"
+                                      className="mt-1 border rounded px-2 py-1 w-full text-sm"
+                                      placeholder="e.g. Your lesson with {schoolName} is confirmed!"
+                                      value={form.subject}
+                                      onChange={(e) => setTemplateForms(prev => ({ ...prev, [key]: { ...prev[key], subject: e.target.value } }))}
+                                    />
+                                  </label>
+                                  <label className="block text-xs text-slate-700">
+                                    Custom note (shown at top of email body, leave blank to omit)
+                                    <textarea
+                                      className="mt-1 border rounded px-2 py-1 w-full text-sm h-16 resize-none"
+                                      placeholder="e.g. Please arrive 5 minutes early. Contact us at {schoolName} if you have questions."
+                                      value={form.customNote}
+                                      onChange={(e) => setTemplateForms(prev => ({ ...prev, [key]: { ...prev[key], customNote: e.target.value } }))}
+                                    />
+                                  </label>
+                                  <button
+                                    type="button"
+                                    disabled={isAdminAction}
+                                    onClick={() => saveEmailTemplate(key)}
+                                    className="text-xs px-3 py-1.5 bg-slate-900 text-white rounded hover:bg-slate-700 disabled:opacity-50"
+                                  >
+                                    Save
+                                  </button>
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                          );
+                        })}
+                      </div>
+                    ))}
                   </div>
                 </SummaryCard>
               </div>
