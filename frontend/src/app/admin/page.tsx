@@ -12,6 +12,7 @@ import { apiFetch, ApiError, getErrorMessage } from '../apiClient';
 import { PageLoading } from '../components/LoadingSpinner';
 import { SchoolSelectorBanner } from '../components/SchoolSelectorBanner';
 import { formatDateTime, formatDate } from '../utils/timezone';
+import { BookForStudent } from '../components/BookForStudent';
 
 type SchoolSettings = {
   id: number;
@@ -1281,6 +1282,17 @@ export default function AdminPage() {
                   </div>
                 ) : null}
               </SummaryCard>
+              {schoolId && token && (
+                <SummaryCard title="Book for Student" description="Create a booking on behalf of a student.">
+                  <BookForStudent
+                    schoolId={schoolId}
+                    token={token}
+                    students={students}
+                    drivers={drivers}
+                    onBooked={() => { loadBookings(); }}
+                  />
+                </SummaryCard>
+              )}
             </>
           )}
         </div>

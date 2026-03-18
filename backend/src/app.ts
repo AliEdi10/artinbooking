@@ -1726,7 +1726,7 @@ export function createApp() {
   app.post(
     '/schools/:schoolId/bookings',
     authenticateRequest,
-    requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN', 'STUDENT']),
+    requireRoles(['SUPERADMIN', 'SCHOOL_ADMIN', 'DRIVER', 'STUDENT']),
     async (req: AuthenticatedRequest, res, next) => {
       try {
         const schoolId = await resolveSchoolContext(req, res);

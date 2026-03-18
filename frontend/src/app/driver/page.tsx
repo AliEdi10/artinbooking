@@ -14,6 +14,7 @@ import { MapPicker } from '../components/MapPicker';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { AddToCalendarButton } from '../components/AddToCalendarButton';
 import { EarningsCard } from '../components/EarningsCard';
+import { BookForStudent } from '../components/BookForStudent';
 import { createDriverLessonEvent } from '../utils/calendar';
 import { useAuth } from '../auth/AuthProvider';
 import { apiFetch, ApiError, getErrorMessage } from '../apiClient';
@@ -1124,6 +1125,20 @@ function DriverPageContent() {
                   driverId={driverState.driver.id}
                   token={token}
                 />
+              )}
+
+              {/* Book for Student */}
+              {driverState.driver && schoolId && token && (
+                <SummaryCard title="Book for Student" description="Create a booking on behalf of a student.">
+                  <BookForStudent
+                    schoolId={schoolId}
+                    token={token}
+                    students={driverState.students}
+                    drivers={[driverState.driver]}
+                    fixedDriverId={driverState.driver.id}
+                    onBooked={() => loadDriverContext()}
+                  />
+                </SummaryCard>
               )}
             </>
           )}
