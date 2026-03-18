@@ -210,7 +210,7 @@ export function BookForStudent({ schoolId, token, students, drivers, fixedDriver
       <button
         type="submit"
         disabled={booking || !selectedSlot}
-        className="w-full bg-blue-600 text-white rounded px-3 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full bg-slate-900 text-white rounded px-3 py-2 text-sm font-semibold hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {booking ? 'Booking...' : 'Create Booking'}
       </button>
