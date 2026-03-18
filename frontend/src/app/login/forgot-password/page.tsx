@@ -1,18 +1,31 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+const RESEND_COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes
 
 export default function ForgotPasswordPage() {
     const [email, setEmail] = useState('');
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
     const [message, setMessage] = useState('');
+    const [lastSentAt, setLastSentAt] = useState<number | null>(null);
+    const [cooldownRemaining, setCooldownRemaining] = useState(0);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    // Countdown timer for resend cooldown
+    useEffect(() => {
+        if (!lastSentAt) return;
+        const tick = () => {
+            const remaining = Math.max(0, RESEND_COOLDOWN_MS - (Date.now() - lastSentAt));
+            setCooldownRemaining(remaining);
+        };
+        tick();
+        const interval = setInterval(tick, 1000);
+        return () => clearInterval(interval);
+    }, [lastSentAt]);
 
+    const sendResetEmail = useCallback(async () => {
         if (!email.trim()) {
             setStatus('error');
             setMessage('Please enter your email address');
@@ -37,10 +50,27 @@ export default function ForgotPasswordPage() {
 
             setStatus('success');
             setMessage(data.message);
+            setLastSentAt(Date.now());
         } catch (err) {
             setStatus('error');
             setMessage(err instanceof Error ? err.message : 'Failed to send reset email');
         }
+    }, [email]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        await sendResetEmail();
+    };
+
+    const handleResend = async () => {
+        if (cooldownRemaining > 0) return;
+        await sendResetEmail();
+    };
+
+    const formatCooldown = (ms: number) => {
+        const minutes = Math.floor(ms / 60000);
+        const seconds = Math.floor((ms % 60000) / 1000);
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     };
 
     return (
@@ -63,6 +93,20 @@ export default function ForgotPasswordPage() {
                                     <p className="text-sm text-green-700 mt-1">{message}</p>
                                 </div>
                             </div>
+                        </div>
+                        <div className="text-center space-y-2">
+                            <p className="text-xs text-slate-500">
+                                Didn&apos;t receive the email? Check your spam folder or resend.
+                            </p>
+                            <button
+                                onClick={handleResend}
+                                disabled={cooldownRemaining > 0}
+                                className="text-sm text-blue-600 hover:text-blue-800 font-medium disabled:text-slate-400 disabled:cursor-not-allowed"
+                            >
+                                {cooldownRemaining > 0
+                                    ? `Resend available in ${formatCooldown(cooldownRemaining)}`
+                                    : 'Resend reset link'}
+                            </button>
                         </div>
                         <div className="text-center">
                             <Link
