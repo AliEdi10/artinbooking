@@ -81,8 +81,8 @@ function RegisterContent() {
             return;
         }
 
-        if (form.password.length < 8) {
-            setError('Password must be at least 8 characters');
+        if (form.password.length < 8 || !/[a-zA-Z]/.test(form.password) || !/\d/.test(form.password)) {
+            setError('Password must be at least 8 characters and contain a letter and a number');
             return;
         }
 
@@ -367,9 +367,13 @@ function RegisterContent() {
                                         />
                                     ))}
                                 </div>
-                                <p className={`text-xs ${form.password.length < 8 ? 'text-red-600' : 'text-green-600'}`}>
+                                <p className={`text-xs ${form.password.length < 8 || !/[a-zA-Z]/.test(form.password) || !/\d/.test(form.password) ? 'text-red-600' : 'text-green-600'}`}>
                                     {form.password.length < 8
                                         ? `⚠️ ${8 - form.password.length} more character${8 - form.password.length > 1 ? 's' : ''} needed`
+                                        : !/[a-zA-Z]/.test(form.password)
+                                        ? '⚠️ Must contain a letter'
+                                        : !/\d/.test(form.password)
+                                        ? '⚠️ Must contain a number'
                                         : '✓ Password meets requirements'}
                                 </p>
                             </div>

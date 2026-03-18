@@ -5,6 +5,10 @@ import { verifyJwtFromRequest } from '../services/jwtVerifier';
 import { AuthenticatedRequest, AuthenticatedUser } from '../types/auth';
 
 if (process.env.AUTH_EMULATOR === 'true') {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('FATAL: AUTH_EMULATOR cannot be enabled in production! Exiting.');
+    process.exit(1);
+  }
   console.warn('WARNING: AUTH_EMULATOR is enabled. Do NOT use in production!');
 }
 

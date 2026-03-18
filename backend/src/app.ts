@@ -185,6 +185,7 @@ export function createApp() {
     'https://booking.artindriving.ca',
     'http://localhost:3000',
     'http://127.0.0.1:3000',
+    ...(process.env.CORS_EXTRA_ORIGINS ? process.env.CORS_EXTRA_ORIGINS.split(',').map(o => o.trim()) : []),
   ];
   app.use(cors({
     origin: (origin, callback) => {

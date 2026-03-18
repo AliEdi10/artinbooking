@@ -86,11 +86,11 @@ router.get('/schools/:schoolId/analytics/summary', authenticateRequest, requireR
         const cancellationRate = total > 0 ? Math.round((cancelled / total) * 100) : 0;
 
         res.json({
-            totalDrivers: parseInt(driversResult.rows[0].count, 10),
-            totalStudents: parseInt(studentsResult.rows[0].count, 10),
-            upcomingBookings: parseInt(bookingsResult.rows[0].count, 10),
-            lessonsThisWeek: parseInt(thisWeekResult.rows[0].count, 10),
-            lessonsThisMonth: parseInt(thisMonthResult.rows[0].count, 10),
+            totalDrivers: parseInt(driversResult.rows[0]?.count ?? '0', 10),
+            totalStudents: parseInt(studentsResult.rows[0]?.count ?? '0', 10),
+            upcomingBookings: parseInt(bookingsResult.rows[0]?.count ?? '0', 10),
+            lessonsThisWeek: parseInt(thisWeekResult.rows[0]?.count ?? '0', 10),
+            lessonsThisMonth: parseInt(thisMonthResult.rows[0]?.count ?? '0', 10),
             cancellationRatePercent: cancellationRate,
         });
     } catch (error) {
@@ -533,7 +533,7 @@ router.get('/schools/:schoolId/analytics/signups', authenticateRequest, requireR
         );
 
         res.json({
-            count: parseInt(result.rows[0].count, 10),
+            count: parseInt(result.rows[0]?.count ?? '0', 10),
             days: safeDays,
         });
     } catch (error) {

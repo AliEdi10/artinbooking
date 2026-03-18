@@ -68,6 +68,7 @@ export function AnalyticsDashboard({ schoolId, token, activeTab, onTabChange }: 
     const [signupData, setSignupData] = useState<SignupData | null>(null);
     const [activeInactive, setActiveInactive] = useState<ActiveInactiveData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
 
     // Reports tab state
     const [reportDrivers, setReportDrivers] = useState<{ id: number; fullName: string }[]>([]);
@@ -152,6 +153,7 @@ export function AnalyticsDashboard({ schoolId, token, activeTab, onTabChange }: 
     async function loadAnalytics() {
         if (!token || !schoolId) return;
         setLoading(true);
+        setLoadError(null);
         try {
             // Only fetch overview data on initial load (4 calls instead of 6)
             // Driver stats and audit logs are lazy-loaded when their tabs are opened
@@ -167,9 +169,19 @@ export function AnalyticsDashboard({ schoolId, token, activeTab, onTabChange }: 
             setActiveInactive(actInact);
         } catch (error) {
             console.error('Failed to load analytics:', error);
+            setLoadError('Failed to load analytics data. Please try refreshing the page.');
         } finally {
             setLoading(false);
         }
+    }
+
+    if (loadError) {
+        return (
+            <div className="text-center py-8">
+                <p className="text-red-600 font-medium">{loadError}</p>
+                <button className="mt-2 text-sm text-blue-600 hover:underline" onClick={loadAnalytics}>Retry</button>
+            </div>
+        );
     }
 
     if (loading) {
