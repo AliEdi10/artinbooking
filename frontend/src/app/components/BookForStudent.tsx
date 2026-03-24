@@ -75,6 +75,7 @@ export function BookForStudent({ schoolId, token, students, drivers, fixedDriver
     try {
       await apiFetch(`/schools/${schoolId}/bookings`, token, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           studentId,
           driverId,
