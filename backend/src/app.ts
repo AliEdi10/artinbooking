@@ -1659,15 +1659,17 @@ export function createApp() {
         };
 
         // Apply effective lead time = max(leadTime, cancellationCutoff)
-        const effectiveLeadTime = Math.max(
+        // Admins and instructors can book same-day without lead time restriction
+        const isPrivileged = ['SUPERADMIN', 'SCHOOL_ADMIN', 'DRIVER'].includes(req.user?.role ?? '');
+        const effectiveLeadTime = isPrivileged ? 0 : Math.max(
           settings?.minBookingLeadTimeHours ?? 0,
           settings?.cancellationCutoffHours ?? 0,
         );
-        const slots = (await computeAvailableSlots(availabilityRequest, travelCalculator)).filter((slot) => {
-          if (effectiveLeadTime <= 0) return true;
-          const cutoff = Date.now() + effectiveLeadTime * 60 * 60 * 1000;
-          return slot.getTime() >= cutoff;
-        });
+        const now = Date.now();
+        const cutoff = effectiveLeadTime > 0 ? now + effectiveLeadTime * 60 * 60 * 1000 : now;
+        const slots = (await computeAvailableSlots(availabilityRequest, travelCalculator)).filter(
+          (slot) => slot.getTime() >= cutoff
+        );
 
         res.json(slots.map((slot) => slot.toISOString()));
       } catch (error) {
@@ -1880,7 +1882,9 @@ export function createApp() {
         }
 
         // Enforce effective lead time = max(leadTime, cancellationCutoff)
-        const effectiveLeadTimeHours = Math.max(
+        // Admins and instructors bypass lead time to allow same-day bookings
+        const isPrivilegedBooker = ['SUPERADMIN', 'SCHOOL_ADMIN', 'DRIVER'].includes(req.user?.role ?? '');
+        const effectiveLeadTimeHours = isPrivilegedBooker ? 0 : Math.max(
           settings?.minBookingLeadTimeHours ?? 0,
           settings?.cancellationCutoffHours ?? 0,
         );
@@ -1914,7 +1918,7 @@ export function createApp() {
 
         let availableSlots = await computeAvailableSlots(availabilityRequest, travelCalculator);
 
-        const effectiveLeadTimeBooking = Math.max(
+        const effectiveLeadTimeBooking = isPrivilegedBooker ? 0 : Math.max(
           settings?.minBookingLeadTimeHours ?? 0,
           settings?.cancellationCutoffHours ?? 0,
         );
