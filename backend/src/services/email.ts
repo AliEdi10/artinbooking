@@ -13,6 +13,12 @@ const FROM_EMAIL = process.env.EMAIL_FROM || 'onboarding@resend.dev';
 const APP_NAME = process.env.APP_NAME || 'Artin Driving School';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://artinbooking.vercel.app';
 
+/** Build a "Display Name <email>" from address so recipients see the school name. */
+function senderFrom(displayName?: string): string {
+  const name = displayName || APP_NAME;
+  return `${name} <${FROM_EMAIL}>`;
+}
+
 function escapeHtml(str: string): string {
   return str
     .replace(/&/g, '&amp;')
@@ -80,7 +86,7 @@ export async function sendInvitationEmail(params: SendInvitationEmailParams): Pr
       : '';
 
     const result = await getResend().emails.send({
-      from: FROM_EMAIL,
+      from: senderFrom(params.schoolName),
       to,
       subject,
       html: `
@@ -118,7 +124,7 @@ export async function sendPasswordResetEmail(to: string, resetToken: string): Pr
 
   try {
     await getResend().emails.send({
-      from: FROM_EMAIL,
+      from: senderFrom(),
       to,
       subject: `Reset your ${APP_NAME} password`,
       html: `
@@ -181,7 +187,7 @@ export async function sendBookingConfirmationEmail(params: BookingEmailParams): 
 
   try {
     const result = await getResend().emails.send({
-      from: FROM_EMAIL,
+      from: senderFrom(params.schoolName),
       to,
       subject,
       html: `
@@ -252,7 +258,7 @@ export async function sendBookingCancellationEmail(params: Omit<BookingEmailPara
 
   try {
     const result = await getResend().emails.send({
-      from: FROM_EMAIL,
+      from: senderFrom(params.schoolName),
       to,
       subject,
       html: `
@@ -319,7 +325,7 @@ export async function sendDriverCancellationNotification(
 
   try {
     await getResend().emails.send({
-      from: FROM_EMAIL,
+      from: senderFrom(rawSchoolName),
       to,
       subject,
       html: `
@@ -380,7 +386,7 @@ export async function sendDriverBookingNotification(
 
   try {
     await getResend().emails.send({
-      from: FROM_EMAIL,
+      from: senderFrom(rawSchoolName),
       to,
       subject,
       html: `
@@ -431,7 +437,7 @@ export async function sendBookingRescheduleEmail(params: BookingEmailParams): Pr
 
   try {
     await getResend().emails.send({
-      from: FROM_EMAIL,
+      from: senderFrom(params.schoolName),
       to,
       subject,
       html: `
@@ -518,7 +524,7 @@ export async function sendStudentLessonReminderEmail(params: LessonReminderEmail
 
   try {
     await getResend().emails.send({
-      from: FROM_EMAIL,
+      from: senderFrom(params.schoolName),
       to,
       subject,
       html: `
@@ -591,7 +597,7 @@ export async function sendDriverLessonReminderEmail(params: LessonReminderEmailP
 
   try {
     await getResend().emails.send({
-      from: FROM_EMAIL,
+      from: senderFrom(params.schoolName),
       to,
       subject,
       html: `
