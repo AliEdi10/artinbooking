@@ -1458,23 +1458,25 @@ export function createApp() {
           return;
         }
 
-        // Prevent conflicts between off-days and availability
+        // Prevent conflicts between off-days and availability.
+        // Full-day blocks (00:00-23:59) can't coexist with working hours; partial-day blocks are allowed.
         const existingAvailability = await listAvailability(driverId, schoolId);
-        if (type === 'override_closed') {
+        const isFullDayBlock = (s: string, e: string) => s.slice(0, 5) === '00:00' && e.slice(0, 5) === '23:59';
+        if (type === 'override_closed' && isFullDayBlock(startTime, endTime)) {
           const hasWorkingHours = existingAvailability.some(
             a => toHalifaxDate(a.date) === date && a.type === 'working_hours'
           );
           if (hasWorkingHours) {
-            res.status(409).json({ error: 'Cannot block a day with published availability. Delete the availability first.' });
+            res.status(409).json({ error: 'Cannot block a full day that has published availability. Delete the availability first or block specific hours.' });
             return;
           }
         }
         if (type === 'working_hours') {
-          const hasClosed = existingAvailability.some(
-            a => toHalifaxDate(a.date) === date && a.type === 'override_closed'
+          const hasFullDayClosed = existingAvailability.some(
+            a => toHalifaxDate(a.date) === date && a.type === 'override_closed' && isFullDayBlock(a.startTime, a.endTime)
           );
-          if (hasClosed) {
-            res.status(409).json({ error: 'Cannot add availability on a blocked day. Remove the time-off first.' });
+          if (hasFullDayClosed) {
+            res.status(409).json({ error: 'Cannot add availability on a fully blocked day. Remove the time-off first.' });
             return;
           }
         }
@@ -1584,11 +1586,15 @@ export function createApp() {
         const settings = await getSchoolSettings(schoolId);
         const driverAvailabilities = await listAvailability(driver.id, schoolId);
 
-        // Check if driver has a holiday/time off on this date
-        const hasHolidayOnDate = driverAvailabilities.some(
-          (entry) => toHalifaxDate(entry.date) === dateParam && entry.type === 'override_closed'
+        // Check if driver has a FULL-DAY holiday/time off on this date.
+        // Partial-day blocks are handled by computeAvailableSlots via subtractInterval.
+        const hasFullDayHoliday = driverAvailabilities.some(
+          (entry) => toHalifaxDate(entry.date) === dateParam
+            && entry.type === 'override_closed'
+            && entry.startTime.slice(0, 5) === '00:00'
+            && entry.endTime.slice(0, 5) === '23:59'
         );
-        if (hasHolidayOnDate) {
+        if (hasFullDayHoliday) {
           res.json([]); // No slots available on driver's day off
           return;
         }

@@ -14,6 +14,7 @@ import { createStudentLessonEvent } from '../utils/calendar';
 import { useAuth } from '../auth/AuthProvider';
 import { apiFetch, getErrorMessage } from '../apiClient';
 import { PageLoading } from '../components/LoadingSpinner';
+import { SlotListSkeleton } from '../components/CardSkeleton';
 import { SchoolSelectorBanner } from '../components/SchoolSelectorBanner';
 import { formatDateTime, formatDate, formatTime, todayDateString } from '../utils/timezone';
 
@@ -93,9 +94,11 @@ export default function StudentPage() {
   const [viewingDriver, setViewingDriver] = useState<DriverProfile | null>(null);
   const [contactForm, setContactForm] = useState({ phone: '', email: '' });
   const [isSavingContact, setIsSavingContact] = useState(false);
+  const [loadingSlots, setLoadingSlots] = useState(false);
 
   async function fetchSlots(driverId: number, pickupId: number, dropoffId: number, date: string) {
     if (!token || !schoolId) return;
+    setLoadingSlots(true);
     try {
       const slots = await apiFetch<string[]>(
         `/schools/${schoolId}/drivers/${driverId}/available-slots?date=${date}&pickupAddressId=${pickupId}&dropoffAddressId=${dropoffId}`,
@@ -104,6 +107,8 @@ export default function StudentPage() {
       setSuggestedSlots(slots.map((slot) => ({ startTime: slot, driverId })));
     } catch {
       setSuggestedSlots([]);
+    } finally {
+      setLoadingSlots(false);
     }
   }
 
@@ -898,33 +903,37 @@ export default function StudentPage() {
                       slotQuery.date,
                     )
                   }
-                  disabled={!slotQuery.driverId || !slotQuery.pickupId || !slotQuery.dropoffId || !slotQuery.date}
+                  disabled={loadingSlots || !slotQuery.driverId || !slotQuery.pickupId || !slotQuery.dropoffId || !slotQuery.date}
                 >
-                  Find Available Slots
+                  {loadingSlots ? 'Loading...' : 'Find Available Slots'}
                 </button>
-                <ul className="space-y-2">
-                  {suggestedSlots.map((slot) => (
-                    <li key={`${slot.driverId}-${slot.startTime}`} className="flex items-center justify-between p-2 bg-slate-50 rounded border">
-                      <div>
-                        <span className="text-sm font-medium text-slate-800">{formatDateTime(slot.startTime)}</span>
-                        <span className="text-xs text-slate-800 ml-2">with {drivers.find(d => d.id === slot.driverId)?.fullName ?? 'Instructor'}</span>
-                      </div>
-                      <button
-                        className="px-4 py-2 rounded bg-slate-900 text-white hover:bg-slate-800 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                        type="button"
-                        disabled={bookingInProgress}
-                        onClick={() => createBooking(slot.startTime)}
-                      >
-                        {bookingInProgress ? 'Booking...' : 'Book This Slot'}
-                      </button>
-                    </li>
-                  ))}
-                  {suggestedSlots.length === 0 && !status ? (
-                    <li className="text-sm text-slate-700 text-center py-4">
-                      No availability for the selected day.
-                    </li>
-                  ) : null}
-                </ul>
+                {loadingSlots ? (
+                  <SlotListSkeleton count={4} />
+                ) : (
+                  <ul className="space-y-2">
+                    {suggestedSlots.map((slot) => (
+                      <li key={`${slot.driverId}-${slot.startTime}`} className="flex items-center justify-between p-2 bg-slate-50 rounded border">
+                        <div>
+                          <span className="text-sm font-medium text-slate-800">{formatDateTime(slot.startTime)}</span>
+                          <span className="text-xs text-slate-800 ml-2">with {drivers.find(d => d.id === slot.driverId)?.fullName ?? 'Instructor'}</span>
+                        </div>
+                        <button
+                          className="px-4 py-2 rounded bg-slate-900 text-white hover:bg-slate-800 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                          type="button"
+                          disabled={bookingInProgress}
+                          onClick={() => createBooking(slot.startTime)}
+                        >
+                          {bookingInProgress ? 'Booking...' : 'Book This Slot'}
+                        </button>
+                      </li>
+                    ))}
+                    {suggestedSlots.length === 0 && !status ? (
+                      <li className="text-sm text-slate-700 text-center py-4">
+                        No availability for the selected day.
+                      </li>
+                    ) : null}
+                  </ul>
+                )}
               </div>
               )}
             </SummaryCard>

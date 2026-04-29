@@ -4,7 +4,15 @@ import React, { useMemo, useState } from 'react';
 import { APP_TIMEZONE, toDateStringHalifax } from '../utils/timezone';
 
 type Availability = { id: number; date: string; startTime: string; endTime: string; type?: string };
-type Booking = { id: number; driverId: number; studentId: number; startTime: string; status: string };
+type Booking = {
+    id: number;
+    driverId: number;
+    studentId: number;
+    startTime: string;
+    status: string;
+    pickupAddressId?: number | null;
+    dropoffAddressId?: number | null;
+};
 type StudentProfile = { id: number; fullName: string };
 
 interface WeeklyCalendarProps {
@@ -12,6 +20,7 @@ interface WeeklyCalendarProps {
     bookings: Booking[];
     students: StudentProfile[];
     lessonDurationMinutes?: number;
+    onBookingClick?: (booking: Booking) => void;
 }
 
 const HOURS = Array.from({ length: 12 }, (_, i) => i + 7); // 7 AM to 6 PM
@@ -55,7 +64,7 @@ function getHalifaxHour(isoStr: string): number {
     return hour + minute / 60;
 }
 
-export function WeeklyCalendar({ availability, bookings, students, lessonDurationMinutes = 90 }: WeeklyCalendarProps) {
+export function WeeklyCalendar({ availability, bookings, students, lessonDurationMinutes = 90, onBookingClick }: WeeklyCalendarProps) {
     const [weekOffset, setWeekOffset] = useState(0);
 
     const baseDate = useMemo(() => {
@@ -98,7 +107,7 @@ export function WeeklyCalendar({ availability, bookings, students, lessonDuratio
 
     // Map bookings to grid positions
     const bookingBlocks = useMemo(() => {
-        const blocks: { dayIndex: number; startHour: number; endHour: number; studentName: string; status: string }[] = [];
+        const blocks: { dayIndex: number; startHour: number; endHour: number; studentName: string; status: string; booking: Booking }[] = [];
 
         bookings.forEach((booking) => {
             const bookingDateStr = toDateStringHalifax(booking.startTime);
@@ -116,11 +125,12 @@ export function WeeklyCalendar({ availability, bookings, students, lessonDuratio
                 endHour,
                 studentName: student?.fullName ?? 'Student',
                 status: booking.status,
+                booking,
             });
         });
 
         return blocks;
-    }, [bookings, weekDates, students]);
+    }, [bookings, weekDates, students, lessonDurationMinutes]);
 
     const weekLabel = useMemo(() => {
         const startDate = new Date(weekDates[0] + 'T12:00:00');
@@ -243,11 +253,13 @@ export function WeeklyCalendar({ availability, bookings, students, lessonDuratio
                             const top = (block.startHour - 7) * 48;
                             const height = Math.max((block.endHour - block.startHour) * 48, 24);
                             const left = `calc(${(block.dayIndex + 1) * 12.5}% + 1px)`;
+                            const clickable = !!onBookingClick;
 
                             return (
-                                <div
+                                <button
+                                    type="button"
                                     key={`booking-${i}`}
-                                    className="absolute bg-blue-500 text-white rounded text-xs p-1 overflow-hidden shadow"
+                                    className={`absolute bg-blue-500 text-white rounded text-xs p-1 overflow-hidden shadow text-left ${clickable ? 'hover:bg-blue-600 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-300' : 'cursor-default'}`}
                                     style={{
                                         top: `${top}px`,
                                         height: `${height}px`,
@@ -255,11 +267,13 @@ export function WeeklyCalendar({ availability, bookings, students, lessonDuratio
                                         width: 'calc(12.5% - 2px)',
                                         zIndex: 2,
                                     }}
-                                    title={`Lesson with ${block.studentName}`}
+                                    title={clickable ? `Click for details — ${block.studentName}` : `Lesson with ${block.studentName}`}
+                                    onClick={() => onBookingClick?.(block.booking)}
+                                    disabled={!clickable}
                                 >
                                     <div className="font-medium truncate">{block.studentName}</div>
                                     <div className="text-[10px] opacity-80">{block.status}</div>
-                                </div>
+                                </button>
                             );
                         })}
                     </div>

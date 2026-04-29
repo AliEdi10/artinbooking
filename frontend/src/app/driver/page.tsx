@@ -119,6 +119,8 @@ function DriverPageContent() {
   const [cancelReason, setCancelReason] = useState<Record<number, string>>({});
   const [actionMessage, setActionMessage] = useState('');
   const [holidayRange, setHolidayRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
+  const [holidayMode, setHolidayMode] = useState<'fullDay' | 'hourly'>('fullDay');
+  const [holidayHours, setHolidayHours] = useState<{ start: string; end: string }>({ start: '09:00', end: '17:00' });
 
   // Phase 3: Student history viewer
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
@@ -143,6 +145,7 @@ function DriverPageContent() {
 
   // Student profile modal
   const [viewingStudent, setViewingStudent] = useState<StudentProfile | null>(null);
+  const [viewingBooking, setViewingBooking] = useState<Booking | null>(null);
 
   // Service Center and Working Hours state
   const [serviceCenterCoords, setServiceCenterCoords] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -471,6 +474,20 @@ function DriverPageContent() {
       return;
     }
 
+    if (holidayMode === 'hourly') {
+      if (!holidayHours.start || !holidayHours.end) {
+        toast.error('Please specify both start and end times.');
+        return;
+      }
+      if (holidayHours.start >= holidayHours.end) {
+        toast.error('End time must be after start time.');
+        return;
+      }
+    }
+
+    const blockStartTime = holidayMode === 'hourly' ? holidayHours.start : '00:00';
+    const blockEndTime = holidayMode === 'hourly' ? holidayHours.end : '23:59';
+
     // Build date strings without timezone shifts
     const holidayDates: string[] = [];
     const hCur = new Date(startDateStr + 'T00:00:00');
@@ -483,47 +500,53 @@ function DriverPageContent() {
       hCur.setDate(hCur.getDate() + 1);
     }
 
-    // Check for conflicts
-    const conflictDates: string[] = [];
-    const alreadyBlockedDates: string[] = [];
-    for (const dateStr of holidayDates) {
-      if (driverState.availability.some(a => a.date === dateStr && a.type === 'override_closed')) {
-        alreadyBlockedDates.push(formatDate(dateStr + 'T00:00:00'));
+    // Check for conflicts (full-day mode only — hourly blocks may coexist with availability)
+    if (holidayMode === 'fullDay') {
+      const isFullDay = (s: string, e: string) => s.slice(0, 5) === '00:00' && e.slice(0, 5) === '23:59';
+      const conflictDates: string[] = [];
+      const alreadyBlockedDates: string[] = [];
+      for (const dateStr of holidayDates) {
+        if (driverState.availability.some(a => a.date === dateStr && a.type === 'override_closed' && isFullDay(a.startTime, a.endTime))) {
+          alreadyBlockedDates.push(formatDate(dateStr + 'T00:00:00'));
+        }
+        if (driverState.availability.some(a => a.date === dateStr && a.type === 'working_hours')) {
+          conflictDates.push(formatDate(dateStr + 'T00:00:00'));
+        }
       }
-      if (driverState.availability.some(a => a.date === dateStr && a.type === 'working_hours')) {
-        conflictDates.push(formatDate(dateStr + 'T00:00:00'));
+
+      if (alreadyBlockedDates.length === holidayDates.length) {
+        toast.error(`All selected dates are already blocked: ${alreadyBlockedDates.join(', ')}`);
+        return;
       }
-    }
 
-    // Error if all dates are already blocked
-    if (alreadyBlockedDates.length === holidayDates.length) {
-      toast.error(`All selected dates are already blocked: ${alreadyBlockedDates.join(', ')}`);
-      return;
-    }
-
-    // ERROR if any dates have published availability - user must delete availability first
-    if (conflictDates.length > 0) {
-      toast.error(`Cannot block ${conflictDates.join(', ')} - delete availability first.`);
-      return;
+      if (conflictDates.length > 0) {
+        toast.error(`Cannot fully block ${conflictDates.join(', ')} - delete availability first or use hourly block.`);
+        return;
+      }
     }
 
     const toastId = toast.loading(`Adding time off for ${holidayDates.length} day(s)...`);
 
     try {
+      const isFullDay = (s: string, e: string) => s.slice(0, 5) === '00:00' && e.slice(0, 5) === '23:59';
       for (const dateStr of holidayDates) {
-        // Skip if already blocked
-        if (!driverState.availability.some(a => a.date === dateStr && a.type === 'override_closed')) {
-          await apiFetch(`/schools/${schoolId}/drivers/${driverState.driver.id}/availability`, token, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              date: dateStr,
-              startTime: '00:00',
-              endTime: '23:59',
-              type: 'override_closed',
-            }),
-          });
-        }
+        // For full-day mode, skip dates already fully blocked. For hourly mode, always create
+        // (the user may add multiple distinct blocks throughout the day).
+        const alreadyFullyBlocked = driverState.availability.some(
+          a => a.date === dateStr && a.type === 'override_closed' && isFullDay(a.startTime, a.endTime)
+        );
+        if (holidayMode === 'fullDay' && alreadyFullyBlocked) continue;
+
+        await apiFetch(`/schools/${schoolId}/drivers/${driverState.driver.id}/availability`, token, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            date: dateStr,
+            startTime: blockStartTime,
+            endTime: blockEndTime,
+            type: 'override_closed',
+          }),
+        });
       }
       setHolidayRange({ start: '', end: '' });
       await loadDriverContext();
@@ -728,6 +751,53 @@ function DriverPageContent() {
                     );
                   })}
                 </ul>
+              </div>
+            );
+          })()}
+
+          {/* Next 24 hours summary */}
+          {(() => {
+            const now = Date.now();
+            const next24 = upcomingLessons
+              .filter((l) => {
+                const t = new Date(l.rawStartTime).getTime();
+                return t >= now && t - now <= 24 * 60 * 60 * 1000 && l.status !== 'cancelled_by_student' && l.status !== 'cancelled_by_driver' && l.status !== 'cancelled_by_school';
+              })
+              .sort((a, b) => new Date(a.rawStartTime).getTime() - new Date(b.rawStartTime).getTime());
+            return (
+              <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4 shadow-sm">
+                <h2 className="text-lg font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                  ⏰ Next 24 hours
+                  <span className="text-xs font-normal bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
+                    {next24.length} upcoming
+                  </span>
+                </h2>
+                {next24.length === 0 ? (
+                  <p className="text-sm text-slate-700">No lessons scheduled in the next 24 hours.</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {next24.map((lesson) => (
+                      <li key={`next24-${lesson.id}`} className="flex items-start justify-between bg-white rounded p-2 border border-amber-100">
+                        <div className="flex-1">
+                          <div className="text-sm font-semibold text-slate-900">{formatDateTime(lesson.rawStartTime)}</div>
+                          <button
+                            type="button"
+                            className="text-sm text-slate-800 hover:text-blue-700 hover:underline text-left"
+                            onClick={() => {
+                              const s = driverState.students.find((st) => st.id === lesson.studentId);
+                              if (s) setViewingStudent(s);
+                            }}
+                          >
+                            {lesson.student}
+                          </button>
+                          {lesson.pickupAddress && (
+                            <p className="text-xs text-slate-700 mt-0.5">📍 {lesson.pickupAddress}</p>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             );
           })()}
@@ -1156,6 +1226,13 @@ function DriverPageContent() {
                   bookings={driverState.bookings}
                   students={driverState.students}
                   lessonDurationMinutes={schoolSettings?.defaultLessonDurationMinutes ?? 90}
+                  onBookingClick={(booking) => {
+                    const student = driverState.students.find((s) => s.id === booking.studentId);
+                    if (student) {
+                      setViewingBooking(booking);
+                      setViewingStudent(student);
+                    }
+                  }}
                 />
               </SummaryCard>
             </>
@@ -1610,31 +1687,86 @@ function DriverPageContent() {
                       />
                     </div>
                   </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-800 mb-1">Block Type</label>
+                    <div className="flex gap-2">
+                      <label className="flex-1 flex items-center gap-2 border rounded px-3 py-2 text-sm cursor-pointer text-slate-900 has-[:checked]:bg-red-50 has-[:checked]:border-red-400">
+                        <input
+                          type="radio"
+                          name="holidayMode"
+                          value="fullDay"
+                          checked={holidayMode === 'fullDay'}
+                          onChange={() => setHolidayMode('fullDay')}
+                        />
+                        Full day
+                      </label>
+                      <label className="flex-1 flex items-center gap-2 border rounded px-3 py-2 text-sm cursor-pointer text-slate-900 has-[:checked]:bg-red-50 has-[:checked]:border-red-400">
+                        <input
+                          type="radio"
+                          name="holidayMode"
+                          value="hourly"
+                          checked={holidayMode === 'hourly'}
+                          onChange={() => setHolidayMode('hourly')}
+                        />
+                        Specific hours
+                      </label>
+                    </div>
+                  </div>
+                  {holidayMode === 'hourly' && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-xs font-medium text-slate-800 mb-1">Block Start Time</label>
+                        <input
+                          className="w-full border rounded px-3 py-2 text-sm text-slate-900"
+                          type="time"
+                          value={holidayHours.start}
+                          onChange={(e) => setHolidayHours({ ...holidayHours, start: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-slate-800 mb-1">Block End Time</label>
+                        <input
+                          className="w-full border rounded px-3 py-2 text-sm text-slate-900"
+                          type="time"
+                          value={holidayHours.end}
+                          onChange={(e) => setHolidayHours({ ...holidayHours, end: e.target.value })}
+                          required
+                        />
+                      </div>
+                    </div>
+                  )}
                   <button
                     className="w-full px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700 text-sm"
                     type="submit"
                   >
-                    ⛔ Block Date Range
+                    ⛔ {holidayMode === 'hourly' ? 'Block Hours' : 'Block Date Range'}
                   </button>
                 </form>
                 <ul className="space-y-2 text-sm max-h-48 overflow-y-auto">
                   {driverState.availability
                     .filter(a => a.type === 'override_closed')
-                    .sort((a, b) => a.date.localeCompare(b.date))
-                    .map((holiday) => (
-                      <li key={holiday.id} className="flex justify-between items-center border rounded p-2 bg-red-50">
-                        <div>
-                          <span className="font-medium text-slate-800">{formatDate(holiday.date)}</span>
-                          <span className="text-xs text-red-700 font-medium ml-2">⛔ Unavailable</span>
-                        </div>
-                        <button
-                          className="text-xs px-2 py-1 rounded bg-red-600 text-white hover:bg-red-700"
-                          onClick={() => setConfirmDeleteBlock({ id: holiday.id, date: formatDate(holiday.date) })}
-                        >
-                          Remove
-                        </button>
-                      </li>
-                    ))}
+                    .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime))
+                    .map((holiday) => {
+                      const isFull = holiday.startTime.slice(0, 5) === '00:00' && holiday.endTime.slice(0, 5) === '23:59';
+                      const timeRange = isFull
+                        ? 'Full day'
+                        : `${holiday.startTime.slice(0, 5)}–${holiday.endTime.slice(0, 5)}`;
+                      return (
+                        <li key={holiday.id} className="flex justify-between items-center border rounded p-2 bg-red-50">
+                          <div>
+                            <span className="font-medium text-slate-800">{formatDate(holiday.date)}</span>
+                            <span className="text-xs text-red-700 font-medium ml-2">⛔ {timeRange}</span>
+                          </div>
+                          <button
+                            className="text-xs px-2 py-1 rounded bg-red-600 text-white hover:bg-red-700"
+                            onClick={() => setConfirmDeleteBlock({ id: holiday.id, date: formatDate(holiday.date) })}
+                          >
+                            Remove
+                          </button>
+                        </li>
+                      );
+                    })}
                   {driverState.availability.filter(a => a.type === 'override_closed').length === 0 ? (
                     <li className="text-xs text-slate-800 text-center py-2">No time off scheduled.</li>
                   ) : null}
@@ -1687,11 +1819,11 @@ function DriverPageContent() {
 
       {/* Student Profile Modal */}
       {viewingStudent && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setViewingStudent(null)}>
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => { setViewingStudent(null); setViewingBooking(null); }}>
           <div className="bg-white rounded-xl shadow-xl max-w-[90vw] sm:max-w-sm w-full p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-start">
-              <h3 className="text-lg font-semibold text-slate-900">Student Profile</h3>
-              <button type="button" onClick={() => setViewingStudent(null)} className="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
+              <h3 className="text-lg font-semibold text-slate-900">{viewingBooking ? 'Lesson Details' : 'Student Profile'}</h3>
+              <button type="button" onClick={() => { setViewingStudent(null); setViewingBooking(null); }} className="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
             </div>
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 text-xl font-bold">
@@ -1735,9 +1867,65 @@ function DriverPageContent() {
                 <p className="text-slate-500 text-sm">No contact information available yet.</p>
               )}
             </div>
+            {viewingBooking && (() => {
+              const pickupAddr = viewingBooking.pickupAddressId ? allAddresses.get(viewingBooking.pickupAddressId) : null;
+              const dropoffAddr = viewingBooking.dropoffAddressId ? allAddresses.get(viewingBooking.dropoffAddressId) : null;
+              const fmt = (addr: StudentAddress | null | undefined) => {
+                if (!addr) return null;
+                const parts = [addr.line1];
+                if (addr.city) parts.push(addr.city);
+                if (addr.provinceOrState) parts.push(addr.provinceOrState);
+                return parts.join(', ');
+              };
+              const mapsHref = (addr: StudentAddress | null | undefined) => {
+                if (!addr) return null;
+                if (addr.latitude != null && addr.longitude != null) {
+                  return `https://www.google.com/maps/search/?api=1&query=${addr.latitude},${addr.longitude}`;
+                }
+                const parts = [addr.line1, addr.city, addr.provinceOrState, addr.postalCode].filter(Boolean).join(', ');
+                return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(parts)}`;
+              };
+              const pickupText = fmt(pickupAddr);
+              const dropoffText = fmt(dropoffAddr);
+              return (
+                <div className="border-t border-slate-200 pt-3 space-y-2 text-sm">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Lesson</p>
+                  <div className="flex items-center gap-3">
+                    <span className="text-slate-400 w-5 text-center">&#128197;</span>
+                    <span className="text-slate-800">{formatDateTime(viewingBooking.startTime)}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-slate-400 w-5 text-center">&#9989;</span>
+                    <span className="text-slate-700">{viewingBooking.status}</span>
+                  </div>
+                  {pickupText && (
+                    <div className="flex items-start gap-3">
+                      <span className="text-slate-400 w-5 text-center">&#128205;</span>
+                      <div className="flex-1">
+                        <div className="text-slate-700">Pickup: {pickupText}</div>
+                        {mapsHref(pickupAddr) && (
+                          <a href={mapsHref(pickupAddr)!} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline">🧭 Open in Maps</a>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {dropoffText && dropoffText !== pickupText && (
+                    <div className="flex items-start gap-3">
+                      <span className="text-slate-400 w-5 text-center">&#127937;</span>
+                      <div className="flex-1">
+                        <div className="text-slate-700">Drop-off: {dropoffText}</div>
+                        {mapsHref(dropoffAddr) && (
+                          <a href={mapsHref(dropoffAddr)!} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline">🧭 Open in Maps</a>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
             <button
               type="button"
-              onClick={() => setViewingStudent(null)}
+              onClick={() => { setViewingStudent(null); setViewingBooking(null); }}
               className="w-full bg-slate-900 text-white rounded px-3 py-2 text-sm font-medium hover:bg-slate-800"
             >
               Close

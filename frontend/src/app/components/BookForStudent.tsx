@@ -7,8 +7,27 @@ import toast from 'react-hot-toast';
 
 type Student = { id: number; fullName: string; licenceStatus?: string; active?: boolean };
 type Driver = { id: number; fullName: string; active?: boolean };
-type Address = { id: number; label: string | null; line1: string; city: string; isDefaultPickup: boolean; isDefaultDropoff: boolean };
+type Address = {
+  id: number;
+  label: string | null;
+  line1: string;
+  city: string | null;
+  provinceOrState?: string | null;
+  postalCode?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  isDefaultPickup: boolean;
+  isDefaultDropoff: boolean;
+};
 type SlotOption = { startTime: string; driverId: number };
+
+function buildMapsUrl(addr: Address): string {
+  if (addr.latitude != null && addr.longitude != null) {
+    return `https://www.google.com/maps/search/?api=1&query=${addr.latitude},${addr.longitude}`;
+  }
+  const parts = [addr.line1, addr.city, addr.provinceOrState, addr.postalCode].filter(Boolean).join(', ');
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(parts)}`;
+}
 
 interface BookForStudentProps {
   schoolId: number;
@@ -22,6 +41,7 @@ interface BookForStudentProps {
 
 export function BookForStudent({ schoolId, token, students, drivers, fixedDriverId, onBooked }: BookForStudentProps) {
   const [studentId, setStudentId] = useState<number | ''>('');
+  const [studentSearch, setStudentSearch] = useState('');
   const [driverId, setDriverId] = useState<number | ''>(fixedDriverId ?? '');
   const [date, setDate] = useState(todayDateString());
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -34,6 +54,11 @@ export function BookForStudent({ schoolId, token, students, drivers, fixedDriver
 
   const approvedStudents = students.filter(s => s.active !== false && s.licenceStatus === 'approved');
   const activeDrivers = drivers.filter(d => d.active !== false);
+
+  const trimmedSearch = studentSearch.trim().toLowerCase();
+  const filteredStudents = trimmedSearch
+    ? approvedStudents.filter(s => s.fullName.toLowerCase().includes(trimmedSearch))
+    : approvedStudents;
 
   // Load addresses when student changes
   useEffect(() => {
@@ -105,14 +130,24 @@ export function BookForStudent({ schoolId, token, students, drivers, fixedDriver
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <div>
           <label className="block text-xs font-medium text-slate-700 mb-1">Student</label>
+          <input
+            type="text"
+            placeholder="Search student by name..."
+            className="border rounded px-2 py-1.5 w-full text-sm text-slate-900 mb-1"
+            value={studentSearch}
+            onChange={e => setStudentSearch(e.target.value)}
+          />
           <select
             className="border rounded px-2 py-1.5 w-full text-sm text-slate-900"
             value={studentId}
             onChange={e => setStudentId(Number(e.target.value) || '')}
             required
+            size={trimmedSearch && filteredStudents.length > 0 && filteredStudents.length <= 6 ? filteredStudents.length + 1 : undefined}
           >
-            <option value="">Select student...</option>
-            {approvedStudents.map(s => (
+            <option value="">
+              {filteredStudents.length === 0 ? 'No matching students' : 'Select student...'}
+            </option>
+            {filteredStudents.map(s => (
               <option key={s.id} value={s.id}>{s.fullName}</option>
             ))}
           </select>
@@ -150,6 +185,16 @@ export function BookForStudent({ schoolId, token, students, drivers, fixedDriver
                 <option key={a.id} value={a.id}>{a.label || a.line1}, {a.city}</option>
               ))}
             </select>
+            {pickupId && addresses.find(a => a.id === pickupId) && (
+              <a
+                href={buildMapsUrl(addresses.find(a => a.id === pickupId)!)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block mt-1 text-xs text-blue-600 hover:text-blue-800 hover:underline"
+              >
+                🧭 Open in Maps
+              </a>
+            )}
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-700 mb-1">Drop-off Address</label>
@@ -164,6 +209,16 @@ export function BookForStudent({ schoolId, token, students, drivers, fixedDriver
                 <option key={a.id} value={a.id}>{a.label || a.line1}, {a.city}</option>
               ))}
             </select>
+            {dropoffId && addresses.find(a => a.id === dropoffId) && (
+              <a
+                href={buildMapsUrl(addresses.find(a => a.id === dropoffId)!)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block mt-1 text-xs text-blue-600 hover:text-blue-800 hover:underline"
+              >
+                🧭 Open in Maps
+              </a>
+            )}
           </div>
         </div>
       )}
